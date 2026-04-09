@@ -10,6 +10,7 @@ import { useTenant } from "@/hooks/use-tenant";
 import { useDevices, type ManagedDevice } from "@/hooks/use-devices";
 import { useCreateTask, useDeviceTasks } from "@/hooks/use-tasks";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { formatLastSeenAge } from "@/lib/device-presence";
 
 export default function Devices() {
   const [search, setSearch] = useState("");
@@ -31,6 +32,18 @@ export default function Devices() {
       (d.public_ip || "").toLowerCase().includes(search.toLowerCase())
   );
 
+  const currentSelectedDevice = selectedDevice
+    ? (liveDevices || []).find((device) => device.target_id === selectedDevice.target_id) ?? selectedDevice
+    : null;
+
+  const selectedDeviceIsResponsive = currentSelectedDevice
+    ? currentSelectedDevice.isResponsive ?? currentSelectedDevice.status === "Online"
+    : false;
+
+  const selectedDeviceLastSeenLabel = currentSelectedDevice?.last_seen
+    ? formatLastSeenAge(currentSelectedDevice.last_seen)
+    : "an unknown time";
+
   useEffect(() => {
     terminalEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [deviceTasks]);
@@ -47,9 +60,19 @@ export default function Devices() {
   };
 
   const handleSendCommand = () => {
-    if (!tenant?.tenantId || !selectedDevice || !cmdInput.trim()) return;
+    if (!tenant?.tenantId || !currentSelectedDevice || !cmdInput.trim()) return;
+
+    if (!selectedDeviceIsResponsive) {
+      toast({
+        title: "Device offline",
+        description: `No heartbeat received from ${currentSelectedDevice.target_id} for ${selectedDeviceLastSeenLabel}. Commands will stay queued until the agent reconnects.`,
+        variant: "destructive",
+      });
+      return;
+    }
+
     createTask.mutate(
-      { tenant_id: tenant.tenantId, target_id: selectedDevice.target_id, command: cmdInput.trim() },
+      { tenant_id: tenant.tenantId, target_id: currentSelectedDevice.target_id, command: cmdInput.trim() },
       {
         onSuccess: () => {
           setCmdInput("");
@@ -79,7 +102,7 @@ export default function Devices() {
   };
 
   // Terminal view
-  if (selectedDevice) {
+  if (currentSelectedDevice) {
     return (
       <div className="flex flex-col h-[calc(100vh-4rem)]">
         {/* Terminal header */}
@@ -87,12 +110,12 @@ export default function Devices() {
           <div className="flex items-center gap-3">
             <Terminal className="h-5 w-5 text-green-400" />
             <div>
-              <h2 className="text-sm font-bold font-mono text-foreground">{selectedDevice.target_id}</h2>
+              <h2 className="text-sm font-bold font-mono text-foreground">{currentSelectedDevice.target_id}</h2>
               <p className="text-xs text-muted-foreground">
-                {selectedDevice.public_ip || "Unknown IP"} · {selectedDevice.os_info || "Unknown OS"} · {selectedDevice.arch || "Unknown Arch"}
+                {currentSelectedDevice.public_ip || "Unknown IP"} · {currentSelectedDevice.os_info || "Unknown OS"} · {currentSelectedDevice.arch || "Unknown Arch"}
               </p>
             </div>
-            <StatusBadge status={selectedDevice.status === "Online" ? "online" : "offline"} />
+            <StatusBadge status={selectedDeviceIsResponsive ? "online" : "offline"} />
           </div>
           <Button variant="ghost" size="icon" onClick={() => setSelectedDevice(null)}>
             <X className="h-4 w-4" />
@@ -103,11 +126,17 @@ export default function Devices() {
         <ScrollArea className="flex-1 bg-[#0d1117]">
           <div className="p-4 font-mono text-sm space-y-3 min-h-full">
             <div className="text-green-400 text-xs">
-              ── Connected to {selectedDevice.target_id} ──
+              ── Connected to {currentSelectedDevice.target_id} ──
             </div>
             <div className="text-muted-foreground text-xs">
               Commands are queued and picked up by the agent on next poll cycle.
             </div>
+
+            {!selectedDeviceIsResponsive && (
+              <div className="rounded-md border border-warning/30 bg-warning/10 px-3 py-2 text-xs text-warning">
+                No heartbeat has been received from this agent since {selectedDeviceLastSeenLabel}. New commands are blocked until it reconnects and polls again.
+              </div>
+            )}
 
             {(deviceTasks || []).map((task) => (
               <div key={task.id} className="space-y-1">
@@ -123,7 +152,13 @@ export default function Devices() {
                 {task.status === "Pending" || task.status === "Sent" ? (
                   <div className="flex items-center gap-2 pl-4 text-muted-foreground text-xs">
                     <Loader2 className="h-3 w-3 animate-spin" />
-                    {task.status === "Pending" ? "Waiting for agent to pick up..." : "Sent to agent, awaiting result..."}
+                    {task.status === "Pending"
+                      ? selectedDeviceIsResponsive
+                        ? "Waiting for agent to pick up..."
+                        : `No recent heartbeat from the agent (${selectedDeviceLastSeenLabel}); this task will remain queued until it reconnects.`
+                      : selectedDeviceIsResponsive
+                      ? "Sent to agent, awaiting result..."
+                      : `The task was sent before the agent went offline (${selectedDeviceLastSeenLabel}); waiting for it to report back.`}
                   </div>
                 ) : task.result ? (
                   <pre className="pl-4 text-xs text-muted-foreground whitespace-pre-wrap break-all">{task.result}</pre>
@@ -144,12 +179,12 @@ export default function Devices() {
             onKeyDown={handleKeyDown}
             placeholder="Type a command..."
             className="flex-1 bg-transparent border-none text-foreground font-mono text-sm focus-visible:ring-0 focus-visible:ring-offset-0 placeholder:text-muted-foreground"
-            disabled={selectedDevice.status === "Offline" || createTask.isPending}
+            disabled={!selectedDeviceIsResponsive || createTask.isPending}
           />
           <Button
             size="sm"
             onClick={handleSendCommand}
-            disabled={!cmdInput.trim() || createTask.isPending || selectedDevice.status === "Offline"}
+            disabled={!cmdInput.trim() || createTask.isPending || !selectedDeviceIsResponsive}
           >
             {createTask.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Send"}
           </Button>
