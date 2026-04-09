@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
 export interface RemoteTask {
@@ -12,13 +13,33 @@ export interface RemoteTask {
 }
 
 export function useTasks(tenantId: string | undefined) {
+  const queryClient = useQueryClient();
+
+  useEffect(() => {
+    if (!tenantId) return;
+
+    const channel = supabase
+      .channel("remote_tasks_realtime")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "remote_tasks", filter: `tenant_id=eq.${tenantId}` },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ["remote_tasks", tenantId] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [tenantId, queryClient]);
+
   return useQuery({
     queryKey: ["remote_tasks", tenantId],
     enabled: !!tenantId,
-    refetchInterval: 10000,
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("remote_tasks" as any)
+        .from("remote_tasks")
         .select("*")
         .eq("tenant_id", tenantId!)
         .order("created_at", { ascending: false })
@@ -36,7 +57,7 @@ export function useCreateTask() {
   return useMutation({
     mutationFn: async (params: { tenant_id: string; target_id: string; command: string }) => {
       const { data, error } = await supabase
-        .from("remote_tasks" as any)
+        .from("remote_tasks")
         .insert({
           tenant_id: params.tenant_id,
           target_id: params.target_id,
