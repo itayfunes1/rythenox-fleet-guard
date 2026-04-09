@@ -90,43 +90,6 @@ export function useDeviceTasks(tenantId: string | undefined, targetId: string | 
     },
   });
 }
-  const queryClient = useQueryClient();
-
-  useEffect(() => {
-    if (!tenantId) return;
-
-    const channel = supabase
-      .channel("remote_tasks_realtime")
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "remote_tasks", filter: `tenant_id=eq.${tenantId}` },
-        () => {
-          queryClient.invalidateQueries({ queryKey: ["remote_tasks", tenantId] });
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [tenantId, queryClient]);
-
-  return useQuery({
-    queryKey: ["remote_tasks", tenantId],
-    enabled: !!tenantId,
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("remote_tasks")
-        .select("*")
-        .eq("tenant_id", tenantId!)
-        .order("created_at", { ascending: false })
-        .limit(50);
-
-      if (error) throw error;
-      return (data || []) as unknown as RemoteTask[];
-    },
-  });
-}
 
 export function useCreateTask() {
   const queryClient = useQueryClient();
@@ -148,6 +111,7 @@ export function useCreateTask() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["remote_tasks"] });
+      queryClient.invalidateQueries({ queryKey: ["device_tasks"] });
     },
   });
 }
