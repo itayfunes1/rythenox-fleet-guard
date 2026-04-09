@@ -99,8 +99,8 @@ export default function NetworkInfrastructure() {
                   <TableRow key={relay.id}>
                     <TableCell className="font-mono text-sm">{relay.addr}</TableCell>
                     <TableCell>
-                      <Badge variant={relay.status === "Online" ? "default" : "secondary"}>
-                        {relay.status}
+                      <Badge variant={isRelayOnline(relay) ? "default" : "secondary"}>
+                        {isRelayOnline(relay) ? "Online" : "Offline"}
                       </Badge>
                     </TableCell>
                     <TableCell>{relay.client_count}</TableCell>
