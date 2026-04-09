@@ -1,0 +1,1 @@
+UPDATE remote_tasks SET status = 'Failed', result = 'Manual Reset' WHERE status = 'Sent';
