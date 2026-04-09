@@ -1,35 +1,59 @@
 import { useState } from "react";
-import { diagnosticFiles } from "@/data/mock-data";
+import { diagnosticFiles as mockFiles } from "@/data/mock-data";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
-import { Search, Download, Eye, FileText, FileVideo, File } from "lucide-react";
+import { Search, Download, Eye, FileText, FileVideo, File, FileImage, FileAudio } from "lucide-react";
+import { useTenant } from "@/hooks/use-tenant";
+import { useDiagnosticFiles, type DiagnosticEntry } from "@/hooks/use-diagnostic-files";
 
 const typeIcons: Record<string, React.ReactNode> = {
   pdf: <FileText className="h-4 w-4 text-destructive" />,
   log: <File className="h-4 w-4 text-warning" />,
   mp4: <FileVideo className="h-4 w-4 text-accent" />,
+  image: <FileImage className="h-4 w-4 text-accent" />,
+  audio: <FileAudio className="h-4 w-4 text-warning" />,
+  text: <FileText className="h-4 w-4 text-muted-foreground" />,
 };
 
 const typeBadgeColors: Record<string, string> = {
   pdf: "bg-destructive/10 text-destructive border-destructive/30",
   log: "bg-warning/10 text-warning border-warning/30",
   mp4: "bg-accent/10 text-accent border-accent/30",
+  image: "bg-accent/10 text-accent border-accent/30",
+  audio: "bg-warning/10 text-warning border-warning/30",
+  text: "bg-muted text-muted-foreground border-border",
 };
 
 export default function DiagnosticVault() {
   const [search, setSearch] = useState("");
   const [tab, setTab] = useState("all");
 
-  const filtered = diagnosticFiles.filter((f) => {
+  const { data: tenant } = useTenant();
+  const { data: liveFiles } = useDiagnosticFiles(tenant?.tenantId);
+
+  const hasLiveData = !!tenant?.tenantId && !!liveFiles && liveFiles.length > 0;
+
+  // Mock data filtering
+  const filteredMock = mockFiles.filter((f) => {
     const matchesSearch = f.name.toLowerCase().includes(search.toLowerCase()) || f.device.toLowerCase().includes(search.toLowerCase());
     if (tab === "all") return matchesSearch;
     if (tab === "reports") return matchesSearch && f.category === "report";
     if (tab === "logs") return matchesSearch && f.category === "event_log";
     if (tab === "recordings") return matchesSearch && f.category === "recording";
+    return matchesSearch;
+  });
+
+  // Live data filtering
+  const filteredLive = (liveFiles || []).filter((f) => {
+    const matchesSearch = f.target_id.toLowerCase().includes(search.toLowerCase()) || f.file_url.toLowerCase().includes(search.toLowerCase());
+    if (tab === "all") return matchesSearch;
+    if (tab === "reports") return matchesSearch && f.type === "text";
+    if (tab === "logs") return matchesSearch && f.type === "text";
+    if (tab === "recordings") return matchesSearch && (f.type === "audio" || f.type === "image");
     return matchesSearch;
   });
 
@@ -63,44 +87,79 @@ export default function DiagnosticVault() {
               <TabsTrigger value="recordings">Recordings</TabsTrigger>
             </TabsList>
             <TabsContent value={tab} className="mt-4">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>File</TableHead>
-                    <TableHead className="hidden md:table-cell">Device</TableHead>
-                    <TableHead>Type</TableHead>
-                    <TableHead className="hidden md:table-cell">Size</TableHead>
-                    <TableHead className="hidden lg:table-cell">Date</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filtered.map((file) => (
-                    <TableRow key={file.id}>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          {typeIcons[file.type]}
-                          <span className="text-sm font-medium truncate max-w-[200px]">{file.name}</span>
-                        </div>
-                      </TableCell>
-                      <TableCell className="hidden md:table-cell font-mono text-sm">{file.device}</TableCell>
-                      <TableCell>
-                        <Badge variant="outline" className={typeBadgeColors[file.type]}>
-                          {file.type.toUpperCase()}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="hidden md:table-cell text-sm text-muted-foreground">{file.size}</TableCell>
-                      <TableCell className="hidden lg:table-cell text-sm text-muted-foreground">{file.date}</TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex items-center justify-end gap-1">
-                          <Button variant="ghost" size="icon"><Eye className="h-4 w-4" /></Button>
-                          <Button variant="ghost" size="icon"><Download className="h-4 w-4" /></Button>
-                        </div>
-                      </TableCell>
+              {hasLiveData ? (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>File</TableHead>
+                      <TableHead className="hidden md:table-cell">Device</TableHead>
+                      <TableHead>Type</TableHead>
+                      <TableHead className="hidden lg:table-cell">Date</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredLive.map((file) => (
+                      <TableRow key={file.id}>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            {typeIcons[file.type]}
+                            <span className="text-sm font-medium truncate max-w-[200px]">{file.file_url.split("/").pop()}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell className="hidden md:table-cell font-mono text-sm">{file.target_id}</TableCell>
+                        <TableCell>
+                          <Badge variant="outline" className={typeBadgeColors[file.type]}>{file.type.toUpperCase()}</Badge>
+                        </TableCell>
+                        <TableCell className="hidden lg:table-cell text-sm text-muted-foreground">{new Date(file.created_at).toLocaleString()}</TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex items-center justify-end gap-1">
+                            <Button variant="ghost" size="icon" asChild><a href={file.file_url} target="_blank" rel="noopener noreferrer"><Eye className="h-4 w-4" /></a></Button>
+                            <Button variant="ghost" size="icon" asChild><a href={file.file_url} download><Download className="h-4 w-4" /></a></Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>File</TableHead>
+                      <TableHead className="hidden md:table-cell">Device</TableHead>
+                      <TableHead>Type</TableHead>
+                      <TableHead className="hidden md:table-cell">Size</TableHead>
+                      <TableHead className="hidden lg:table-cell">Date</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredMock.map((file) => (
+                      <TableRow key={file.id}>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            {typeIcons[file.type]}
+                            <span className="text-sm font-medium truncate max-w-[200px]">{file.name}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell className="hidden md:table-cell font-mono text-sm">{file.device}</TableCell>
+                        <TableCell>
+                          <Badge variant="outline" className={typeBadgeColors[file.type]}>{file.type.toUpperCase()}</Badge>
+                        </TableCell>
+                        <TableCell className="hidden md:table-cell text-sm text-muted-foreground">{file.size}</TableCell>
+                        <TableCell className="hidden lg:table-cell text-sm text-muted-foreground">{file.date}</TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex items-center justify-end gap-1">
+                            <Button variant="ghost" size="icon"><Eye className="h-4 w-4" /></Button>
+                            <Button variant="ghost" size="icon"><Download className="h-4 w-4" /></Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
             </TabsContent>
           </Tabs>
         </CardContent>
