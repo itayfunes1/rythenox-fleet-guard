@@ -1,16 +1,13 @@
-import { auditLog as mockAuditLog } from "@/data/mock-data";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { CheckCircle, Shield } from "lucide-react";
 import { useTenant } from "@/hooks/use-tenant";
-import { useTasks, type RemoteTask } from "@/hooks/use-tasks";
+import { useTasks } from "@/hooks/use-tasks";
 
 export default function Compliance() {
   const { data: tenant } = useTenant();
-  const { data: liveTasks } = useTasks(tenant?.tenantId);
-
-  const hasLiveData = !!tenant?.tenantId && !!liveTasks && liveTasks.length > 0;
+  const { data: liveTasks, isLoading } = useTasks(tenant?.tenantId);
 
   return (
     <div className="space-y-6">
@@ -60,7 +57,11 @@ export default function Compliance() {
           <CardDescription>Complete record of all remote management actions</CardDescription>
         </CardHeader>
         <CardContent className="p-0">
-          {hasLiveData ? (
+          {isLoading ? (
+            <p className="text-sm text-muted-foreground p-6">Loading...</p>
+          ) : !liveTasks || liveTasks.length === 0 ? (
+            <p className="text-sm text-muted-foreground p-6">No audit entries yet. Remote commands will be logged here automatically.</p>
+          ) : (
             <Table>
               <TableHeader>
                 <TableRow>
@@ -91,35 +92,6 @@ export default function Compliance() {
                         <CheckCircle className="h-3 w-3 mr-1" /> Shown
                       </Badge>
                     </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Timestamp</TableHead>
-                  <TableHead>Action</TableHead>
-                  <TableHead className="hidden md:table-cell">Admin</TableHead>
-                  <TableHead className="hidden lg:table-cell">Target</TableHead>
-                  <TableHead>Consent</TableHead>
-                  <TableHead className="hidden md:table-cell">Data Scope</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {mockAuditLog.map((entry) => (
-                  <TableRow key={entry.id}>
-                    <TableCell className="text-sm font-mono">{entry.timestamp}</TableCell>
-                    <TableCell className="text-sm font-medium">{entry.action}</TableCell>
-                    <TableCell className="hidden md:table-cell text-sm">{entry.admin}</TableCell>
-                    <TableCell className="hidden lg:table-cell text-sm text-muted-foreground">{entry.target}</TableCell>
-                    <TableCell>
-                      <Badge variant="outline" className="border-success/30 bg-success/10 text-success text-xs">
-                        <CheckCircle className="h-3 w-3 mr-1" /> Shown
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="hidden md:table-cell text-xs text-muted-foreground">{entry.dataScope}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>
