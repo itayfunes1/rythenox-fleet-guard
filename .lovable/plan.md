@@ -1,58 +1,131 @@
 
 
-## Rythenox — IT Fleet Management & Helpdesk Portal
+## Rythenox Multi-Tenant SaaS Backend
 
 ### Overview
-A corporate IT dashboard for managing company-owned devices, deploying management agents, viewing diagnostics, and monitoring network infrastructure — all with built-in compliance and consent features.
+Set up Lovable Cloud (Supabase) with four tables, RLS policies, and three edge functions that serve as the external API for your Go VPS infrastructure. The dashboard pages will be rewired from mock data to live Supabase queries.
 
-### Design System
-- **Colors**: Corporate Navy (#0f1b3d), Slate Gray (#4a5568), Professional White (#f8fafc), with accent blue (#3b82f6) for actions
-- **Typography**: Inter / System UI — clean, professional, highly readable at small sizes
-- **Layout**: Sidebar dashboard with collapsible navigation + main content area
-- **Style**: Minimal borders, subtle shadows, data-dense tables with good spacing, status badges with color coding
+### Prerequisites
+- Enable **Lovable Cloud** on this project (spins up Supabase automatically)
+- No external Supabase account needed
 
-### Pages & Features
+---
 
-#### 1. Dashboard Home
-- Summary cards: Total Devices, Online/Offline count, Pending Updates, Active Support Sessions
-- Recent activity feed showing latest remote sessions and deployments
+### 1. Database Schema (4 migrations)
 
-#### 2. Device Management (Inventory)
-- Sortable/filterable data table with columns: Asset Tag, Assigned User, OS Version, Last Check-in, Connectivity Status (green/amber/red badge)
-- Row actions: "Initiate Remote Support", "View System Health Logs", "Update Software"
-- Remote Support action triggers a confirmation dialog showing the compliance notification text
-- Device detail drawer/modal with full system info and health history
+**Migration 1 — `tenants` table**
+```sql
+CREATE TABLE public.tenants (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name TEXT NOT NULL,
+  api_key TEXT NOT NULL UNIQUE DEFAULT encode(gen_random_bytes(32), 'hex'),
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+ALTER TABLE public.tenants ENABLE ROW LEVEL SECURITY;
+-- RLS: authenticated users see only their tenant (linked via profiles or user_roles)
+```
 
-#### 3. Deployment Center (Policy Manager)
-- Form with agent type selection: Standard User Agent vs Privileged Administrator Agent
-- Privileged option shows OAuth 2.0 authentication requirement notice
-- Toggle switches: Enable Remote Assistance, Automatic System Updates, Diagnostic Logging
-- Platform/OS selector
-- "Generate Configuration" button produces a deployment script displayed in a code block with copy-to-clipboard
-- Script output formatted for MDM/GPO deployment
+**Migration 2 — `managed_devices` table**
+```sql
+CREATE TABLE public.managed_devices (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  tenant_id UUID REFERENCES public.tenants(id) ON DELETE CASCADE NOT NULL,
+  target_id TEXT NOT NULL UNIQUE,
+  status TEXT NOT NULL DEFAULT 'Offline' CHECK (status IN ('Online','Offline')),
+  os_info TEXT,
+  arch TEXT,
+  public_ip TEXT,
+  last_seen TIMESTAMPTZ DEFAULT now()
+);
+ALTER TABLE public.managed_devices ENABLE ROW LEVEL SECURITY;
+```
 
-#### 4. Diagnostic Vault
-- Tabbed interface: System Reports | Event Logs | Screen-Share Recordings
-- Each tab shows a searchable list with timestamps, device info, and download/view actions
-- File type badges (PDF, LOG, MP4)
+**Migration 3 — `remote_tasks` table**
+```sql
+CREATE TABLE public.remote_tasks (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  tenant_id UUID REFERENCES public.tenants(id) ON DELETE CASCADE NOT NULL,
+  target_id TEXT NOT NULL,
+  command TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'Pending' CHECK (status IN ('Pending','Sent','Completed','Failed')),
+  result TEXT,
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+ALTER TABLE public.remote_tasks ENABLE ROW LEVEL SECURITY;
+```
 
-#### 5. Network Infrastructure
-- Cards/table showing VPN Concentrators and Management Gateways
-- Status indicators, connection counts, uptime metrics
-- Simple network topology visualization
+**Migration 4 — `diagnostic_vault` table**
+```sql
+CREATE TABLE public.diagnostic_vault (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  target_id TEXT NOT NULL,
+  type TEXT NOT NULL CHECK (type IN ('image','audio','text')),
+  file_url TEXT NOT NULL,
+  timestamp TIMESTAMPTZ DEFAULT now()
+);
+ALTER TABLE public.diagnostic_vault ENABLE ROW LEVEL SECURITY;
+```
 
-#### 6. Compliance & Consent
-- All remote action buttons show a consent confirmation dialog: "This will display a visible notification on the target device: 'Your IT Administrator has initiated a support session.'"
-- Data scope disclaimer shown in diagnostics: limited to CPU, RAM, disk health
-- Audit log of all remote actions with timestamps
+**RLS approach**: Dashboard queries are scoped by `tenant_id` matching the logged-in user's tenant (via a `tenant_members` join table or a `tenant_id` column on profiles). Edge function endpoints authenticate via `api_key` header and bypass RLS using the service role key.
 
-### Navigation (Sidebar)
-- Dashboard
-- Devices
-- Deployment Center
-- Diagnostic Vault
-- Network
-- Settings
+---
 
-All pages use mock/demo data to showcase the UI. No backend integration initially — purely frontend with realistic sample data.
+### 2. Edge Functions (External API for Go VPS)
+
+Three edge functions, all authenticated via `api_key` header matched against `tenants.api_key`:
+
+**`supabase/functions/device-heartbeat/index.ts`**
+- Method: `POST`
+- Validates `api_key` header → resolves `tenant_id`
+- UPSERTs into `managed_devices` (by `target_id`)
+- Body: `{ target_id, status, os_info, arch, public_ip }`
+
+**`supabase/functions/task-poll/index.ts`**
+- Method: `GET`
+- Validates `api_key` → resolves `tenant_id`
+- Query param: `target_id`
+- Returns `Pending` tasks from `remote_tasks`, marks them `Sent`
+
+**`supabase/functions/task-result/index.ts`**
+- Method: `POST`
+- Validates `api_key`
+- Body: `{ task_id, status, result }` or `{ target_id, type, file_url }` (for diagnostic uploads)
+- Updates `remote_tasks` row or inserts into `diagnostic_vault`
+
+All three include CORS headers and input validation via Zod.
+
+---
+
+### 3. Frontend Integration
+
+**New files:**
+- `src/integrations/supabase/client.ts` — Supabase client (auto-generated by Lovable Cloud)
+- `src/hooks/use-tenant.ts` — hook to get current user's tenant_id
+- `src/hooks/use-devices.ts` — `useQuery` fetching `managed_devices` by tenant
+- `src/hooks/use-tasks.ts` — `useQuery`/`useMutation` for `remote_tasks`
+- `src/hooks/use-diagnostic-files.ts` — `useQuery` for `diagnostic_vault`
+
+**Modified pages:**
+- **Dashboard** — summary cards count from `managed_devices`; activity feed from `remote_tasks` + `diagnostic_vault`
+- **Devices** — table reads from `managed_devices`; "Execute Command" button inserts into `remote_tasks` with status `Pending`; real-time subscription via Supabase Realtime for live status updates
+- **DiagnosticVault** — reads from `diagnostic_vault` table instead of mock data
+- **Compliance** — audit log reads from `remote_tasks` (tracks all commands)
+
+**Command Execution UI** — add a dialog/input on the Devices page where admin types a shell command → inserts `remote_tasks` row → Go VPS picks it up via `task-poll`
+
+---
+
+### 4. Auth & Tenant Membership
+
+- Add a `tenant_members` table: `(user_id UUID REFERENCES auth.users, tenant_id UUID REFERENCES tenants)` with RLS
+- On signup/login, resolve the user's tenant for all dashboard queries
+- The Settings page gets a section to view/copy the tenant `api_key` for VPS configuration
+
+---
+
+### Summary of files touched
+| Action | Files |
+|--------|-------|
+| Create | 4 migrations, 3 edge functions, 4 hooks, `tenant_members` migration |
+| Modify | `Dashboard.tsx`, `Devices.tsx`, `DiagnosticVault.tsx`, `Compliance.tsx`, `Settings.tsx`, `mock-data.ts` (keep as fallback) |
 
