@@ -1,6 +1,8 @@
-import { LayoutDashboard, Monitor, Rocket, FolderArchive, Network, Settings, Shield } from "lucide-react";
+import { LayoutDashboard, Monitor, Rocket, FolderArchive, Network, Settings, Shield, LogOut } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
+import { useAuth } from "@/components/AuthProvider";
+import { Button } from "@/components/ui/button";
 import {
   Sidebar,
   SidebarContent,
