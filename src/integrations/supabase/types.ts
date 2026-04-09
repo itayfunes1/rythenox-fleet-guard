@@ -90,6 +90,47 @@ export type Database = {
           },
         ]
       }
+      relay_nodes: {
+        Row: {
+          addr: string
+          client_count: number
+          id: string
+          last_seen: string | null
+          status: string
+          tenant_id: string
+          throughput: string | null
+          uptime: number
+        }
+        Insert: {
+          addr: string
+          client_count?: number
+          id?: string
+          last_seen?: string | null
+          status?: string
+          tenant_id: string
+          throughput?: string | null
+          uptime?: number
+        }
+        Update: {
+          addr?: string
+          client_count?: number
+          id?: string
+          last_seen?: string | null
+          status?: string
+          tenant_id?: string
+          throughput?: string | null
+          uptime?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "relay_nodes_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       remote_tasks: {
         Row: {
           command: string
