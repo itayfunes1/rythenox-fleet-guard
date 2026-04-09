@@ -51,6 +51,83 @@ export function useTasks(tenantId: string | undefined) {
   });
 }
 
+export function useDeviceTasks(tenantId: string | undefined, targetId: string | undefined) {
+  const queryClient = useQueryClient();
+
+  useEffect(() => {
+    if (!tenantId || !targetId) return;
+
+    const channel = supabase
+      .channel(`device_tasks_${targetId}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "remote_tasks", filter: `target_id=eq.${targetId}` },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ["device_tasks", tenantId, targetId] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [tenantId, targetId, queryClient]);
+
+  return useQuery({
+    queryKey: ["device_tasks", tenantId, targetId],
+    enabled: !!tenantId && !!targetId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("remote_tasks")
+        .select("*")
+        .eq("tenant_id", tenantId!)
+        .eq("target_id", targetId!)
+        .order("created_at", { ascending: true })
+        .limit(100);
+
+      if (error) throw error;
+      return (data || []) as unknown as RemoteTask[];
+    },
+  });
+}
+  const queryClient = useQueryClient();
+
+  useEffect(() => {
+    if (!tenantId) return;
+
+    const channel = supabase
+      .channel("remote_tasks_realtime")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "remote_tasks", filter: `tenant_id=eq.${tenantId}` },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ["remote_tasks", tenantId] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [tenantId, queryClient]);
+
+  return useQuery({
+    queryKey: ["remote_tasks", tenantId],
+    enabled: !!tenantId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("remote_tasks")
+        .select("*")
+        .eq("tenant_id", tenantId!)
+        .order("created_at", { ascending: false })
+        .limit(50);
+
+      if (error) throw error;
+      return (data || []) as unknown as RemoteTask[];
+    },
+  });
+}
+
 export function useCreateTask() {
   const queryClient = useQueryClient();
 
