@@ -5,24 +5,24 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-api-key",
 };
 
+const jsonResponse = (body: unknown, status = 200) =>
+  new Response(JSON.stringify(body), {
+    status,
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
 
   if (req.method !== "GET") {
-    return new Response(JSON.stringify({ error: "Method not allowed" }), {
-      status: 405,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return jsonResponse({ error: "Method not allowed" }, 405);
   }
 
   const apiKey = req.headers.get("x-api-key");
   if (!apiKey) {
-    return new Response(JSON.stringify({ error: "Missing x-api-key header" }), {
-      status: 401,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return jsonResponse({ error: "Missing x-api-key header" }, 401);
   }
 
   const supabase = createClient(
@@ -37,48 +37,74 @@ Deno.serve(async (req) => {
     .single();
 
   if (tenantErr || !tenant) {
-    return new Response(JSON.stringify({ error: "Invalid API key" }), {
-      status: 403,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return jsonResponse({ error: "Invalid API key" }, 403);
   }
 
   const url = new URL(req.url);
-  const targetId = url.searchParams.get("target_id");
+  const targetId = url.searchParams.get("target_id") ?? url.searchParams.get("targetId");
   if (!targetId) {
-    return new Response(JSON.stringify({ error: "target_id query param required" }), {
-      status: 400,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return jsonResponse({ error: "target_id query param required" }, 400);
   }
 
-  // Fetch only ONE pending task (oldest first)
-  const { data: tasks, error: fetchErr } = await supabase
+  const { data: task, error: fetchErr } = await supabase
     .from("remote_tasks")
-    .select("id, command, created_at")
+    .select("id, target_id, command, created_at")
     .eq("tenant_id", tenant.id)
     .eq("target_id", targetId)
     .eq("status", "Pending")
     .order("created_at", { ascending: true })
-    .limit(1);
+    .limit(1)
+    .maybeSingle();
 
   if (fetchErr) {
-    return new Response(JSON.stringify({ error: fetchErr.message }), {
-      status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    console.error(`[task-poll] fetch failed for tenant=${tenant.id} target=${targetId}: ${fetchErr.message}`);
+    return jsonResponse({ error: fetchErr.message }, 500);
   }
 
-  // Immediately mark it as Sent
-  if (tasks && tasks.length > 0) {
-    await supabase
-      .from("remote_tasks")
-      .update({ status: "Sent" })
-      .eq("id", tasks[0].id);
+  if (!task) {
+    console.log(`[task-poll] no task for tenant=${tenant.id} target=${targetId}`);
+    return jsonResponse(
+      {
+        task: null,
+        task_id: null,
+        target_id: targetId,
+        command: null,
+        created_at: null,
+        status: "idle",
+      },
+      200,
+    );
   }
 
-  return new Response(JSON.stringify({ task: tasks && tasks.length > 0 ? tasks[0] : null }), {
-    status: 200,
-    headers: { ...corsHeaders, "Content-Type": "application/json" },
-  });
+  const { data: sentTask, error: updateErr } = await supabase
+    .from("remote_tasks")
+    .update({ status: "Sent" })
+    .eq("id", task.id)
+    .eq("tenant_id", tenant.id)
+    .select("id, target_id, command, created_at, status")
+    .maybeSingle();
+
+  if (updateErr) {
+    console.error(`[task-poll] failed to claim task=${task.id}: ${updateErr.message}`);
+    return jsonResponse({ error: updateErr.message }, 500);
+  }
+
+  if (!sentTask) {
+    console.warn(`[task-poll] task=${task.id} was not claimed for target=${targetId}`);
+    return jsonResponse({ error: "Task was already claimed" }, 409);
+  }
+
+  console.log(`[task-poll] dispatched task=${sentTask.id} target=${sentTask.target_id}`);
+
+  return jsonResponse(
+    {
+      task: sentTask,
+      task_id: sentTask.id,
+      target_id: sentTask.target_id,
+      command: sentTask.command,
+      created_at: sentTask.created_at,
+      status: sentTask.status,
+    },
+    200,
+  );
 });
