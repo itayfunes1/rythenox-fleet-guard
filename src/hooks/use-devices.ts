@@ -40,6 +40,8 @@ export function useDevices(tenantId: string | undefined) {
   return useQuery({
     queryKey: ["managed_devices", tenantId],
     enabled: !!tenantId,
+    refetchInterval: 30_000,
+    refetchIntervalInBackground: true,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("managed_devices")
