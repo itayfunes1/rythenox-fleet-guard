@@ -1,0 +1,1 @@
+DELETE FROM public.relay_nodes WHERE addr = '10.0.0.1:9090';
