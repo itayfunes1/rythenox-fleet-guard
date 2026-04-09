@@ -1,1 +1,10 @@
 project_id = "prodlnwtjkomsstrufqr"
+
+[functions.device-heartbeat]
+verify_jwt = false
+
+[functions.task-poll]
+verify_jwt = false
+
+[functions.task-result]
+verify_jwt = false

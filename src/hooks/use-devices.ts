@@ -1,4 +1,5 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
 export interface ManagedDevice {
@@ -13,13 +14,33 @@ export interface ManagedDevice {
 }
 
 export function useDevices(tenantId: string | undefined) {
+  const queryClient = useQueryClient();
+
+  useEffect(() => {
+    if (!tenantId) return;
+
+    const channel = supabase
+      .channel("managed_devices_realtime")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "managed_devices", filter: `tenant_id=eq.${tenantId}` },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ["managed_devices", tenantId] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [tenantId, queryClient]);
+
   return useQuery({
     queryKey: ["managed_devices", tenantId],
     enabled: !!tenantId,
-    refetchInterval: 15000,
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("managed_devices" as any)
+        .from("managed_devices")
         .select("*")
         .eq("tenant_id", tenantId!)
         .order("last_seen", { ascending: false });

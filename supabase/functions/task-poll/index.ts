@@ -52,14 +52,15 @@ Deno.serve(async (req) => {
     });
   }
 
-  // Fetch pending tasks
+  // Fetch only ONE pending task (oldest first)
   const { data: tasks, error: fetchErr } = await supabase
     .from("remote_tasks")
     .select("id, command, created_at")
     .eq("tenant_id", tenant.id)
     .eq("target_id", targetId)
     .eq("status", "Pending")
-    .order("created_at", { ascending: true });
+    .order("created_at", { ascending: true })
+    .limit(1);
 
   if (fetchErr) {
     return new Response(JSON.stringify({ error: fetchErr.message }), {
@@ -68,16 +69,15 @@ Deno.serve(async (req) => {
     });
   }
 
-  // Mark them as Sent
+  // Immediately mark it as Sent
   if (tasks && tasks.length > 0) {
-    const ids = tasks.map((t) => t.id);
     await supabase
       .from("remote_tasks")
       .update({ status: "Sent" })
-      .in("id", ids);
+      .eq("id", tasks[0].id);
   }
 
-  return new Response(JSON.stringify({ tasks: tasks || [] }), {
+  return new Response(JSON.stringify({ task: tasks && tasks.length > 0 ? tasks[0] : null }), {
     status: 200,
     headers: { ...corsHeaders, "Content-Type": "application/json" },
   });
