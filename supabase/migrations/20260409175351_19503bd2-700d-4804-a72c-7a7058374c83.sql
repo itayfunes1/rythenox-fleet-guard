@@ -1,0 +1,1 @@
+DELETE FROM managed_devices WHERE id = 'bcb60ce8-6830-4c80-b5d7-91d209d6bae9';
