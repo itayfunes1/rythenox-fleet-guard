@@ -1,6 +1,7 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { isDeviceResponsive, isDeviceVisible } from "@/lib/device-presence";
 
 export interface ManagedDevice {
   id: string;
@@ -11,6 +12,7 @@ export interface ManagedDevice {
   arch: string | null;
   public_ip: string | null;
   last_seen: string | null;
+  isResponsive: boolean;
 }
 
 export function useDevices(tenantId: string | undefined) {
@@ -46,7 +48,20 @@ export function useDevices(tenantId: string | undefined) {
         .order("last_seen", { ascending: false });
 
       if (error) throw error;
-      return (data || []) as unknown as ManagedDevice[];
+
+      const now = Date.now();
+
+      return ((data || []) as Omit<ManagedDevice, "isResponsive">[])
+        .filter((device) => isDeviceVisible(device.last_seen, now))
+        .map((device) => {
+          const responsive = isDeviceResponsive(device.status, device.last_seen, now);
+
+          return {
+            ...device,
+            status: responsive ? "Online" : "Offline",
+            isResponsive: responsive,
+          } satisfies ManagedDevice;
+        });
     },
   });
 }
