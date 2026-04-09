@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Globe, Server, Wifi, Clock, ArrowUpDown, Users } from "lucide-react";
-import { useRelays } from "@/hooks/use-relays";
+import { useRelays, type RelayNode } from "@/hooks/use-relays";
 import { useTenant } from "@/hooks/use-tenant";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
@@ -18,7 +18,13 @@ export default function NetworkInfrastructure() {
   const { data: tenant } = useTenant();
   const { data: relays, isLoading } = useRelays(tenant?.tenantId);
 
-  const onlineCount = relays?.filter(r => r.status === "Online").length ?? 0;
+  const isRelayOnline = (r: RelayNode) => {
+    if (r.status !== "Online") return false;
+    if (!r.last_seen) return false;
+    return Date.now() - new Date(r.last_seen).getTime() < 90_000; // 90s threshold
+  };
+
+  const onlineCount = relays?.filter(isRelayOnline).length ?? 0;
   const totalClients = relays?.reduce((sum, r) => sum + r.client_count, 0) ?? 0;
 
   return (
@@ -93,8 +99,8 @@ export default function NetworkInfrastructure() {
                   <TableRow key={relay.id}>
                     <TableCell className="font-mono text-sm">{relay.addr}</TableCell>
                     <TableCell>
-                      <Badge variant={relay.status === "Online" ? "default" : "secondary"}>
-                        {relay.status}
+                      <Badge variant={isRelayOnline(relay) ? "default" : "secondary"}>
+                        {isRelayOnline(relay) ? "Online" : "Offline"}
                       </Badge>
                     </TableCell>
                     <TableCell>{relay.client_count}</TableCell>
