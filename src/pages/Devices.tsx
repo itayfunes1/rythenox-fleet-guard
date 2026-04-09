@@ -1,27 +1,28 @@
-import { useState } from "react";
+import { useState, useRef, useEffect, KeyboardEvent } from "react";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
-import { Search, Terminal, RefreshCw } from "lucide-react";
+import { Search, Terminal, RefreshCw, X, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useTenant } from "@/hooks/use-tenant";
 import { useDevices, type ManagedDevice } from "@/hooks/use-devices";
-import { useCreateTask } from "@/hooks/use-tasks";
-import { Textarea } from "@/components/ui/textarea";
+import { useCreateTask, useDeviceTasks } from "@/hooks/use-tasks";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 export default function Devices() {
   const [search, setSearch] = useState("");
-  const [commandOpen, setCommandOpen] = useState(false);
   const [selectedDevice, setSelectedDevice] = useState<ManagedDevice | null>(null);
-  const [command, setCommand] = useState("");
+  const [cmdInput, setCmdInput] = useState("");
   const { toast } = useToast();
+  const terminalEndRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   const { data: tenant } = useTenant();
   const { data: liveDevices, isLoading, refetch, isFetching } = useDevices(tenant?.tenantId);
   const createTask = useCreateTask();
+  const { data: deviceTasks } = useDeviceTasks(tenant?.tenantId, selectedDevice?.target_id);
 
   const filtered = (liveDevices || []).filter(
     (d) =>
@@ -30,20 +31,28 @@ export default function Devices() {
       (d.public_ip || "").toLowerCase().includes(search.toLowerCase())
   );
 
-  const handleExecuteCommand = (device: ManagedDevice) => {
+  useEffect(() => {
+    terminalEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [deviceTasks]);
+
+  useEffect(() => {
+    if (selectedDevice) {
+      setTimeout(() => inputRef.current?.focus(), 100);
+    }
+  }, [selectedDevice]);
+
+  const handleOpenTerminal = (device: ManagedDevice) => {
     setSelectedDevice(device);
-    setCommand("");
-    setCommandOpen(true);
+    setCmdInput("");
   };
 
-  const submitCommand = () => {
-    if (!tenant?.tenantId || !selectedDevice || !command.trim()) return;
+  const handleSendCommand = () => {
+    if (!tenant?.tenantId || !selectedDevice || !cmdInput.trim()) return;
     createTask.mutate(
-      { tenant_id: tenant.tenantId, target_id: selectedDevice.target_id, command: command.trim() },
+      { tenant_id: tenant.tenantId, target_id: selectedDevice.target_id, command: cmdInput.trim() },
       {
         onSuccess: () => {
-          setCommandOpen(false);
-          toast({ title: "Task Created", description: `Command queued for ${selectedDevice.target_id}` });
+          setCmdInput("");
         },
         onError: (err) => {
           toast({ title: "Error", description: (err as Error).message, variant: "destructive" });
@@ -52,6 +61,104 @@ export default function Devices() {
     );
   };
 
+  const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      handleSendCommand();
+    }
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "Pending": return "text-yellow-400";
+      case "Sent": return "text-blue-400";
+      case "Completed": return "text-green-400";
+      case "Failed": return "text-red-400";
+      default: return "text-muted-foreground";
+    }
+  };
+
+  // Terminal view
+  if (selectedDevice) {
+    return (
+      <div className="flex flex-col h-[calc(100vh-4rem)]">
+        {/* Terminal header */}
+        <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-card">
+          <div className="flex items-center gap-3">
+            <Terminal className="h-5 w-5 text-green-400" />
+            <div>
+              <h2 className="text-sm font-bold font-mono text-foreground">{selectedDevice.target_id}</h2>
+              <p className="text-xs text-muted-foreground">
+                {selectedDevice.public_ip || "Unknown IP"} · {selectedDevice.os_info || "Unknown OS"} · {selectedDevice.arch || "Unknown Arch"}
+              </p>
+            </div>
+            <StatusBadge status={selectedDevice.status === "Online" ? "online" : "offline"} />
+          </div>
+          <Button variant="ghost" size="icon" onClick={() => setSelectedDevice(null)}>
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
+
+        {/* Terminal body */}
+        <ScrollArea className="flex-1 bg-[#0d1117]">
+          <div className="p-4 font-mono text-sm space-y-3 min-h-full">
+            <div className="text-green-400 text-xs">
+              ── Connected to {selectedDevice.target_id} ──
+            </div>
+            <div className="text-muted-foreground text-xs">
+              Commands are queued and picked up by the agent on next poll cycle.
+            </div>
+
+            {(deviceTasks || []).map((task) => (
+              <div key={task.id} className="space-y-1">
+                {/* Command line */}
+                <div className="flex items-center gap-2">
+                  <span className="text-green-400">$</span>
+                  <span className="text-foreground">{task.command}</span>
+                  <span className={`text-xs ml-auto ${getStatusColor(task.status)}`}>
+                    [{task.status}]
+                  </span>
+                </div>
+                {/* Result */}
+                {task.status === "Pending" || task.status === "Sent" ? (
+                  <div className="flex items-center gap-2 pl-4 text-muted-foreground text-xs">
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                    {task.status === "Pending" ? "Waiting for agent to pick up..." : "Sent to agent, awaiting result..."}
+                  </div>
+                ) : task.result ? (
+                  <pre className="pl-4 text-xs text-muted-foreground whitespace-pre-wrap break-all">{task.result}</pre>
+                ) : null}
+              </div>
+            ))}
+            <div ref={terminalEndRef} />
+          </div>
+        </ScrollArea>
+
+        {/* Command input */}
+        <div className="flex items-center gap-2 px-4 py-3 border-t border-border bg-[#0d1117]">
+          <span className="text-green-400 font-mono text-sm">$</span>
+          <Input
+            ref={inputRef}
+            value={cmdInput}
+            onChange={(e) => setCmdInput(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder="Type a command..."
+            className="flex-1 bg-transparent border-none text-foreground font-mono text-sm focus-visible:ring-0 focus-visible:ring-offset-0 placeholder:text-muted-foreground"
+            disabled={selectedDevice.status === "Offline" || createTask.isPending}
+          />
+          <Button
+            size="sm"
+            onClick={handleSendCommand}
+            disabled={!cmdInput.trim() || createTask.isPending || selectedDevice.status === "Offline"}
+          >
+            {createTask.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Send"}
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  // Device list view
   return (
     <div className="space-y-6">
       <div>
@@ -91,7 +198,11 @@ export default function Devices() {
               </TableHeader>
               <TableBody>
                 {filtered.map((device) => (
-                  <TableRow key={device.id}>
+                  <TableRow
+                    key={device.id}
+                    className="cursor-pointer hover:bg-accent/50"
+                    onClick={() => handleOpenTerminal(device)}
+                  >
                     <TableCell className="font-mono text-sm font-medium">{device.target_id}</TableCell>
                     <TableCell>
                       <StatusBadge status={device.status === "Online" ? "online" : "offline"} />
@@ -103,8 +214,13 @@ export default function Devices() {
                       {device.last_seen ? new Date(device.last_seen).toLocaleString() : "—"}
                     </TableCell>
                     <TableCell className="text-right">
-                      <Button variant="ghost" size="icon" title="Execute Command" onClick={() => handleExecuteCommand(device)} disabled={device.status === "Offline"}>
-                        <Terminal className="h-4 w-4" />
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={(e) => { e.stopPropagation(); handleOpenTerminal(device); }}
+                      >
+                        <Terminal className="h-4 w-4 mr-2" />
+                        Terminal
                       </Button>
                     </TableCell>
                   </TableRow>
@@ -114,27 +230,6 @@ export default function Devices() {
           )}
         </CardContent>
       </Card>
-
-      <Dialog open={commandOpen} onOpenChange={setCommandOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Terminal className="h-5 w-5 text-accent" />
-              Execute Remote Command
-            </DialogTitle>
-            <DialogDescription>
-              Send a command to <strong>{selectedDevice?.target_id}</strong>. It will be queued and picked up by the agent.
-            </DialogDescription>
-          </DialogHeader>
-          <Textarea placeholder="Enter command..." value={command} onChange={(e) => setCommand(e.target.value)} rows={3} />
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setCommandOpen(false)}>Cancel</Button>
-            <Button onClick={submitCommand} disabled={!command.trim() || createTask.isPending}>
-              {createTask.isPending ? "Sending..." : "Execute"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }

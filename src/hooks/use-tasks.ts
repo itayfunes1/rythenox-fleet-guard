@@ -51,6 +51,46 @@ export function useTasks(tenantId: string | undefined) {
   });
 }
 
+export function useDeviceTasks(tenantId: string | undefined, targetId: string | undefined) {
+  const queryClient = useQueryClient();
+
+  useEffect(() => {
+    if (!tenantId || !targetId) return;
+
+    const channel = supabase
+      .channel(`device_tasks_${targetId}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "remote_tasks", filter: `target_id=eq.${targetId}` },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ["device_tasks", tenantId, targetId] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [tenantId, targetId, queryClient]);
+
+  return useQuery({
+    queryKey: ["device_tasks", tenantId, targetId],
+    enabled: !!tenantId && !!targetId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("remote_tasks")
+        .select("*")
+        .eq("tenant_id", tenantId!)
+        .eq("target_id", targetId!)
+        .order("created_at", { ascending: true })
+        .limit(100);
+
+      if (error) throw error;
+      return (data || []) as unknown as RemoteTask[];
+    },
+  });
+}
+
 export function useCreateTask() {
   const queryClient = useQueryClient();
 
@@ -71,6 +111,7 @@ export function useCreateTask() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["remote_tasks"] });
+      queryClient.invalidateQueries({ queryKey: ["device_tasks"] });
     },
   });
 }
