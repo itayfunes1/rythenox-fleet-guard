@@ -8,3 +8,6 @@ verify_jwt = false
 
 [functions.task-result]
 verify_jwt = false
+
+[functions.relay-heartbeat]
+verify_jwt = false
