@@ -14,13 +14,179 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      diagnostic_vault: {
+        Row: {
+          created_at: string
+          file_url: string
+          id: string
+          target_id: string
+          tenant_id: string
+          type: string
+        }
+        Insert: {
+          created_at?: string
+          file_url: string
+          id?: string
+          target_id: string
+          tenant_id: string
+          type: string
+        }
+        Update: {
+          created_at?: string
+          file_url?: string
+          id?: string
+          target_id?: string
+          tenant_id?: string
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "diagnostic_vault_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      managed_devices: {
+        Row: {
+          arch: string | null
+          id: string
+          last_seen: string | null
+          os_info: string | null
+          public_ip: string | null
+          status: string
+          target_id: string
+          tenant_id: string
+        }
+        Insert: {
+          arch?: string | null
+          id?: string
+          last_seen?: string | null
+          os_info?: string | null
+          public_ip?: string | null
+          status?: string
+          target_id: string
+          tenant_id: string
+        }
+        Update: {
+          arch?: string | null
+          id?: string
+          last_seen?: string | null
+          os_info?: string | null
+          public_ip?: string | null
+          status?: string
+          target_id?: string
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "managed_devices_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      remote_tasks: {
+        Row: {
+          command: string
+          created_at: string
+          id: string
+          result: string | null
+          status: string
+          target_id: string
+          tenant_id: string
+        }
+        Insert: {
+          command: string
+          created_at?: string
+          id?: string
+          result?: string | null
+          status?: string
+          target_id: string
+          tenant_id: string
+        }
+        Update: {
+          command?: string
+          created_at?: string
+          id?: string
+          result?: string | null
+          status?: string
+          target_id?: string
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "remote_tasks_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tenant_members: {
+        Row: {
+          created_at: string
+          id: string
+          role: string
+          tenant_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role?: string
+          tenant_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: string
+          tenant_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tenant_members_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tenants: {
+        Row: {
+          api_key: string
+          created_at: string
+          id: string
+          name: string
+        }
+        Insert: {
+          api_key?: string
+          created_at?: string
+          id?: string
+          name: string
+        }
+        Update: {
+          api_key?: string
+          created_at?: string
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_user_tenant_id: { Args: { _user_id: string }; Returns: string }
     }
     Enums: {
       [_ in never]: never
