@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
-import { Search, Terminal } from "lucide-react";
+import { Search, Terminal, RefreshCw } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useTenant } from "@/hooks/use-tenant";
 import { useDevices, type ManagedDevice } from "@/hooks/use-devices";
@@ -20,7 +20,7 @@ export default function Devices() {
   const { toast } = useToast();
 
   const { data: tenant } = useTenant();
-  const { data: liveDevices, isLoading } = useDevices(tenant?.tenantId);
+  const { data: liveDevices, isLoading, refetch, isFetching } = useDevices(tenant?.tenantId);
   const createTask = useCreateTask();
 
   const filtered = (liveDevices || []).filter(
@@ -64,6 +64,10 @@ export default function Devices() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input placeholder="Search devices..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
         </div>
+        <Button variant="outline" size="sm" onClick={() => refetch()} disabled={isFetching}>
+          <RefreshCw className={`h-4 w-4 mr-2 ${isFetching ? "animate-spin" : ""}`} />
+          Refresh
+        </Button>
       </div>
 
       <Card>
