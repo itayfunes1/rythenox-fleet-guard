@@ -1,7 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Globe, Server, Wifi, Clock, ArrowUpDown, Users } from "lucide-react";
-import { useRelays } from "@/hooks/use-relays";
+import { useRelays, type RelayNode } from "@/hooks/use-relays";
 import { useTenant } from "@/hooks/use-tenant";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
