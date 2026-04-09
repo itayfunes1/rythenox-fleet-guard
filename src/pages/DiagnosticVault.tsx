@@ -1,0 +1,110 @@
+import { useState } from "react";
+import { diagnosticFiles } from "@/data/mock-data";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
+import { Search, Download, Eye, FileText, FileVideo, File } from "lucide-react";
+
+const typeIcons: Record<string, React.ReactNode> = {
+  pdf: <FileText className="h-4 w-4 text-destructive" />,
+  log: <File className="h-4 w-4 text-warning" />,
+  mp4: <FileVideo className="h-4 w-4 text-accent" />,
+};
+
+const typeBadgeColors: Record<string, string> = {
+  pdf: "bg-destructive/10 text-destructive border-destructive/30",
+  log: "bg-warning/10 text-warning border-warning/30",
+  mp4: "bg-accent/10 text-accent border-accent/30",
+};
+
+export default function DiagnosticVault() {
+  const [search, setSearch] = useState("");
+  const [tab, setTab] = useState("all");
+
+  const filtered = diagnosticFiles.filter((f) => {
+    const matchesSearch = f.name.toLowerCase().includes(search.toLowerCase()) || f.device.toLowerCase().includes(search.toLowerCase());
+    if (tab === "all") return matchesSearch;
+    if (tab === "reports") return matchesSearch && f.category === "report";
+    if (tab === "logs") return matchesSearch && f.category === "event_log";
+    if (tab === "recordings") return matchesSearch && f.category === "recording";
+    return matchesSearch;
+  });
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h1 className="text-2xl font-bold text-foreground">Diagnostic Vault</h1>
+        <p className="text-sm text-muted-foreground">System reports, event logs, and support session recordings</p>
+      </div>
+
+      <div className="rounded-md border bg-muted/50 p-3 text-xs text-muted-foreground">
+        <strong>Data Scope Notice:</strong> All diagnostic data is limited to standard system metrics — CPU load, RAM usage, and disk health. No personal user data is collected.
+      </div>
+
+      <Card>
+        <CardHeader>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <CardTitle>Files</CardTitle>
+            <div className="relative max-w-sm">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input placeholder="Search files..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <Tabs value={tab} onValueChange={setTab}>
+            <TabsList>
+              <TabsTrigger value="all">All</TabsTrigger>
+              <TabsTrigger value="reports">System Reports</TabsTrigger>
+              <TabsTrigger value="logs">Event Logs</TabsTrigger>
+              <TabsTrigger value="recordings">Recordings</TabsTrigger>
+            </TabsList>
+            <TabsContent value={tab} className="mt-4">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>File</TableHead>
+                    <TableHead className="hidden md:table-cell">Device</TableHead>
+                    <TableHead>Type</TableHead>
+                    <TableHead className="hidden md:table-cell">Size</TableHead>
+                    <TableHead className="hidden lg:table-cell">Date</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filtered.map((file) => (
+                    <TableRow key={file.id}>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          {typeIcons[file.type]}
+                          <span className="text-sm font-medium truncate max-w-[200px]">{file.name}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell className="hidden md:table-cell font-mono text-sm">{file.device}</TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className={typeBadgeColors[file.type]}>
+                          {file.type.toUpperCase()}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="hidden md:table-cell text-sm text-muted-foreground">{file.size}</TableCell>
+                      <TableCell className="hidden lg:table-cell text-sm text-muted-foreground">{file.date}</TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex items-center justify-end gap-1">
+                          <Button variant="ghost" size="icon"><Eye className="h-4 w-4" /></Button>
+                          <Button variant="ghost" size="icon"><Download className="h-4 w-4" /></Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TabsContent>
+          </Tabs>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
