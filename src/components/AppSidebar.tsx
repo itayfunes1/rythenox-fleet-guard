@@ -1,6 +1,8 @@
-import { LayoutDashboard, Monitor, Rocket, FolderArchive, Network, Settings, Shield } from "lucide-react";
+import { LayoutDashboard, Monitor, Rocket, FolderArchive, Network, Settings, Shield, LogOut } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
+import { useAuth } from "@/components/AuthProvider";
+import { Button } from "@/components/ui/button";
 import {
   Sidebar,
   SidebarContent,
@@ -32,6 +34,7 @@ export function AppSidebar() {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
   const location = useLocation();
+  const { user, signOut } = useAuth();
   const isActive = (path: string) => location.pathname === path;
 
   return (
@@ -90,10 +93,18 @@ export function AppSidebar() {
 
       <SidebarFooter className="p-4">
         {!collapsed && (
-          <div className="rounded-md bg-sidebar-accent p-3">
+          <div className="rounded-md bg-sidebar-accent p-3 space-y-2">
             <p className="text-[10px] text-sidebar-foreground/60">Logged in as</p>
-            <p className="text-xs font-medium text-sidebar-foreground">Admin: John Miller</p>
+            <p className="text-xs font-medium text-sidebar-foreground truncate">{user?.email || "Unknown"}</p>
+            <Button variant="ghost" size="sm" className="w-full justify-start text-xs" onClick={signOut}>
+              <LogOut className="h-3 w-3 mr-2" /> Sign Out
+            </Button>
           </div>
+        )}
+        {collapsed && (
+          <Button variant="ghost" size="icon" onClick={signOut} title="Sign Out">
+            <LogOut className="h-4 w-4" />
+          </Button>
         )}
       </SidebarFooter>
     </Sidebar>
