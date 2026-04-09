@@ -18,7 +18,13 @@ export default function NetworkInfrastructure() {
   const { data: tenant } = useTenant();
   const { data: relays, isLoading } = useRelays(tenant?.tenantId);
 
-  const onlineCount = relays?.filter(r => r.status === "Online").length ?? 0;
+  const isRelayOnline = (r: RelayNode) => {
+    if (r.status !== "Online") return false;
+    if (!r.last_seen) return false;
+    return Date.now() - new Date(r.last_seen).getTime() < 90_000; // 90s threshold
+  };
+
+  const onlineCount = relays?.filter(isRelayOnline).length ?? 0;
   const totalClients = relays?.reduce((sum, r) => sum + r.client_count, 0) ?? 0;
 
   return (
