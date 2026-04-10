@@ -30,10 +30,17 @@ export function useTasks(tenantId: string | undefined) {
       )
       .on(
         "postgres_changes",
-        { event: "UPDATE", schema: "public", table: "remote_tasks", filter: `tenant_id=eq.${tenantId}` },
-        () => {
-          queryClient.invalidateQueries({ queryKey: ["remote_tasks", tenantId] });
-          queryClient.invalidateQueries({ queryKey: ["device_tasks"] });
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "remote_tasks",
+          filter: `tenant_id=eq.${tenantId}`
+        },
+        (payload) => {
+          if ((payload.new as any).result) {
+            queryClient.invalidateQueries({ queryKey: ["remote_tasks", tenantId] });
+            queryClient.invalidateQueries({ queryKey: ["device_tasks"] });
+          }
         }
       )
       .subscribe();
