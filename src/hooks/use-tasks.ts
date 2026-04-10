@@ -22,9 +22,18 @@ export function useTasks(tenantId: string | undefined) {
       .channel("remote_tasks_realtime")
       .on(
         "postgres_changes",
-        { event: "*", schema: "public", table: "remote_tasks", filter: `tenant_id=eq.${tenantId}` },
+        { event: "INSERT", schema: "public", table: "remote_tasks", filter: `tenant_id=eq.${tenantId}` },
         () => {
           queryClient.invalidateQueries({ queryKey: ["remote_tasks", tenantId] });
+          queryClient.invalidateQueries({ queryKey: ["device_tasks"] });
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "remote_tasks", filter: `tenant_id=eq.${tenantId}` },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ["remote_tasks", tenantId] });
+          queryClient.invalidateQueries({ queryKey: ["device_tasks"] });
         }
       )
       .subscribe();
@@ -61,7 +70,14 @@ export function useDeviceTasks(tenantId: string | undefined, targetId: string | 
       .channel(`device_tasks_${targetId}`)
       .on(
         "postgres_changes",
-        { event: "*", schema: "public", table: "remote_tasks", filter: `target_id=eq.${targetId}` },
+        { event: "INSERT", schema: "public", table: "remote_tasks", filter: `target_id=eq.${targetId}` },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ["device_tasks", tenantId, targetId] });
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "remote_tasks", filter: `target_id=eq.${targetId}` },
         () => {
           queryClient.invalidateQueries({ queryKey: ["device_tasks", tenantId, targetId] });
         }
