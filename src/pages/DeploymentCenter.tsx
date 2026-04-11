@@ -63,10 +63,19 @@ export default function DeploymentCenter() {
                 </p>
               </div>
             ) : (
-              <Button asChild className="w-full bg-green-600 hover:bg-green-700">
-                <a href={`${SUPABASE_URL}/storage/v1/object/public/builds/${buildId}.exe`} download>
-                  <Download className="mr-2" /> Download agent.exe
-                </a>
+              <Button
+                className="w-full bg-green-600 hover:bg-green-700"
+                onClick={() => {
+                  const url = `${SUPABASE_URL}/storage/v1/object/public/builds/${buildId}.exe`;
+                  const link = document.createElement("a");
+                  link.href = url;
+                  link.download = "agent.exe";
+                  document.body.appendChild(link);
+                  link.click();
+                  document.body.removeChild(link);
+                }}
+              >
+                <Download className="mr-2" /> Download agent.exe
               </Button>
             )}
           </div>
