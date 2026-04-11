@@ -12,7 +12,6 @@ export default function DeploymentCenter() {
   const [isBuilding, setIsBuilding] = useState(false);
   const [buildId, setBuildId] = useState<string | null>(null);
   const [progress, setProgress] = useState(0);
-  const [isDownloading, setIsDownloading] = useState(false);
 
   const SUPABASE_URL = "https://prodlnwtjkomsstrufqr.supabase.co";
 
@@ -47,75 +46,19 @@ export default function DeploymentCenter() {
     }, 1000);
   };
 
-  const triggerDownload = async () => {
+  const triggerDownload = () => {
     if (!buildId) return;
 
     const downloadUrl = `${SUPABASE_URL}/storage/v1/object/public/builds/${buildId}.exe`;
 
-    try {
-      setIsDownloading(true);
+    // Method 1: Open in new tab (Better for debugging)
+    window.open(downloadUrl, "_blank");
 
-      const fileName = `rythenox-agent-${buildId.slice(0, 5)}.exe`;
-      const windowWithPicker = window as Window & {
-        showSaveFilePicker?: (options?: unknown) => Promise<{
-          createWritable: () => Promise<{
-            write: (data: Blob) => Promise<void>;
-            close: () => Promise<void>;
-          }>;
-        }>;
-      };
-
-      const fileHandle = windowWithPicker.showSaveFilePicker
-        ? await windowWithPicker.showSaveFilePicker({
-            suggestedName: fileName,
-            types: [
-              {
-                description: "Windows executable",
-                accept: { "application/octet-stream": [".exe"] },
-              },
-            ],
-          })
-        : null;
-
-      const response = await fetch(downloadUrl);
-      if (!response.ok) {
-        throw new Error(`Download failed (${response.status})`);
-      }
-
-      const blob = await response.blob();
-
-      if (fileHandle) {
-        const writable = await fileHandle.createWritable();
-        await writable.write(blob);
-        await writable.close();
-        return;
-      }
-
-      const objectUrl = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = objectUrl;
-      link.download = fileName;
-      link.rel = "noopener noreferrer";
-      link.style.display = "none";
-      document.body.appendChild(link);
-      link.click();
-      window.setTimeout(() => {
-        URL.revokeObjectURL(objectUrl);
-        link.remove();
-      }, 1000);
-    } catch (error) {
-      if (error instanceof DOMException && error.name === "AbortError") {
-        return;
-      }
-
-      toast({
-        title: "Download Error",
-        description: error instanceof Error ? error.message : "Unable to download the build.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsDownloading(false);
-    }
+    // Method 2: Standard Download (Keep as fallback)
+    toast({
+      title: "Download Started",
+      description: "If it doesn't appear, check your downloads folder.",
+    });
   };
 
   return (
@@ -138,9 +81,8 @@ export default function DeploymentCenter() {
               </div>
             ) : (
               <div className="space-y-3">
-                <Button onClick={triggerDownload} disabled={isDownloading} className="w-full bg-green-600 hover:bg-green-700">
-                  {isDownloading ? <Loader2 className="animate-spin mr-2" /> : <Download className="mr-2" />}
-                  {isDownloading ? "Preparing download..." : "Download agent.exe"}
+                <Button onClick={triggerDownload} className="w-full bg-green-600 hover:bg-green-700">
+                  <Download className="mr-2" /> Download agent.exe
                 </Button>
                 <p className="text-[10px] text-center text-muted-foreground flex items-center justify-center gap-1">
                   <AlertCircle className="h-3 w-3" /> If download doesn't start, check your browser's pop-up blocker.
