@@ -74,8 +74,8 @@ export default function AuthPage() {
   );
 
   if (resetMode) {
-    return (
-      { authCardWrapper(
+    return authCardWrapper(
+      <>
         <CardHeader className="text-center space-y-3">
           <div className="flex justify-center">
             <div className="relative flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-primary to-[hsl(260,67%,60%)] shadow-lg shadow-primary/30">
@@ -99,12 +99,12 @@ export default function AuthPage() {
             </Button>
           </form>
         </CardContent>
-      ) }
+      </>
     );
   }
 
-  return (
-    { authCardWrapper(
+  return authCardWrapper(
+    <>
       <CardHeader className="text-center space-y-3">
         <div className="flex justify-center">
           <div className="relative flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-primary to-[hsl(260,67%,60%)] shadow-lg shadow-primary/30">
@@ -163,6 +163,6 @@ export default function AuthPage() {
           </TabsContent>
         </Tabs>
       </CardContent>
-    ) }
+    </>
   );
 }
