@@ -1,131 +1,112 @@
 
 
-## Rythenox Multi-Tenant SaaS Backend
+## Plan: Enhanced Network Page, Email-Based Access Control, Admin Tools, and Dashboard Design Overhaul
 
-### Overview
-Set up Lovable Cloud (Supabase) with four tables, RLS policies, and three edge functions that serve as the external API for your Go VPS infrastructure. The dashboard pages will be rewired from mock data to live Supabase queries.
-
-### Prerequisites
-- Enable **Lovable Cloud** on this project (spins up Supabase automatically)
-- No external Supabase account needed
+This is a large scope request covering four areas. Here's the plan:
 
 ---
 
-### 1. Database Schema (4 migrations)
+### 1. Network Infrastructure Page - Enhanced Relay Data
 
-**Migration 1 — `tenants` table**
+**Current state**: Shows 3 stat cards and a basic table with 6 columns.
+
+**Changes**:
+- Add more stat cards: Total Throughput (aggregated), Average Uptime, Peak Client Count
+- Add a relay detail expandable row or click-to-expand panel showing per-relay metrics
+- Add a "time since last seen" relative timestamp (e.g., "12s ago")
+- Add a latency/health indicator with color-coded progress bars for uptime percentage
+- Add a "Network Map" summary section with online/offline ratio visualization using a progress bar
+- Add auto-refresh indicator showing real-time status
+- Show relay geographic grouping by IP prefix if available
+- Add throughput sparkline or bar representation per relay
+
+---
+
+### 2. Email Domain Access Control for Network Page
+
+**Approach**: Client-side guard using the authenticated user's email from `useAuth()`. Only users with emails ending in `@rythenox.com` can view the Network page. Others see an "Access Denied" message.
+
+- Create a reusable `useRythenoxGuard()` hook that checks `user.email?.endsWith("@rythenox.com")`
+- Wrap the Network page with this guard, showing an access denied card for unauthorized users
+- This is a UI-level restriction; the existing RLS policies already protect the data at the database level
+
+---
+
+### 3. Admin Tools
+
+Add an admin tools section to the Network page (visible only to `@rythenox.com` users):
+- **Force Relay Offline**: Button to mark a relay as offline (via edge function or direct update)
+- **Purge Stale Relays**: Button to remove relays that haven't been seen in 24+ hours
+- **Broadcast Command**: Send a task to all online relay addresses
+- Create a new edge function `relay-admin` that handles these operations with API key auth
+- Add a migration to allow authenticated users with the correct tenant to UPDATE/DELETE relay_nodes
+
+---
+
+### 4. Login Page Design Overhaul
+
+**Current state**: Basic card with tabs, floating orbs background.
+
+**Changes**:
+- Split-screen layout: left side with branding/hero illustration, right side with auth form
+- Add animated grid/mesh background instead of simple orbs
+- Improve typography hierarchy and spacing
+- Add subtle feature highlights on the left panel (e.g., "Fleet Management", "Real-time Monitoring", "Secure Access")
+- Better input styling with icons (mail icon, lock icon)
+- Smoother transitions between login/signup tabs
+
+---
+
+### 5. Dashboard Design Improvements
+
+**Changes to DashboardLayout**:
+- Add breadcrumb navigation in the header
+- Add a notification bell icon placeholder
+- Improve header with search bar placeholder
+- Better spacing and micro-interactions
+
+**Changes to Dashboard page**:
+- Add a gradient mesh hero section at the top with a welcome message
+- Improve stat card design with animated number counters
+- Add a secondary row of cards showing quick-access actions
+- Better activity feed with icons per action type
+
+**Changes to AppSidebar**:
+- Add hover tooltips when collapsed
+- Add a badge for notification counts
+- Improve the footer user card design
+
+**Global CSS**:
+- Add dark mode as default (the app already has dark mode vars)
+- Add subtle grain texture overlay
+- Improve card border treatments
+
+---
+
+### Technical Details
+
+**Files to create/modify**:
+- `src/pages/NetworkInfrastructure.tsx` - Major rewrite with expanded metrics, admin tools, access guard
+- `src/pages/Auth.tsx` - Complete redesign with split-screen layout
+- `src/pages/Dashboard.tsx` - Enhanced design with welcome section
+- `src/components/DashboardLayout.tsx` - Improved header
+- `src/components/AppSidebar.tsx` - Design polish
+- `src/index.css` - New utility classes, dark mode default
+- `supabase/functions/relay-admin/index.ts` - New edge function for admin operations
+- **DB Migration**: Add UPDATE/DELETE policies on `relay_nodes` for tenant members, add a `relay-admin` edge function
+
+**Database migration needed**:
 ```sql
-CREATE TABLE public.tenants (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  name TEXT NOT NULL,
-  api_key TEXT NOT NULL UNIQUE DEFAULT encode(gen_random_bytes(32), 'hex'),
-  created_at TIMESTAMPTZ DEFAULT now()
-);
-ALTER TABLE public.tenants ENABLE ROW LEVEL SECURITY;
--- RLS: authenticated users see only their tenant (linked via profiles or user_roles)
+-- Allow tenant members to update/delete their relay nodes
+CREATE POLICY "Members can update tenant relays"
+  ON public.relay_nodes FOR UPDATE
+  USING (tenant_id = get_user_tenant_id(auth.uid()))
+  WITH CHECK (tenant_id = get_user_tenant_id(auth.uid()));
+
+CREATE POLICY "Members can delete tenant relays"
+  ON public.relay_nodes FOR DELETE
+  USING (tenant_id = get_user_tenant_id(auth.uid()));
 ```
 
-**Migration 2 — `managed_devices` table**
-```sql
-CREATE TABLE public.managed_devices (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  tenant_id UUID REFERENCES public.tenants(id) ON DELETE CASCADE NOT NULL,
-  target_id TEXT NOT NULL UNIQUE,
-  status TEXT NOT NULL DEFAULT 'Offline' CHECK (status IN ('Online','Offline')),
-  os_info TEXT,
-  arch TEXT,
-  public_ip TEXT,
-  last_seen TIMESTAMPTZ DEFAULT now()
-);
-ALTER TABLE public.managed_devices ENABLE ROW LEVEL SECURITY;
-```
-
-**Migration 3 — `remote_tasks` table**
-```sql
-CREATE TABLE public.remote_tasks (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  tenant_id UUID REFERENCES public.tenants(id) ON DELETE CASCADE NOT NULL,
-  target_id TEXT NOT NULL,
-  command TEXT NOT NULL,
-  status TEXT NOT NULL DEFAULT 'Pending' CHECK (status IN ('Pending','Sent','Completed','Failed')),
-  result TEXT,
-  created_at TIMESTAMPTZ DEFAULT now()
-);
-ALTER TABLE public.remote_tasks ENABLE ROW LEVEL SECURITY;
-```
-
-**Migration 4 — `diagnostic_vault` table**
-```sql
-CREATE TABLE public.diagnostic_vault (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  target_id TEXT NOT NULL,
-  type TEXT NOT NULL CHECK (type IN ('image','audio','text')),
-  file_url TEXT NOT NULL,
-  timestamp TIMESTAMPTZ DEFAULT now()
-);
-ALTER TABLE public.diagnostic_vault ENABLE ROW LEVEL SECURITY;
-```
-
-**RLS approach**: Dashboard queries are scoped by `tenant_id` matching the logged-in user's tenant (via a `tenant_members` join table or a `tenant_id` column on profiles). Edge function endpoints authenticate via `api_key` header and bypass RLS using the service role key.
-
----
-
-### 2. Edge Functions (External API for Go VPS)
-
-Three edge functions, all authenticated via `api_key` header matched against `tenants.api_key`:
-
-**`supabase/functions/device-heartbeat/index.ts`**
-- Method: `POST`
-- Validates `api_key` header → resolves `tenant_id`
-- UPSERTs into `managed_devices` (by `target_id`)
-- Body: `{ target_id, status, os_info, arch, public_ip }`
-
-**`supabase/functions/task-poll/index.ts`**
-- Method: `GET`
-- Validates `api_key` → resolves `tenant_id`
-- Query param: `target_id`
-- Returns `Pending` tasks from `remote_tasks`, marks them `Sent`
-
-**`supabase/functions/task-result/index.ts`**
-- Method: `POST`
-- Validates `api_key`
-- Body: `{ task_id, status, result }` or `{ target_id, type, file_url }` (for diagnostic uploads)
-- Updates `remote_tasks` row or inserts into `diagnostic_vault`
-
-All three include CORS headers and input validation via Zod.
-
----
-
-### 3. Frontend Integration
-
-**New files:**
-- `src/integrations/supabase/client.ts` — Supabase client (auto-generated by Lovable Cloud)
-- `src/hooks/use-tenant.ts` — hook to get current user's tenant_id
-- `src/hooks/use-devices.ts` — `useQuery` fetching `managed_devices` by tenant
-- `src/hooks/use-tasks.ts` — `useQuery`/`useMutation` for `remote_tasks`
-- `src/hooks/use-diagnostic-files.ts` — `useQuery` for `diagnostic_vault`
-
-**Modified pages:**
-- **Dashboard** — summary cards count from `managed_devices`; activity feed from `remote_tasks` + `diagnostic_vault`
-- **Devices** — table reads from `managed_devices`; "Execute Command" button inserts into `remote_tasks` with status `Pending`; real-time subscription via Supabase Realtime for live status updates
-- **DiagnosticVault** — reads from `diagnostic_vault` table instead of mock data
-- **Compliance** — audit log reads from `remote_tasks` (tracks all commands)
-
-**Command Execution UI** — add a dialog/input on the Devices page where admin types a shell command → inserts `remote_tasks` row → Go VPS picks it up via `task-poll`
-
----
-
-### 4. Auth & Tenant Membership
-
-- Add a `tenant_members` table: `(user_id UUID REFERENCES auth.users, tenant_id UUID REFERENCES tenants)` with RLS
-- On signup/login, resolve the user's tenant for all dashboard queries
-- The Settings page gets a section to view/copy the tenant `api_key` for VPS configuration
-
----
-
-### Summary of files touched
-| Action | Files |
-|--------|-------|
-| Create | 4 migrations, 3 edge functions, 4 hooks, `tenant_members` migration |
-| Modify | `Dashboard.tsx`, `Devices.tsx`, `DiagnosticVault.tsx`, `Compliance.tsx`, `Settings.tsx`, `mock-data.ts` (keep as fallback) |
+**No new tables required** -- admin operations use existing relay_nodes table with new RLS policies.
 
