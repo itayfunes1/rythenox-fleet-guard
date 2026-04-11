@@ -60,7 +60,7 @@ export default function AuthPage() {
     }
   };
 
-  const AuthCard = ({ children }: { children: React.ReactNode }) => (
+  const authCardWrapper = (content: React.ReactNode) => (
     <div className="min-h-screen flex items-center justify-center bg-background p-4 relative overflow-hidden">
       {/* Background orbs */}
       <div className="floating-orb w-96 h-96 bg-primary/30 -top-48 -left-48" style={{ animationDelay: '0s' }} />
@@ -68,14 +68,14 @@ export default function AuthPage() {
       <div className="floating-orb w-64 h-64 bg-success/20 top-1/4 right-1/4" style={{ animationDelay: '6s' }} />
 
       <Card className="w-full max-w-md glass-card border-border/30 animate-scale-in relative z-10">
-        {children}
+        {content}
       </Card>
     </div>
   );
 
   if (resetMode) {
-    return (
-      <AuthCard>
+    return authCardWrapper(
+      <>
         <CardHeader className="text-center space-y-3">
           <div className="flex justify-center">
             <div className="relative flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-primary to-[hsl(260,67%,60%)] shadow-lg shadow-primary/30">
@@ -99,12 +99,12 @@ export default function AuthPage() {
             </Button>
           </form>
         </CardContent>
-      </AuthCard>
+      </>
     );
   }
 
-  return (
-    <AuthCard>
+  return authCardWrapper(
+    <>
       <CardHeader className="text-center space-y-3">
         <div className="flex justify-center">
           <div className="relative flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-primary to-[hsl(260,67%,60%)] shadow-lg shadow-primary/30">
@@ -163,6 +163,6 @@ export default function AuthPage() {
           </TabsContent>
         </Tabs>
       </CardContent>
-    </AuthCard>
+    </>
   );
 }
