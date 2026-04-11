@@ -55,21 +55,59 @@ export default function DeploymentCenter() {
     try {
       setIsDownloading(true);
 
+      const fileName = `rythenox-agent-${buildId.slice(0, 5)}.exe`;
+      const windowWithPicker = window as Window & {
+        showSaveFilePicker?: (options?: unknown) => Promise<{
+          createWritable: () => Promise<{
+            write: (data: Blob) => Promise<void>;
+            close: () => Promise<void>;
+          }>;
+        }>;
+      };
+
+      const fileHandle = windowWithPicker.showSaveFilePicker
+        ? await windowWithPicker.showSaveFilePicker({
+            suggestedName: fileName,
+            types: [
+              {
+                description: "Windows executable",
+                accept: { "application/octet-stream": [".exe"] },
+              },
+            ],
+          })
+        : null;
+
       const response = await fetch(downloadUrl);
       if (!response.ok) {
         throw new Error(`Download failed (${response.status})`);
       }
 
       const blob = await response.blob();
+
+      if (fileHandle) {
+        const writable = await fileHandle.createWritable();
+        await writable.write(blob);
+        await writable.close();
+        return;
+      }
+
       const objectUrl = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = objectUrl;
-      link.download = `rythenox-agent-${buildId.slice(0, 5)}.exe`;
+      link.download = fileName;
+      link.rel = "noopener noreferrer";
+      link.style.display = "none";
       document.body.appendChild(link);
       link.click();
-      link.remove();
-      URL.revokeObjectURL(objectUrl);
+      window.setTimeout(() => {
+        URL.revokeObjectURL(objectUrl);
+        link.remove();
+      }, 1000);
     } catch (error) {
+      if (error instanceof DOMException && error.name === "AbortError") {
+        return;
+      }
+
       toast({
         title: "Download Error",
         description: error instanceof Error ? error.message : "Unable to download the build.",
