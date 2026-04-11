@@ -143,7 +143,7 @@ export default function DeploymentCenter() {
               <pre className="rounded-xl terminal-bg p-4 text-[10px] text-primary/80 font-mono border border-border/20 overflow-x-auto">
                 {JSON.stringify(
                   {
-                    tenant_id: tenant?.id || "unknown",
+                    tenant_id: tenant?.tenantId || "unknown",
                     platform: "windows_x64",
                     status: isBuilding ? "PROVISIONING" : buildId ? "READY" : "IDLE",
                     security_layer: "ldflags-stripped-symbols",
