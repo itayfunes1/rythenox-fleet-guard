@@ -5,7 +5,7 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Shield, Copy, Check } from "lucide-react";
+import { Shield, Copy, Check, Rocket, Code2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 export default function DeploymentCenter() {
@@ -60,41 +60,46 @@ Register-ManagedDevice -PolicyGroup "Standard-Fleet"`;
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-foreground">Deployment Center</h1>
+      <div className="space-y-1">
+        <h1 className="text-2xl font-bold text-foreground tracking-tight">Deployment Center</h1>
         <p className="text-sm text-muted-foreground">Generate and deploy management agent configurations</p>
       </div>
 
-      <div className="grid lg:grid-cols-2 gap-6">
-        <Card>
+      <div className="grid lg:grid-cols-2 gap-6 stagger-children">
+        <Card className="glass-card">
           <CardHeader>
-            <CardTitle>Agent Configuration</CardTitle>
+            <CardTitle className="flex items-center gap-2 text-base">
+              <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                <Rocket className="h-4 w-4 text-primary" />
+              </div>
+              Agent Configuration
+            </CardTitle>
             <CardDescription>Configure the management agent for deployment</CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="space-y-2">
-              <Label>Agent Type</Label>
+              <Label className="text-xs uppercase tracking-wider text-muted-foreground/60 font-semibold">Agent Type</Label>
               <Select value={agentType} onValueChange={setAgentType}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectTrigger className="bg-muted/30 border-border/50"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="standard">Standard User Agent</SelectItem>
                   <SelectItem value="privileged">Privileged Administrator Agent</SelectItem>
                 </SelectContent>
               </Select>
               {agentType === "privileged" && (
-                <div className="flex items-center gap-2 mt-2 p-3 rounded-md border bg-warning/5 border-warning/20">
+                <div className="flex items-center gap-2 mt-2 p-3 rounded-xl border border-warning/20 bg-warning/5 animate-fade-in">
                   <Shield className="h-4 w-4 text-warning shrink-0" />
                   <p className="text-xs text-muted-foreground">
-                    Privileged agents require <strong>OAuth 2.0 organization-level authentication</strong> before deployment.
+                    Privileged agents require <strong className="text-foreground">OAuth 2.0 organization-level authentication</strong> before deployment.
                   </p>
                 </div>
               )}
             </div>
 
             <div className="space-y-2">
-              <Label>Target Platform</Label>
+              <Label className="text-xs uppercase tracking-wider text-muted-foreground/60 font-semibold">Target Platform</Label>
               <Select value={platform} onValueChange={setPlatform}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectTrigger className="bg-muted/30 border-border/50"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="windows">Windows (GPO / Intune)</SelectItem>
                   <SelectItem value="macos">macOS (MDM / Jamf)</SelectItem>
@@ -104,36 +109,43 @@ Register-ManagedDevice -PolicyGroup "Standard-Fleet"`;
             </div>
 
             <div className="space-y-4">
-              <Label>Features</Label>
+              <Label className="text-xs uppercase tracking-wider text-muted-foreground/60 font-semibold">Features</Label>
               <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="remote" className="text-sm font-normal">Enable Remote Assistance</Label>
-                  <Switch id="remote" checked={remoteAssist} onCheckedChange={setRemoteAssist} />
-                </div>
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="updates" className="text-sm font-normal">Automatic System Updates</Label>
-                  <Switch id="updates" checked={autoUpdates} onCheckedChange={setAutoUpdates} />
-                </div>
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="diag" className="text-sm font-normal">Diagnostic Logging</Label>
-                  <Switch id="diag" checked={diagnosticLogging} onCheckedChange={setDiagnosticLogging} />
-                </div>
+                {[
+                  { id: "remote", label: "Enable Remote Assistance", checked: remoteAssist, onChange: setRemoteAssist },
+                  { id: "updates", label: "Automatic System Updates", checked: autoUpdates, onChange: setAutoUpdates },
+                  { id: "diag", label: "Diagnostic Logging", checked: diagnosticLogging, onChange: setDiagnosticLogging },
+                ].map((feature) => (
+                  <div key={feature.id} className="flex items-center justify-between py-1">
+                    <Label htmlFor={feature.id} className="text-sm font-normal">{feature.label}</Label>
+                    <Switch id={feature.id} checked={feature.checked} onCheckedChange={feature.onChange} />
+                  </div>
+                ))}
               </div>
             </div>
 
-            <Button className="w-full" onClick={() => setGenerated(true)}>
+            <Button
+              className="w-full bg-gradient-to-r from-primary to-[hsl(260,67%,60%)] hover:opacity-90 transition-opacity shadow-lg shadow-primary/20"
+              onClick={() => setGenerated(true)}
+            >
+              <Rocket className="h-4 w-4 mr-2" />
               Generate Configuration
             </Button>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="glass-card">
           <CardHeader>
             <div className="flex items-center justify-between">
-              <CardTitle>Deployment Script</CardTitle>
+              <CardTitle className="flex items-center gap-2 text-base">
+                <div className="h-8 w-8 rounded-lg bg-muted/50 flex items-center justify-center">
+                  <Code2 className="h-4 w-4 text-muted-foreground" />
+                </div>
+                Deployment Script
+              </CardTitle>
               {generated && (
-                <Button variant="outline" size="sm" onClick={handleCopy}>
-                  {copied ? <Check className="h-3 w-3 mr-1" /> : <Copy className="h-3 w-3 mr-1" />}
+                <Button variant="outline" size="sm" onClick={handleCopy} className="border-border/50 hover:border-primary/50 transition-colors">
+                  {copied ? <Check className="h-3 w-3 mr-1 text-success" /> : <Copy className="h-3 w-3 mr-1" />}
                   {copied ? "Copied" : "Copy"}
                 </Button>
               )}
@@ -144,18 +156,21 @@ Register-ManagedDevice -PolicyGroup "Standard-Fleet"`;
           </CardHeader>
           <CardContent>
             {generated ? (
-              <div className="space-y-3">
+              <div className="space-y-3 animate-fade-in">
                 <div className="flex gap-2">
-                  <Badge variant="outline">{agentType === "privileged" ? "Privileged" : "Standard"}</Badge>
-                  <Badge variant="outline">{platform}</Badge>
+                  <Badge variant="outline" className="text-[10px] rounded-full border-primary/20 bg-primary/10 text-primary">{agentType === "privileged" ? "Privileged" : "Standard"}</Badge>
+                  <Badge variant="outline" className="text-[10px] rounded-full border-border/50">{platform}</Badge>
                 </div>
-                <pre className="rounded-md bg-primary p-4 text-xs text-primary-foreground overflow-x-auto font-mono leading-relaxed">
+                <pre className="rounded-xl terminal-bg p-4 text-xs text-[hsl(var(--terminal-foreground))] overflow-x-auto font-mono leading-relaxed border border-border/20">
                   {script}
                 </pre>
               </div>
             ) : (
-              <div className="flex items-center justify-center h-48 text-muted-foreground text-sm">
-                Configure the agent and click "Generate Configuration"
+              <div className="flex flex-col items-center justify-center h-48 text-center">
+                <div className="h-12 w-12 rounded-2xl bg-muted/50 flex items-center justify-center mb-3">
+                  <Code2 className="h-5 w-5 text-muted-foreground/50" />
+                </div>
+                <p className="text-sm text-muted-foreground">Configure the agent and click "Generate Configuration"</p>
               </div>
             )}
           </CardContent>
