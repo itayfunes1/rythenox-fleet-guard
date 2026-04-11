@@ -76,20 +76,28 @@ Deno.serve(async (req) => {
     });
   }
 
+  // Build upsert payload — only include os_info/arch/public_ip if provided,
+  // so we don't overwrite existing values with null on every heartbeat.
+  const upsertData: Record<string, unknown> = {
+    tenant_id: tenant.id,
+    target_id,
+    status: status || "Online",
+    last_seen: new Date().toISOString(),
+  };
+
+  if (os_info !== undefined && os_info !== null && os_info !== "") {
+    upsertData.os_info = os_info;
+  }
+  if (arch !== undefined && arch !== null && arch !== "") {
+    upsertData.arch = arch;
+  }
+  if (public_ip !== undefined && public_ip !== null && public_ip !== "") {
+    upsertData.public_ip = public_ip;
+  }
+
   const { error: upsertErr } = await supabase
     .from("managed_devices")
-    .upsert(
-      {
-        tenant_id: tenant.id,
-        target_id,
-        status: status || "Online",
-        os_info: os_info || null,
-        arch: arch || null,
-        public_ip: public_ip || null,
-        last_seen: new Date().toISOString(),
-      },
-      { onConflict: "target_id" }
-    );
+    .upsert(upsertData, { onConflict: "target_id" });
 
   if (upsertErr) {
     return new Response(JSON.stringify({ error: upsertErr.message }), {
