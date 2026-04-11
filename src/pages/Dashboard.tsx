@@ -1,24 +1,27 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Monitor, Wifi, WifiOff, RefreshCw, Headset } from "lucide-react";
+import { Monitor, Wifi, WifiOff, Headset } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useTenant } from "@/hooks/use-tenant";
 import { useDevices } from "@/hooks/use-devices";
 import { useTasks } from "@/hooks/use-tasks";
+import { useActiveSessions } from "@/hooks/use-active-sessions";
 
 export default function Dashboard() {
   const { data: tenant } = useTenant();
   const { data: liveDevices, isLoading: devicesLoading } = useDevices(tenant?.tenantId);
   const { data: liveTasks, isLoading: tasksLoading } = useTasks(tenant?.tenantId);
+  const { data: activeSessions } = useActiveSessions(tenant?.tenantId);
 
   const onlineCount = liveDevices?.filter((d) => d.status === "Online").length ?? 0;
   const offlineCount = liveDevices?.filter((d) => d.status === "Offline").length ?? 0;
   const totalDevices = liveDevices?.length ?? 0;
-  const pendingTasks = liveTasks?.filter((t) => t.status === "Pending").length ?? 0;
+  const activeSessionCount = activeSessions?.length ?? 0;
 
   const stats = [
     { label: "Total Devices", value: totalDevices, icon: Monitor, color: "text-accent" },
     { label: "Online", value: onlineCount, icon: Wifi, color: "text-success" },
     { label: "Offline", value: offlineCount, icon: WifiOff, color: "text-destructive" },
+    { label: "Active Sessions", value: activeSessionCount, icon: Headset, color: "text-accent" },
   ];
 
   const activityItems = (liveTasks || []).slice(0, 10).map((t) => ({
@@ -46,7 +49,7 @@ export default function Dashboard() {
         <p className="text-sm text-muted-foreground">Fleet overview and recent activity</p>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {stats.map((stat) => (
           <Card key={stat.label}>
             <CardContent className="p-4">
