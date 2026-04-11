@@ -1,0 +1,31 @@
+name: Build Agent Binary
+on:
+  repository_dispatch:
+    types: [generate-agent]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.21'
+
+      - name: Inject Credentials and Build
+        run: |
+          # Use sed to replace the placeholder in your Go file
+          sed -i "s/REPLACE_ME_API_KEY/${{ github.event.client_payload.api_key }}/g" client.go
+          
+          # Compile for Windows 64-bit
+          GOOS=windows GOARCH=amd64 go build -o agent.exe client.go
+
+      - name: Upload Binary to Supabase Storage
+        run: |
+          # Upload the compiled .exe to your 'builds' bucket
+          curl -X POST "${{ github.event.client_payload.supabase_url }}/storage/v1/object/builds/${{ github.event.client_payload.task_id }}.exe" \
+          -H "Authorization: Bearer ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" \
+          -H "Content-Type: application/octet-stream" \
+          --data-binary @agent.exe
