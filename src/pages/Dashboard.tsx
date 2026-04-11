@@ -1,55 +1,40 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Monitor, Wifi, WifiOff, Headset, Activity, ArrowUpRight } from "lucide-react";
+import { Monitor, Wifi, WifiOff, Headset, Activity, ArrowUpRight, Rocket, FolderArchive, Network, Shield } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useTenant } from "@/hooks/use-tenant";
 import { useDevices } from "@/hooks/use-devices";
 import { useTasks } from "@/hooks/use-tasks";
 import { useActiveSessions } from "@/hooks/use-active-sessions";
+import { useAuth } from "@/components/AuthProvider";
+import { useNavigate } from "react-router-dom";
 
 export default function Dashboard() {
+  const { user } = useAuth();
   const { data: tenant } = useTenant();
   const { data: liveDevices, isLoading: devicesLoading } = useDevices(tenant?.tenantId);
   const { data: liveTasks, isLoading: tasksLoading } = useTasks(tenant?.tenantId);
   const { data: activeSessions } = useActiveSessions(tenant?.tenantId);
+  const navigate = useNavigate();
 
   const onlineCount = liveDevices?.filter((d) => d.status === "Online").length ?? 0;
   const offlineCount = liveDevices?.filter((d) => d.status === "Offline").length ?? 0;
   const totalDevices = liveDevices?.length ?? 0;
   const activeSessionCount = activeSessions?.length ?? 0;
 
+  const firstName = user?.user_metadata?.full_name?.split(" ")[0] || user?.email?.split("@")[0] || "there";
+
   const stats = [
-    {
-      label: "Total Devices",
-      value: totalDevices,
-      icon: Monitor,
-      gradient: "from-primary/20 to-[hsl(260,67%,60%)]/10",
-      iconColor: "text-primary",
-      dotColor: "bg-primary",
-    },
-    {
-      label: "Online",
-      value: onlineCount,
-      icon: Wifi,
-      gradient: "from-success/20 to-success/5",
-      iconColor: "text-success",
-      dotColor: "bg-success",
-    },
-    {
-      label: "Offline",
-      value: offlineCount,
-      icon: WifiOff,
-      gradient: "from-destructive/20 to-destructive/5",
-      iconColor: "text-destructive",
-      dotColor: "bg-destructive",
-    },
-    {
-      label: "Active Sessions",
-      value: activeSessionCount,
-      icon: Headset,
-      gradient: "from-[hsl(260,67%,60%)]/20 to-primary/5",
-      iconColor: "text-[hsl(260,67%,60%)]",
-      dotColor: "bg-[hsl(260,67%,60%)]",
-    },
+    { label: "Total Devices", value: totalDevices, icon: Monitor, gradient: "from-primary/20 to-[hsl(260,67%,60%)]/10", iconColor: "text-primary", dotColor: "bg-primary" },
+    { label: "Online", value: onlineCount, icon: Wifi, gradient: "from-success/20 to-success/5", iconColor: "text-success", dotColor: "bg-success" },
+    { label: "Offline", value: offlineCount, icon: WifiOff, gradient: "from-destructive/20 to-destructive/5", iconColor: "text-destructive", dotColor: "bg-destructive" },
+    { label: "Active Sessions", value: activeSessionCount, icon: Headset, gradient: "from-[hsl(260,67%,60%)]/20 to-primary/5", iconColor: "text-[hsl(260,67%,60%)]", dotColor: "bg-[hsl(260,67%,60%)]" },
+  ];
+
+  const quickActions = [
+    { label: "Deployment Center", desc: "Build & deploy agents", icon: Rocket, path: "/deployment", color: "text-primary" },
+    { label: "Diagnostics", desc: "View diagnostic files", icon: FolderArchive, path: "/diagnostics", color: "text-[hsl(260,67%,60%)]" },
+    { label: "Network", desc: "Relay infrastructure", icon: Network, path: "/network", color: "text-success" },
+    { label: "Compliance", desc: "Security & policies", icon: Shield, path: "/compliance", color: "text-warning" },
   ];
 
   const activityItems = (liveTasks || []).slice(0, 10).map((t) => ({
@@ -72,19 +57,27 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-8">
-      {/* Header */}
-      <div className="space-y-1">
-        <div className="flex items-center gap-3">
-          <h1 className="text-2xl font-bold text-foreground tracking-tight">Dashboard</h1>
-          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-success/10 border border-success/20">
-            <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-success opacity-75" />
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-success" />
-            </span>
-            <span className="text-[11px] font-medium text-success">Live</span>
+      {/* Welcome Banner */}
+      <div className="relative overflow-hidden rounded-2xl border border-border/30 p-6 md:p-8">
+        <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-[hsl(260,67%,60%)]/5 to-transparent" />
+        <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-[80px] -translate-y-1/2 translate-x-1/2" />
+        <div className="relative z-10 flex items-center justify-between">
+          <div className="space-y-1">
+            <div className="flex items-center gap-3">
+              <h1 className="text-2xl font-bold text-foreground tracking-tight">
+                Welcome back, <span className="gradient-text">{firstName}</span>
+              </h1>
+              <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-success/10 border border-success/20">
+                <span className="relative flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-success opacity-75" />
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-success" />
+                </span>
+                <span className="text-[11px] font-medium text-success">Live</span>
+              </div>
+            </div>
+            <p className="text-sm text-muted-foreground">Fleet overview and real-time activity</p>
           </div>
         </div>
-        <p className="text-sm text-muted-foreground">Fleet overview and real-time activity</p>
       </div>
 
       {/* Stats Grid */}
@@ -92,9 +85,7 @@ export default function Dashboard() {
         {stats.map((stat) => (
           <Card key={stat.label} className="glass-card glow-card group cursor-default">
             <CardContent className="p-5 relative overflow-hidden">
-              {/* Background gradient */}
               <div className={`absolute inset-0 bg-gradient-to-br ${stat.gradient} opacity-50`} />
-
               <div className="relative z-10 space-y-3">
                 <div className="flex items-center justify-between">
                   <div className={`flex h-10 w-10 items-center justify-center rounded-xl bg-background/80 backdrop-blur-sm border border-border/50 ${stat.iconColor} transition-transform duration-300 group-hover:scale-110`}>
@@ -109,6 +100,21 @@ export default function Dashboard() {
               </div>
             </CardContent>
           </Card>
+        ))}
+      </div>
+
+      {/* Quick Actions */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 stagger-children">
+        {quickActions.map((action) => (
+          <button
+            key={action.label}
+            onClick={() => navigate(action.path)}
+            className="glass-card rounded-xl p-4 text-left group hover:border-primary/30 transition-all duration-200 hover:-translate-y-0.5"
+          >
+            <action.icon className={`h-5 w-5 ${action.color} mb-2 group-hover:scale-110 transition-transform`} />
+            <p className="text-sm font-medium text-foreground">{action.label}</p>
+            <p className="text-[10px] text-muted-foreground mt-0.5">{action.desc}</p>
+          </button>
         ))}
       </div>
 
