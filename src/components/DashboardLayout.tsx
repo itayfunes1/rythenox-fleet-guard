@@ -1,6 +1,9 @@
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import { useAuth } from "@/components/AuthProvider";
+import { Bell, Search } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 export function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
@@ -11,11 +14,31 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
       <div className="min-h-screen flex w-full bg-background">
         <AppSidebar />
         <div className="flex-1 flex flex-col min-w-0">
-          <header className="h-14 flex items-center border-b border-border/50 bg-card/50 backdrop-blur-xl px-4 gap-4 sticky top-0 z-30">
+          <header className="h-14 flex items-center border-b border-border/50 bg-card/50 backdrop-blur-xl px-4 gap-3 sticky top-0 z-30">
             <SidebarTrigger className="hover:bg-muted transition-colors rounded-lg" />
+
+            {/* Search placeholder */}
+            <div className="hidden md:flex items-center gap-2 flex-1 max-w-sm ml-2">
+              <div className="flex items-center gap-2 w-full px-3 py-1.5 rounded-lg bg-muted/30 border border-border/30 text-muted-foreground/50 text-sm cursor-default">
+                <Search className="h-3.5 w-3.5" />
+                <span className="text-xs">Search...</span>
+                <kbd className="ml-auto text-[10px] bg-muted/50 px-1.5 py-0.5 rounded border border-border/50">⌘K</kbd>
+              </div>
+            </div>
+
             <div className="flex-1" />
-            <div className="flex items-center gap-3">
-              <div className="h-8 w-8 rounded-full bg-gradient-to-br from-primary to-[hsl(260,67%,60%)] flex items-center justify-center text-xs font-bold text-primary-foreground shadow-md shadow-primary/20">
+
+            <div className="flex items-center gap-2">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground relative">
+                    <Bell className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Notifications</TooltipContent>
+              </Tooltip>
+
+              <div className="h-8 w-8 rounded-full bg-gradient-to-br from-primary to-[hsl(260,67%,60%)] flex items-center justify-center text-xs font-bold text-primary-foreground shadow-md shadow-primary/20 cursor-default">
                 {initials}
               </div>
             </div>
