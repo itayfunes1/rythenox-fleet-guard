@@ -63,7 +63,32 @@ export default function Devices() {
   const handleOpenTerminal = (device: ManagedDevice) => {
     setSelectedDevice(device);
     setCmdInput("");
+
+    if (tenant?.tenantId && user?.id) {
+      startSession.mutate(
+        { tenant_id: tenant.tenantId, user_id: user.id, target_id: device.target_id },
+        { onSuccess: (data) => setActiveSessionId(data.id) }
+      );
+    }
   };
+
+  const handleCloseTerminal = useCallback(() => {
+    if (activeSessionId) {
+      endSession.mutate(activeSessionId);
+      setActiveSessionId(null);
+    }
+    setSelectedDevice(null);
+  }, [activeSessionId, endSession]);
+
+  // Cleanup session on unmount or page navigation
+  useEffect(() => {
+    return () => {
+      if (activeSessionId) {
+        // Fire-and-forget cleanup
+        supabase.from("active_sessions").delete().eq("id", activeSessionId).then();
+      }
+    };
+  }, [activeSessionId]);
 
   const handleSendCommand = () => {
     if (!tenant?.tenantId || !currentSelectedDevice || !cmdInput.trim()) return;
