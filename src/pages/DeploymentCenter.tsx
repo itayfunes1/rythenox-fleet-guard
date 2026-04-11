@@ -64,15 +64,19 @@ export default function DeploymentCenter() {
               </div>
             ) : (
               <Button
-                className="w-full bg-green-600 hover:bg-green-700"
+                className="w-full"
                 onClick={() => {
+                  if (!buildId) return;
                   const url = `${SUPABASE_URL}/storage/v1/object/public/builds/${buildId}.exe`;
-                  const link = document.createElement("a");
-                  link.href = url;
-                  link.download = "agent.exe";
-                  document.body.appendChild(link);
-                  link.click();
-                  document.body.removeChild(link);
+                  const downloadWindow = window.open("", "_blank");
+
+                  if (downloadWindow) {
+                    downloadWindow.opener = null;
+                    downloadWindow.location.href = url;
+                    return;
+                  }
+
+                  window.location.assign(url);
                 }}
               >
                 <Download className="mr-2" /> Download agent.exe
