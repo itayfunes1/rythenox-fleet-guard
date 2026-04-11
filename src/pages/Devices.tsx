@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, KeyboardEvent } from "react";
+import { useState, useRef, useEffect, useCallback, KeyboardEvent } from "react";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
@@ -9,20 +9,27 @@ import { useToast } from "@/hooks/use-toast";
 import { useTenant } from "@/hooks/use-tenant";
 import { useDevices, type ManagedDevice } from "@/hooks/use-devices";
 import { useCreateTask, useDeviceTasks } from "@/hooks/use-tasks";
+import { useStartSession, useEndSession } from "@/hooks/use-active-sessions";
+import { useAuth } from "@/components/AuthProvider";
+import { supabase } from "@/integrations/supabase/client";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { formatLastSeenAge } from "@/lib/device-presence";
 
 export default function Devices() {
   const [search, setSearch] = useState("");
   const [selectedDevice, setSelectedDevice] = useState<ManagedDevice | null>(null);
+  const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
   const [cmdInput, setCmdInput] = useState("");
   const { toast } = useToast();
   const terminalEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
+  const { user } = useAuth();
   const { data: tenant } = useTenant();
   const { data: liveDevices, isLoading, refetch, isFetching } = useDevices(tenant?.tenantId);
   const createTask = useCreateTask();
+  const startSession = useStartSession();
+  const endSession = useEndSession();
   const { data: deviceTasks } = useDeviceTasks(tenant?.tenantId, selectedDevice?.target_id);
 
   const filtered = (liveDevices || []).filter(
@@ -57,7 +64,32 @@ export default function Devices() {
   const handleOpenTerminal = (device: ManagedDevice) => {
     setSelectedDevice(device);
     setCmdInput("");
+
+    if (tenant?.tenantId && user?.id) {
+      startSession.mutate(
+        { tenant_id: tenant.tenantId, user_id: user.id, target_id: device.target_id },
+        { onSuccess: (data) => setActiveSessionId(data.id) }
+      );
+    }
   };
+
+  const handleCloseTerminal = useCallback(() => {
+    if (activeSessionId) {
+      endSession.mutate(activeSessionId);
+      setActiveSessionId(null);
+    }
+    setSelectedDevice(null);
+  }, [activeSessionId, endSession]);
+
+  // Cleanup session on unmount or page navigation
+  useEffect(() => {
+    return () => {
+      if (activeSessionId) {
+        // Fire-and-forget cleanup
+        supabase.from("active_sessions").delete().eq("id", activeSessionId).then();
+      }
+    };
+  }, [activeSessionId]);
 
   const handleSendCommand = () => {
     if (!tenant?.tenantId || !currentSelectedDevice || !cmdInput.trim()) return;
@@ -117,7 +149,7 @@ export default function Devices() {
             </div>
             <StatusBadge status={selectedDeviceIsResponsive ? "online" : "offline"} />
           </div>
-          <Button variant="ghost" size="icon" onClick={() => setSelectedDevice(null)}>
+          <Button variant="ghost" size="icon" onClick={handleCloseTerminal}>
             <X className="h-4 w-4" />
           </Button>
         </div>
