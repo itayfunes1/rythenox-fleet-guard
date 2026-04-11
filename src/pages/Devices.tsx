@@ -17,14 +17,18 @@ import { formatLastSeenAge } from "@/lib/device-presence";
 export default function Devices() {
   const [search, setSearch] = useState("");
   const [selectedDevice, setSelectedDevice] = useState<ManagedDevice | null>(null);
+  const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
   const [cmdInput, setCmdInput] = useState("");
   const { toast } = useToast();
   const terminalEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
+  const { user } = useAuth();
   const { data: tenant } = useTenant();
   const { data: liveDevices, isLoading, refetch, isFetching } = useDevices(tenant?.tenantId);
   const createTask = useCreateTask();
+  const startSession = useStartSession();
+  const endSession = useEndSession();
   const { data: deviceTasks } = useDeviceTasks(tenant?.tenantId, selectedDevice?.target_id);
 
   const filtered = (liveDevices || []).filter(
