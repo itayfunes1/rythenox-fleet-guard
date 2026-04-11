@@ -12,6 +12,7 @@ export default function DeploymentCenter() {
   const [isBuilding, setIsBuilding] = useState(false);
   const [buildId, setBuildId] = useState<string | null>(null);
   const [progress, setProgress] = useState(0);
+  const [isDownloading, setIsDownloading] = useState(false);
 
   const SUPABASE_URL = "https://prodlnwtjkomsstrufqr.supabase.co";
 
@@ -46,15 +47,37 @@ export default function DeploymentCenter() {
     }, 1000);
   };
 
-  const triggerDownload = () => {
+  const triggerDownload = async () => {
     if (!buildId) return;
-    // Force download by creating a temporary link element
-    const link = document.createElement("a");
-    link.href = `${SUPABASE_URL}/storage/v1/object/public/builds/${buildId}.exe`;
-    link.setAttribute("download", `rythenox-agent-${buildId.slice(0, 5)}.exe`);
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
+
+    const downloadUrl = `${SUPABASE_URL}/storage/v1/object/public/builds/${buildId}.exe`;
+
+    try {
+      setIsDownloading(true);
+
+      const response = await fetch(downloadUrl);
+      if (!response.ok) {
+        throw new Error(`Download failed (${response.status})`);
+      }
+
+      const blob = await response.blob();
+      const objectUrl = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = objectUrl;
+      link.download = `rythenox-agent-${buildId.slice(0, 5)}.exe`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(objectUrl);
+    } catch (error) {
+      toast({
+        title: "Download Error",
+        description: error instanceof Error ? error.message : "Unable to download the build.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsDownloading(false);
+    }
   };
 
   return (
@@ -77,8 +100,9 @@ export default function DeploymentCenter() {
               </div>
             ) : (
               <div className="space-y-3">
-                <Button onClick={triggerDownload} className="w-full bg-green-600 hover:bg-green-700">
-                  <Download className="mr-2" /> Download agent.exe
+                <Button onClick={triggerDownload} disabled={isDownloading} className="w-full bg-green-600 hover:bg-green-700">
+                  {isDownloading ? <Loader2 className="animate-spin mr-2" /> : <Download className="mr-2" />}
+                  {isDownloading ? "Preparing download..." : "Download agent.exe"}
                 </Button>
                 <p className="text-[10px] text-center text-muted-foreground flex items-center justify-center gap-1">
                   <AlertCircle className="h-3 w-3" /> If download doesn't start, check your browser's pop-up blocker.
