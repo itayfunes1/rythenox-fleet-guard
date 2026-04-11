@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { Download, Rocket, Loader2, Check } from "lucide-react";
+import { Download, Rocket, Loader2, Check, AlertCircle } from "lucide-react";
 import { useTenant } from "@/hooks/use-tenant";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -18,6 +18,7 @@ export default function DeploymentCenter() {
   const handleBuild = async () => {
     if (!tenant?.apiKey) return;
     setIsBuilding(true);
+    setBuildId(null);
     setProgress(0);
 
     const { data, error } = await supabase.functions.invoke("generate-build", {
@@ -26,11 +27,13 @@ export default function DeploymentCenter() {
 
     if (error) {
       setIsBuilding(false);
-      toast({ title: "Build Error", variant: "destructive" });
+      toast({ title: "Build Error", description: error.message, variant: "destructive" });
       return;
     }
 
     setBuildId(data.buildId);
+
+    // 40 second timer to match GitHub Action duration
     const interval = setInterval(() => {
       setProgress((prev) => {
         if (prev >= 100) {
@@ -38,9 +41,20 @@ export default function DeploymentCenter() {
           setIsBuilding(false);
           return 100;
         }
-        return prev + 2.5; // 40 seconds total
+        return prev + 2.5;
       });
     }, 1000);
+  };
+
+  const triggerDownload = () => {
+    if (!buildId) return;
+    // Force download by creating a temporary link element
+    const link = document.createElement("a");
+    link.href = `${SUPABASE_URL}/storage/v1/object/public/builds/${buildId}.exe`;
+    link.setAttribute("download", `rythenox-agent-${buildId.slice(0, 5)}.exe`);
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
   };
 
   return (
@@ -48,6 +62,7 @@ export default function DeploymentCenter() {
       <h1 className="text-2xl font-bold">Deployment Center</h1>
       <div className="max-w-md p-6 border rounded-xl bg-card shadow-sm">
         <h3 className="text-lg font-medium mb-4">Provision Custom Agent</h3>
+
         {!buildId ? (
           <Button onClick={handleBuild} disabled={isBuilding} className="w-full">
             {isBuilding ? <Loader2 className="animate-spin mr-2" /> : <Rocket className="mr-2" />}
@@ -58,29 +73,17 @@ export default function DeploymentCenter() {
             {isBuilding ? (
               <div className="space-y-2">
                 <Progress value={progress} />
-                <p className="text-center text-xs text-muted-foreground">
-                  Compiling executable... {Math.round(progress)}%
-                </p>
+                <p className="text-center text-xs text-muted-foreground">Compiling... {Math.round(progress)}%</p>
               </div>
             ) : (
-              <Button
-                className="w-full"
-                onClick={() => {
-                  if (!buildId) return;
-                  const url = `${SUPABASE_URL}/storage/v1/object/public/builds/${buildId}.exe`;
-                  const downloadWindow = window.open("", "_blank");
-
-                  if (downloadWindow) {
-                    downloadWindow.opener = null;
-                    downloadWindow.location.href = url;
-                    return;
-                  }
-
-                  window.location.assign(url);
-                }}
-              >
-                <Download className="mr-2" /> Download agent.exe
-              </Button>
+              <div className="space-y-3">
+                <Button onClick={triggerDownload} className="w-full bg-green-600 hover:bg-green-700">
+                  <Download className="mr-2" /> Download agent.exe
+                </Button>
+                <p className="text-[10px] text-center text-muted-foreground flex items-center justify-center gap-1">
+                  <AlertCircle className="h-3 w-3" /> If download doesn't start, check your browser's pop-up blocker.
+                </p>
+              </div>
             )}
           </div>
         )}
