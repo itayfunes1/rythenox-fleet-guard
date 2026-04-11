@@ -11,6 +11,7 @@ import { useDevices, type ManagedDevice } from "@/hooks/use-devices";
 import { useCreateTask, useDeviceTasks } from "@/hooks/use-tasks";
 import { useStartSession, useEndSession } from "@/hooks/use-active-sessions";
 import { useAuth } from "@/components/AuthProvider";
+import { supabase } from "@/integrations/supabase/client";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { formatLastSeenAge } from "@/lib/device-presence";
 
