@@ -251,6 +251,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      cleanup_stale_sessions: { Args: never; Returns: undefined }
       get_user_tenant_id: { Args: { _user_id: string }; Returns: string }
     }
     Enums: {
