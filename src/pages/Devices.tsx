@@ -149,7 +149,7 @@ export default function Devices() {
             </div>
             <StatusBadge status={selectedDeviceIsResponsive ? "online" : "offline"} />
           </div>
-          <Button variant="ghost" size="icon" onClick={() => setSelectedDevice(null)}>
+          <Button variant="ghost" size="icon" onClick={handleCloseTerminal}>
             <X className="h-4 w-4" />
           </Button>
         </div>
