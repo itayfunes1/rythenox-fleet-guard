@@ -10,7 +10,7 @@ import Devices from "@/pages/Devices";
 import DeploymentCenter from "@/pages/DeploymentCenter";
 import DiagnosticVault from "@/pages/DiagnosticVault";
 import NetworkInfrastructure from "@/pages/NetworkInfrastructure";
-import Compliance from "@/pages/Compliance";
+
 import SettingsPage from "@/pages/Settings";
 import AuthPage from "@/pages/Auth";
 import ResetPassword from "@/pages/ResetPassword";
@@ -41,7 +41,7 @@ function ProtectedRoutes() {
         <Route path="/deployment" element={<DeploymentCenter />} />
         <Route path="/diagnostics" element={<DiagnosticVault />} />
         <Route path="/network" element={<NetworkInfrastructure />} />
-        <Route path="/compliance" element={<Compliance />} />
+        
         <Route path="/settings" element={<SettingsPage />} />
         <Route path="*" element={<NotFound />} />
       </Routes>

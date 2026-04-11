@@ -1,9 +1,8 @@
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import { useAuth } from "@/components/AuthProvider";
-import { Bell, Search } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { Search } from "lucide-react";
+import { NotificationDropdown } from "@/components/NotificationDropdown";
 
 export function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
@@ -29,14 +28,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
             <div className="flex-1" />
 
             <div className="flex items-center gap-2">
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-foreground relative">
-                    <Bell className="h-4 w-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>Notifications</TooltipContent>
-              </Tooltip>
+              <NotificationDropdown />
 
               <div className="h-8 w-8 rounded-full bg-gradient-to-br from-primary to-[hsl(260,67%,60%)] flex items-center justify-center text-xs font-bold text-primary-foreground shadow-md shadow-primary/20 cursor-default">
                 {initials}

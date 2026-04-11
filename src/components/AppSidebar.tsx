@@ -1,4 +1,4 @@
-import { LayoutDashboard, Monitor, Rocket, FolderArchive, Network, Settings, Shield, LogOut, Zap } from "lucide-react";
+import { LayoutDashboard, Monitor, Rocket, FolderArchive, Network, Settings, LogOut, Zap } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
 import { useAuth } from "@/components/AuthProvider";
@@ -27,7 +27,6 @@ const mainItems = [
 ];
 
 const systemItems = [
-  { title: "Compliance", url: "/compliance", icon: Shield },
   { title: "Settings", url: "/settings", icon: Settings },
 ];
 
