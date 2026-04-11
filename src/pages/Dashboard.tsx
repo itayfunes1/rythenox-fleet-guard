@@ -19,8 +19,6 @@ export default function Dashboard() {
     { label: "Total Devices", value: totalDevices, icon: Monitor, color: "text-accent" },
     { label: "Online", value: onlineCount, icon: Wifi, color: "text-success" },
     { label: "Offline", value: offlineCount, icon: WifiOff, color: "text-destructive" },
-    { label: "Pending Tasks", value: pendingTasks, icon: RefreshCw, color: "text-warning" },
-    { label: "Active Sessions", value: 0, icon: Headset, color: "text-accent" },
   ];
 
   const activityItems = (liveTasks || []).slice(0, 10).map((t) => ({
