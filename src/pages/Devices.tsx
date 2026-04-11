@@ -132,77 +132,53 @@ export default function Devices() {
   // Terminal view
   if (currentSelectedDevice) {
     return (
-      <div className="flex flex-col h-[calc(100vh-4rem)] animate-fade-in rounded-lg overflow-hidden border border-[#3c3c3c] shadow-2xl">
-        {/* Windows Terminal title bar */}
-        <div className="flex items-center justify-between px-3 py-2 bg-[#1f1f1f] select-none">
-          <div className="flex items-center gap-2">
-            <Terminal className="h-3.5 w-3.5 text-[#cccccc]" />
-            <span className="text-xs font-medium text-[#cccccc] tracking-wide">
-              Windows PowerShell — {currentSelectedDevice.target_id}
-            </span>
-          </div>
-          <div className="flex items-center gap-0">
+      <div className="flex flex-col h-[calc(100vh-4rem)] animate-fade-in">
+        {/* Terminal header */}
+        <div className="flex items-center justify-between px-4 py-3 border-b border-border/50 glass-card rounded-none">
+          <div className="flex items-center gap-3">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-success/10 border border-success/20">
+              <Terminal className="h-4 w-4 text-success" />
+            </div>
+            <div>
+              <h2 className="text-sm font-bold font-mono text-foreground">{currentSelectedDevice.target_id}</h2>
+              <p className="text-xs text-muted-foreground">
+                {currentSelectedDevice.public_ip || "Unknown IP"} · {currentSelectedDevice.os_info || "Unknown OS"} · {currentSelectedDevice.arch || "Unknown Arch"}
+              </p>
+            </div>
             <StatusBadge status={selectedDeviceIsResponsive ? "online" : "offline"} />
-            <button className="px-3 py-1 hover:bg-[#3c3c3c] transition-colors text-[#999] hover:text-[#ccc]" title="Minimize">
-              <span className="text-xs leading-none">─</span>
-            </button>
-            <button className="px-3 py-1 hover:bg-[#3c3c3c] transition-colors text-[#999] hover:text-[#ccc]" title="Maximize">
-              <span className="text-[10px] leading-none">☐</span>
-            </button>
-            <button
-              className="px-3 py-1 hover:bg-[#e81123] transition-colors text-[#999] hover:text-white rounded-tr-md"
-              onClick={handleCloseTerminal}
-              title="Close"
-            >
-              <X className="h-3 w-3" />
-            </button>
           </div>
-        </div>
-
-        {/* Tab bar */}
-        <div className="flex items-center bg-[#181818] border-b border-[#3c3c3c] px-1">
-          <div className="flex items-center gap-2 px-3 py-1.5 bg-[#1f1f1f] border-t-2 border-t-[#0078d4] rounded-t text-xs text-[#cccccc]">
-            <Terminal className="h-3 w-3" />
-            <span>PowerShell</span>
-          </div>
-          <div className="px-2 py-1.5 text-[#666] hover:text-[#ccc] cursor-pointer text-sm">+</div>
+          <Button variant="ghost" size="icon" onClick={handleCloseTerminal} className="hover:bg-destructive/10 hover:text-destructive transition-colors">
+            <X className="h-4 w-4" />
+          </Button>
         </div>
 
         {/* Terminal body */}
-        <ScrollArea className="flex-1 bg-[#012456]">
-          <div className="p-4 font-mono text-sm space-y-2 min-h-full">
-            <div className="text-[#ffff00] text-xs">
-              Windows PowerShell
+        <ScrollArea className="flex-1 terminal-bg">
+          <div className="p-4 font-mono text-sm space-y-3 min-h-full">
+            <div className="text-success text-xs">
+              ── Connected to {currentSelectedDevice.target_id} ──
             </div>
-            <div className="text-[#cccccc] text-xs">
-              Copyright (C) Microsoft Corporation. All rights reserved.
-            </div>
-            <div className="text-[#cccccc] text-xs opacity-60 mt-1">
-              Session connected to {currentSelectedDevice.target_id} ({currentSelectedDevice.public_ip || "Unknown IP"} · {currentSelectedDevice.os_info || "Unknown OS"} · {currentSelectedDevice.arch || "Unknown Arch"})
-            </div>
-            <div className="text-[#cccccc] text-xs opacity-40">
+            <div className="text-[hsl(var(--terminal-foreground))] text-xs opacity-60">
               Commands are queued and picked up by the agent on next poll cycle.
             </div>
 
             {!selectedDeviceIsResponsive && (
-              <div className="rounded border border-[#ffff00]/30 bg-[#ffff00]/10 px-3 py-2 text-xs text-[#ffff00] mt-2">
-                WARNING: No heartbeat received from this agent since {selectedDeviceLastSeenLabel}. New commands are blocked until it reconnects.
+              <div className="rounded-lg border border-warning/30 bg-warning/10 px-3 py-2 text-xs text-warning">
+                No heartbeat has been received from this agent since {selectedDeviceLastSeenLabel}. New commands are blocked until it reconnects and polls again.
               </div>
             )}
 
-            <div className="mt-2" />
-
             {(deviceTasks || []).map((task) => (
               <div key={task.id} className="space-y-1">
-                <div className="flex items-center gap-0">
-                  <span className="text-[#ffff00]">PS C:\&gt;</span>
-                  <span className="text-[#cccccc] ml-2">{task.command}</span>
+                <div className="flex items-center gap-2">
+                  <span className="text-success">$</span>
+                  <span className="text-[hsl(var(--terminal-foreground))]">{task.command}</span>
                   <span className={`text-xs ml-auto ${getStatusColor(task.status)}`}>
                     [{task.status}]
                   </span>
                 </div>
                 {task.status === "Pending" || task.status === "Sent" ? (
-                  <div className="flex items-center gap-2 pl-4 text-[#cccccc] opacity-60 text-xs">
+                  <div className="flex items-center gap-2 pl-4 text-[hsl(var(--terminal-foreground))] opacity-60 text-xs">
                     <Loader2 className="h-3 w-3 animate-spin" />
                     {task.status === "Pending"
                       ? selectedDeviceIsResponsive
@@ -213,7 +189,7 @@ export default function Devices() {
                       : `The task was sent before the agent went offline (${selectedDeviceLastSeenLabel}); waiting for it to report back.`}
                   </div>
                 ) : task.result ? (
-                  <pre className="pl-4 text-xs text-[#cccccc] opacity-80 whitespace-pre-wrap break-all">{task.result}</pre>
+                  <pre className="pl-4 text-xs text-[hsl(var(--terminal-foreground))] opacity-80 whitespace-pre-wrap break-all">{task.result}</pre>
                 ) : null}
               </div>
             ))}
@@ -221,23 +197,23 @@ export default function Devices() {
           </div>
         </ScrollArea>
 
-        {/* Command input - PowerShell style */}
-        <div className="flex items-center gap-2 px-4 py-3 border-t border-[#3c3c3c] bg-[#012456]">
-          <span className="text-[#ffff00] font-mono text-sm shrink-0">PS C:\&gt;</span>
+        {/* Command input */}
+        <div className="flex items-center gap-2 px-4 py-3 border-t border-border/30 terminal-bg">
+          <span className="text-success font-mono text-sm">$</span>
           <Input
             ref={inputRef}
             value={cmdInput}
             onChange={(e) => setCmdInput(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder="Type a command..."
-            className="flex-1 bg-transparent border-none text-[#cccccc] font-mono text-sm focus-visible:ring-0 focus-visible:ring-offset-0 placeholder:text-[#cccccc]/30"
+            className="flex-1 bg-transparent border-none text-[hsl(var(--terminal-foreground))] font-mono text-sm focus-visible:ring-0 focus-visible:ring-offset-0 placeholder:text-[hsl(var(--terminal-foreground))]/30"
             disabled={!selectedDeviceIsResponsive || createTask.isPending}
           />
           <Button
             size="sm"
             onClick={handleSendCommand}
             disabled={!cmdInput.trim() || createTask.isPending || !selectedDeviceIsResponsive}
-            className="bg-[#0078d4] hover:bg-[#106ebe] text-white transition-colors text-xs px-4"
+            className="bg-gradient-to-r from-primary to-[hsl(260,67%,60%)] hover:opacity-90 transition-opacity"
           >
             {createTask.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Send"}
           </Button>
