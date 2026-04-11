@@ -11,3 +11,6 @@ verify_jwt = false
 
 [functions.relay-heartbeat]
 verify_jwt = false
+
+[functions.storage-upload]
+verify_jwt = false
