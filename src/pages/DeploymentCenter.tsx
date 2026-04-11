@@ -1,68 +1,65 @@
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Shield, Copy, Check, Rocket, Code2, Download, Key, BookOpen, FileJson } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
+import { Key, Copy, Check, Download, BookOpen, FileJson, Shield, Rocket, Code2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useTenant } from "@/hooks/use-tenant";
+import { supabase } from "@/integrations/supabase/client";
 
 export default function DeploymentCenter() {
-  const [agentType, setAgentType] = useState("standard");
-  const [platform, setPlatform] = useState("windows");
-  const [remoteAssist, setRemoteAssist] = useState(true);
-  const [autoUpdates, setAutoUpdates] = useState(true);
-  const [diagnosticLogging, setDiagnosticLogging] = useState(true);
-  const [generated, setGenerated] = useState(false);
-  const [copied, setCopied] = useState(false);
-  const [keyCopied, setKeyCopied] = useState(false);
-  const [configCopied, setConfigCopied] = useState(false);
   const { toast } = useToast();
   const { data: tenant, isLoading: tenantLoading } = useTenant();
 
+  // Build States
+  const [isBuilding, setIsBuilding] = useState(false);
+  const [buildId, setBuildId] = useState<string | null>(null);
+  const [buildProgress, setBuildProgress] = useState(0);
+  const [keyCopied, setKeyCopied] = useState(false);
+
   const SUPABASE_URL = "https://prodlnwtjkomsstrufqr.supabase.co";
-  const SYNC_UTILITY_URL = `${SUPABASE_URL}/storage/v1/object/public/builds/sync-utility.exe`;
 
-  const script = agentType === "privileged"
-    ? `# Rythenox Privileged Administrator Agent
-# Requires: OAuth 2.0 Organization Authentication
-# Platform: ${platform === "windows" ? "Windows" : platform === "macos" ? "macOS" : "Linux"}
+  const handleInitializeBuild = async () => {
+    if (!tenant?.apiKey) {
+      toast({ title: "Error", description: "No API Key found for this tenant.", variant: "destructive" });
+      return;
+    }
 
-$OrgToken = Get-RythenoxOAuthToken -Scope "admin:fleet"
-$Config = @{
-  AgentType        = "PrivilegedAdmin"
-  RemoteAssistance = $${remoteAssist}
-  AutoUpdates      = $${autoUpdates}
-  DiagnosticLog    = $${diagnosticLogging}
-  ComplianceNotify = $true
-  DataScope        = @("CPU","RAM","Disk","ScreenShare")
-}
+    setIsBuilding(true);
+    setBuildProgress(0);
 
-Install-RythenoxAgent -Token $OrgToken -Configuration $Config
-Register-ManagedDevice -PolicyGroup "Privileged-Fleet"
-Enable-ComplianceAudit -Level "Full"`
-    : `# Rythenox Standard User Agent
-# Platform: ${platform === "windows" ? "Windows" : platform === "macos" ? "macOS" : "Linux"}
+    try {
+      // 1. Call the Edge Function to trigger GitHub Action
+      const { data, error } = await supabase.functions.invoke("generate-build", {
+        body: { api_key: tenant.apiKey },
+      });
 
-$Config = @{
-  AgentType        = "StandardUser"
-  RemoteAssistance = $${remoteAssist}
-  AutoUpdates      = $${autoUpdates}
-  DiagnosticLog    = $${diagnosticLogging}
-  ComplianceNotify = $true
-  DataScope        = @("CPU","RAM","Disk")
-}
+      if (error || !data?.buildId) throw new Error(error?.message || "Failed to start build");
 
-Install-RythenoxAgent -Configuration $Config
-Register-ManagedDevice -PolicyGroup "Standard-Fleet"`;
+      const newBuildId = data.buildId;
+      setBuildId(newBuildId);
 
-  const handleCopy = () => {
-    navigator.clipboard.writeText(script);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-    toast({ title: "Copied to clipboard" });
+      // 2. Animate progress bar over 30 seconds
+      const duration = 30000;
+      const intervalTime = 100;
+      const step = (intervalTime / duration) * 100;
+
+      const timer = setInterval(() => {
+        setBuildProgress((old) => {
+          if (old >= 100) {
+            clearInterval(timer);
+            setIsBuilding(false);
+            toast({ title: "Utility Ready", description: "Your custom agent is now ready for download." });
+            return 100;
+          }
+          return old + step;
+        });
+      }, intervalTime);
+    } catch (err: any) {
+      setIsBuilding(false);
+      toast({ title: "Build Failed", description: err.message, variant: "destructive" });
+    }
   };
 
   const handleCopyKey = () => {
@@ -70,19 +67,7 @@ Register-ManagedDevice -PolicyGroup "Standard-Fleet"`;
     navigator.clipboard.writeText(tenant.apiKey);
     setKeyCopied(true);
     setTimeout(() => setKeyCopied(false), 2000);
-    toast({ title: "Access key copied to clipboard" });
-  };
-
-  const handleCopyConfig = () => {
-    if (!tenant?.apiKey) return;
-    const config = JSON.stringify({
-      api_key: tenant.apiKey,
-      supabase_url: SUPABASE_URL,
-    }, null, 2);
-    navigator.clipboard.writeText(config);
-    setConfigCopied(true);
-    setTimeout(() => setConfigCopied(false), 2000);
-    toast({ title: "Configuration JSON copied to clipboard" });
+    toast({ title: "Access key copied" });
   };
 
   const maskedKey = tenant?.apiKey
@@ -93,260 +78,135 @@ Register-ManagedDevice -PolicyGroup "Standard-Fleet"`;
     <div className="space-y-6">
       <div className="space-y-1">
         <h1 className="text-2xl font-bold text-foreground tracking-tight">Deployment Center</h1>
-        <p className="text-sm text-muted-foreground">Generate configurations and connect local systems to your cloud dashboard</p>
+        <p className="text-sm text-muted-foreground">
+          Provision custom synchronization utilities for your organization
+        </p>
       </div>
 
-      {/* Network Integration Section */}
-      <div className="grid lg:grid-cols-2 gap-6 stagger-children">
-        {/* Organizational Access Key */}
+      <div className="grid lg:grid-cols-2 gap-6">
+        {/* Left: Key & Preview */}
+        <div className="space-y-6">
+          <Card className="glass-card">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-base">
+                <Key className="h-4 w-4 text-primary" />
+                Organizational Access Key
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center gap-2">
+                <code className="flex-1 rounded-xl terminal-bg p-3 text-xs text-primary font-mono border border-border/20 truncate">
+                  {tenantLoading ? "Loading..." : maskedKey}
+                </code>
+                <Button variant="outline" size="sm" onClick={handleCopyKey}>
+                  {keyCopied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="glass-card">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-base">
+                <FileJson className="h-4 w-4 text-muted-foreground" />
+                Build Configuration
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <pre className="rounded-xl terminal-bg p-4 text-[10px] text-primary/80 font-mono border border-border/20">
+                {JSON.stringify(
+                  {
+                    tenant_id: tenant?.id,
+                    status: isBuilding ? "COMPILING" : buildId ? "READY" : "IDLE",
+                    platform: "windows_amd64",
+                    obfuscation: "garble-literals-tiny",
+                  },
+                  null,
+                  2,
+                )}
+              </pre>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Right: Setup Wizard */}
         <Card className="glass-card">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-base">
-              <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
-                <Key className="h-4 w-4 text-primary" />
-              </div>
-              Organizational Access Key
-            </CardTitle>
-            <CardDescription>Your unique key for authenticating local system connections</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center gap-2">
-              <code className="flex-1 rounded-xl terminal-bg p-3 text-xs text-[hsl(var(--terminal-foreground))] font-mono border border-border/20 truncate">
-                {tenantLoading ? "Loading..." : maskedKey}
-              </code>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleCopyKey}
-                disabled={!tenant?.apiKey}
-                className="border-border/50 hover:border-primary/50 transition-colors shrink-0"
-              >
-                {keyCopied ? <Check className="h-3 w-3 mr-1 text-success" /> : <Copy className="h-3 w-3 mr-1" />}
-                {keyCopied ? "Copied" : "Copy"}
-              </Button>
-            </div>
-            <div className="flex items-center gap-2 p-3 rounded-xl border border-warning/20 bg-warning/5">
-              <Shield className="h-4 w-4 text-warning shrink-0" />
-              <p className="text-xs text-muted-foreground">
-                Keep this key secure. It grants access to your organization's fleet data.
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Setup Wizard */}
-        <Card className="glass-card lg:row-span-2">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base">
-              <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
-                <BookOpen className="h-4 w-4 text-primary" />
-              </div>
+              <BookOpen className="h-4 w-4 text-primary" />
               Setup Wizard
             </CardTitle>
-            <CardDescription>Follow these steps to connect a local system to your dashboard</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-5">
-            {[
-              {
-                step: 1,
-                title: "Download the synchronization utility",
-                description: "Get the latest version of the system sync utility for your platform.",
-                action: (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="border-border/50 hover:border-primary/50 transition-colors"
-                    asChild
-                  >
-                    <a href={SYNC_UTILITY_URL} download>
-                      <Download className="h-3 w-3 mr-1" />
-                      Download Utility
-                    </a>
-                  </Button>
-                ),
-              },
-              {
-                step: 2,
-                title: "Create a configuration file",
-                description: (
-                  <>
-                    Create a file named <code className="text-[11px] px-1.5 py-0.5 rounded bg-muted/50 font-mono">config.json</code> in the same folder as the utility.
-                  </>
-                ),
-              },
-              {
-                step: 3,
-                title: "Generate & paste your config",
-                description: "Click below to copy your unique JSON configuration, then paste it into config.json.",
-                action: (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleCopyConfig}
-                    disabled={!tenant?.apiKey}
-                    className="border-border/50 hover:border-primary/50 transition-colors"
-                  >
-                    {configCopied ? <Check className="h-3 w-3 mr-1 text-success" /> : <FileJson className="h-3 w-3 mr-1" />}
-                    {configCopied ? "Copied" : "Generate Config"}
-                  </Button>
-                ),
-              },
-              {
-                step: 4,
-                title: "Run the utility",
-                description: "Execute the synchronization utility to begin reporting local system metrics to your cloud dashboard.",
-              },
-            ].map(({ step, title, description, action }) => (
-              <div key={step} className="flex gap-3">
-                <div className="h-7 w-7 rounded-full bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
-                  <span className="text-xs font-bold text-primary">{step}</span>
-                </div>
-                <div className="space-y-1.5 min-w-0">
-                  <p className="text-sm font-medium text-foreground">{title}</p>
-                  <p className="text-xs text-muted-foreground leading-relaxed">{description}</p>
-                  {action && <div className="pt-1">{action}</div>}
-                </div>
-              </div>
-            ))}
-
-            <div className="mt-4 p-3 rounded-xl border border-border/30 bg-muted/20">
-              <p className="text-xs text-muted-foreground leading-relaxed">
-                <strong className="text-foreground">Note:</strong> This utility is custom-configured with your organization's unique synchronization key for direct dashboard reporting.
-              </p>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Config Preview */}
-        <Card className="glass-card">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base">
-              <div className="h-8 w-8 rounded-lg bg-muted/50 flex items-center justify-center">
-                <FileJson className="h-4 w-4 text-muted-foreground" />
-              </div>
-              Configuration Preview
-            </CardTitle>
-            <CardDescription>Your generated config.json contents</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <pre className="rounded-xl terminal-bg p-4 text-xs text-[hsl(var(--terminal-foreground))] overflow-x-auto font-mono leading-relaxed border border-border/20">
-              {tenant?.apiKey
-                ? JSON.stringify({ api_key: tenant.apiKey, supabase_url: SUPABASE_URL }, null, 2)
-                : "// Sign in to view your configuration"}
-            </pre>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Agent Configuration Section */}
-      <div className="grid lg:grid-cols-2 gap-6 stagger-children">
-        <Card className="glass-card">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base">
-              <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
-                <Rocket className="h-4 w-4 text-primary" />
-              </div>
-              Agent Configuration
-            </CardTitle>
-            <CardDescription>Configure the management agent for deployment</CardDescription>
+            <CardDescription>Generate and download your unique synchronization binary</CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
-            <div className="space-y-2">
-              <Label className="text-xs uppercase tracking-wider text-muted-foreground/60 font-semibold">Agent Type</Label>
-              <Select value={agentType} onValueChange={setAgentType}>
-                <SelectTrigger className="bg-muted/30 border-border/50"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="standard">Standard User Agent</SelectItem>
-                  <SelectItem value="privileged">Privileged Administrator Agent</SelectItem>
-                </SelectContent>
-              </Select>
-              {agentType === "privileged" && (
-                <div className="flex items-center gap-2 mt-2 p-3 rounded-xl border border-warning/20 bg-warning/5 animate-fade-in">
-                  <Shield className="h-4 w-4 text-warning shrink-0" />
-                  <p className="text-xs text-muted-foreground">
-                    Privileged agents require <strong className="text-foreground">OAuth 2.0 organization-level authentication</strong> before deployment.
-                  </p>
+            <div className="space-y-6">
+              {/* Step 1 */}
+              <div className="flex gap-4">
+                <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0 text-xs font-bold text-primary">
+                  1
                 </div>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <Label className="text-xs uppercase tracking-wider text-muted-foreground/60 font-semibold">Target Platform</Label>
-              <Select value={platform} onValueChange={setPlatform}>
-                <SelectTrigger className="bg-muted/30 border-border/50"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="windows">Windows (GPO / Intune)</SelectItem>
-                  <SelectItem value="macos">macOS (MDM / Jamf)</SelectItem>
-                  <SelectItem value="linux">Linux (Ansible / Chef)</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-4">
-              <Label className="text-xs uppercase tracking-wider text-muted-foreground/60 font-semibold">Features</Label>
-              <div className="space-y-3">
-                {[
-                  { id: "remote", label: "Enable Remote Assistance", checked: remoteAssist, onChange: setRemoteAssist },
-                  { id: "updates", label: "Automatic System Updates", checked: autoUpdates, onChange: setAutoUpdates },
-                  { id: "diag", label: "Diagnostic Logging", checked: diagnosticLogging, onChange: setDiagnosticLogging },
-                ].map((feature) => (
-                  <div key={feature.id} className="flex items-center justify-between py-1">
-                    <Label htmlFor={feature.id} className="text-sm font-normal">{feature.label}</Label>
-                    <Switch id={feature.id} checked={feature.checked} onCheckedChange={feature.onChange} />
+                <div className="space-y-3 flex-1">
+                  <div>
+                    <p className="text-sm font-medium">Initialize Custom Build</p>
+                    <p className="text-xs text-muted-foreground">
+                      Request a custom-compiled binary with your credentials embedded.
+                    </p>
                   </div>
-                ))}
-              </div>
-            </div>
 
-            <Button
-              className="w-full bg-gradient-to-r from-primary to-[hsl(260,67%,60%)] hover:opacity-90 transition-opacity shadow-lg shadow-primary/20"
-              onClick={() => setGenerated(true)}
-            >
-              <Rocket className="h-4 w-4 mr-2" />
-              Generate Configuration
-            </Button>
-          </CardContent>
-        </Card>
-
-        <Card className="glass-card">
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle className="flex items-center gap-2 text-base">
-                <div className="h-8 w-8 rounded-lg bg-muted/50 flex items-center justify-center">
-                  <Code2 className="h-4 w-4 text-muted-foreground" />
+                  {!buildId ? (
+                    <Button
+                      onClick={handleInitializeBuild}
+                      disabled={isBuilding || tenantLoading}
+                      className="w-full sm:w-auto"
+                    >
+                      {isBuilding ? "Requesting Build..." : "Initialize Build"}
+                    </Button>
+                  ) : (
+                    <Button
+                      variant="outline"
+                      className="text-success border-success/20 bg-success/5 pointer-events-none"
+                    >
+                      <Check className="h-4 w-4 mr-2" /> Build Triggered
+                    </Button>
+                  )}
                 </div>
-                Deployment Script
-              </CardTitle>
-              {generated && (
-                <Button variant="outline" size="sm" onClick={handleCopy} className="border-border/50 hover:border-primary/50 transition-colors">
-                  {copied ? <Check className="h-3 w-3 mr-1 text-success" /> : <Copy className="h-3 w-3 mr-1" />}
-                  {copied ? "Copied" : "Copy"}
-                </Button>
+              </div>
+
+              {/* Progress Section */}
+              {isBuilding && (
+                <div className="pl-12 space-y-2 animate-in fade-in slide-in-from-top-2">
+                  <div className="flex justify-between text-[10px] font-mono text-muted-foreground">
+                    <span>GITHUB_ACTIONS_RUNNING</span>
+                    <span>{Math.round(buildProgress)}%</span>
+                  </div>
+                  <Progress value={buildProgress} className="h-1" />
+                  <p className="text-[10px] text-primary italic">Note: Compilation takes ~30 seconds...</p>
+                </div>
               )}
+
+              {/* Step 2 */}
+              <div className={`flex gap-4 transition-opacity ${!buildId || isBuilding ? "opacity-40" : "opacity-100"}`}>
+                <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0 text-xs font-bold text-primary">
+                  2
+                </div>
+                <div className="space-y-3 flex-1">
+                  <div>
+                    <p className="text-sm font-medium">Download Binary</p>
+                    <p className="text-xs text-muted-foreground">
+                      Once compilation finishes, download your unique `.exe` file.
+                    </p>
+                  </div>
+                  {buildId && !isBuilding && (
+                    <Button asChild className="w-full sm:w-auto bg-success hover:bg-success/90">
+                      <a href={`${SUPABASE_URL}/storage/v1/object/public/builds/${buildId}.exe`} download>
+                        <Download className="h-4 w-4 mr-2" />
+                        Download agent.exe
+                      </a>
+                    </Button>
+                  )}
+                </div>
+              </div>
             </div>
-            <CardDescription>
-              {generated ? "Deploy via MDM, GPO, or manual execution" : "Configure and generate to see the deployment script"}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {generated ? (
-              <div className="space-y-3 animate-fade-in">
-                <div className="flex gap-2">
-                  <Badge variant="outline" className="text-[10px] rounded-full border-primary/20 bg-primary/10 text-primary">{agentType === "privileged" ? "Privileged" : "Standard"}</Badge>
-                  <Badge variant="outline" className="text-[10px] rounded-full border-border/50">{platform}</Badge>
-                </div>
-                <pre className="rounded-xl terminal-bg p-4 text-xs text-[hsl(var(--terminal-foreground))] overflow-x-auto font-mono leading-relaxed border border-border/20">
-                  {script}
-                </pre>
-              </div>
-            ) : (
-              <div className="flex flex-col items-center justify-center h-48 text-center">
-                <div className="h-12 w-12 rounded-2xl bg-muted/50 flex items-center justify-center mb-3">
-                  <Code2 className="h-5 w-5 text-muted-foreground/50" />
-                </div>
-                <p className="text-sm text-muted-foreground">Configure the agent and click "Generate Configuration"</p>
-              </div>
-            )}
           </CardContent>
         </Card>
       </div>
