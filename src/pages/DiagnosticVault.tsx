@@ -252,6 +252,7 @@ function AssetGridCard({ file, onPreview }: { file: DiagnosticEntry; onPreview: 
               </div>
             </div>
           </AspectRatio>
+        )}
         <div className="absolute inset-0 bg-background/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center gap-2 rounded-t-lg">
           <Button
             size="sm"
