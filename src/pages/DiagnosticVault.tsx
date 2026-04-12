@@ -252,7 +252,6 @@ function AssetGridCard({ file, onPreview }: { file: DiagnosticEntry; onPreview: 
               </div>
             </div>
           </AspectRatio>
-        )}
         <div className="absolute inset-0 bg-background/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center gap-2 rounded-t-lg">
           <Button
             size="sm"
@@ -443,11 +442,11 @@ function handlePreview(file: DiagnosticEntry) {
   } else if (file.type === "text") {
     setTextPreview(file);
   } else if (file.type === "loot") {
-    // FIX: Instead of opening a broken preview, trigger download immediately
+    // CRITICAL FIX: Trigger direct download to avoid iframe 404 error
     downloadFile(file.file_url, getFileName(file.file_url));
     toast({ 
       title: "Downloading File", 
-      description: `Starting download for: ${getFileName(file.file_url)}`,
+      description: `Saving ${getFileName(file.file_url)} to your device.`,
     });
   }
 }
