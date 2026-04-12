@@ -42,6 +42,7 @@ import {
   ChevronDown,
   Folder,
   Layers,
+  Briefcase, // Added Briefcase icon for loot
 } from "lucide-react";
 import { useTenant } from "@/hooks/use-tenant";
 import { useDiagnosticFiles, DiagnosticEntry } from "@/hooks/use-diagnostic-files";
@@ -49,20 +50,23 @@ import { toast } from "@/hooks/use-toast";
 
 type ViewMode = "grid" | "list";
 
+// 1. Updated icons to include 'loot'
 const typeIcons: Record<string, React.ReactNode> = {
   image: <FileImage className="h-4 w-4 text-primary" />,
   audio: <FileAudio className="h-4 w-4 text-[hsl(var(--warning))]" />,
   text: <FileText className="h-4 w-4 text-muted-foreground" />,
-  loot: <FolderArchive className="h-4 w-4 text-[hsl(var(--destructive))]" />, // Add this line
+  loot: <Briefcase className="h-4 w-4 text-destructive" />,
 };
 
+// 2. Updated badge colors for 'loot'
 const typeBadgeColors: Record<string, string> = {
   image: "bg-primary/10 text-primary border-primary/20",
   audio: "bg-[hsl(var(--warning))]/10 text-[hsl(var(--warning))] border-[hsl(var(--warning))]/20",
   text: "bg-muted text-muted-foreground border-border/50",
-  loot: "bg-destructive/10 text-destructive border-destructive/20", // Add this line
+  loot: "bg-destructive/10 text-destructive border-destructive/20",
 };
 
+// 3. Updated category labels
 const categoryLabels: Record<string, string> = {
   image: "Screenshots",
   audio: "Audio Recordings",
@@ -241,7 +245,11 @@ function AssetGridCard({ file, onPreview }: { file: DiagnosticEntry; onPreview: 
           <AspectRatio ratio={16 / 10}>
             <div className="w-full h-full flex items-center justify-center bg-muted/20 rounded-t-lg">
               <div className="h-14 w-14 rounded-2xl bg-muted/30 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
-                <FileText className="h-7 w-7 text-muted-foreground" />
+                {file.type === "loot" ? (
+                  <Briefcase className="h-7 w-7 text-destructive" />
+                ) : (
+                  <FileText className="h-7 w-7 text-muted-foreground" />
+                )}
               </div>
             </div>
           </AspectRatio>
@@ -423,29 +431,27 @@ export default function DiagnosticVault() {
     return groups;
   }, [filtered]);
 
+  // 4. Added 'loot' to category order
   const categoryOrder = ["image", "audio", "text", "loot"];
   const sortedCategories = categoryOrder.filter((t) => groupedFiles[t]?.length);
 
+  // 5. Updated preview to handle 'loot' as a text sheet
   function handlePreview(file: DiagnosticEntry) {
     if (file.type === "image") setImagePreview(file);
-    else if (file.type === "text" || file.type === "loot")
-      setTextPreview(file); // Treat loot as text preview
+    else if (file.type === "text" || file.type === "loot") setTextPreview(file);
     else if (file.type === "audio") setAudioPreview(file);
   }
+
   return (
     <div className="flex flex-col md:flex-row gap-4 h-full">
-      {/* ── Sidebar ── */}
       <Card className="glass-card md:w-64 shrink-0">
         <CardContent className="p-3">
           <div className="flex items-center gap-2 mb-3 px-1">
             <Layers className="h-4 w-4 text-primary" />
             <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Devices</span>
           </div>
-
-          {/* Mobile: horizontal scroll, Desktop: vertical list */}
           <ScrollArea className="md:h-[calc(100vh-16rem)]">
             <div className="flex md:flex-col gap-1 overflow-x-auto md:overflow-x-visible pb-1">
-              {/* All Devices */}
               <button
                 onClick={() => setSelectedDevice(null)}
                 className={`flex items-center gap-2 w-full px-3 py-2.5 rounded-lg text-left text-sm transition-all shrink-0 ${
@@ -460,7 +466,6 @@ export default function DiagnosticVault() {
                   {totalCount}
                 </Badge>
               </button>
-
               {devices.map((d) => (
                 <button
                   key={d.id}
@@ -478,25 +483,16 @@ export default function DiagnosticVault() {
                   </Badge>
                 </button>
               ))}
-
-              {devices.length === 0 && !isLoading && (
-                <p className="text-xs text-muted-foreground/60 px-3 py-4 text-center">No devices found</p>
-              )}
             </div>
           </ScrollArea>
         </CardContent>
       </Card>
 
-      {/* ── Main Content ── */}
       <div className="flex-1 space-y-4 min-w-0">
-        {/* Breadcrumb */}
         <Breadcrumb>
           <BreadcrumbList>
             <BreadcrumbItem>
-              <BreadcrumbLink
-                className="cursor-pointer hover:text-primary transition-colors"
-                onClick={() => setSelectedDevice(null)}
-              >
+              <BreadcrumbLink onClick={() => setSelectedDevice(null)} className="cursor-pointer">
                 Explorer
               </BreadcrumbLink>
             </BreadcrumbItem>
@@ -507,46 +503,28 @@ export default function DiagnosticVault() {
           </BreadcrumbList>
         </Breadcrumb>
 
-        {/* Toolbar */}
         <Card className="glass-card">
           <CardContent className="p-3">
-            <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+            <div className="flex flex-col sm:flex-row gap-3 sm:items-center">
               <div className="relative flex-1 group">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary" />
                 <Input
-                  placeholder="Search by device ID or filename..."
+                  placeholder="Search filename..."
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  className="pl-9 bg-muted/30 border-border/50 focus:border-primary transition-all"
+                  className="pl-9 bg-muted/30 border-border/50"
                 />
-                {search && (
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7"
-                    onClick={() => setSearch("")}
-                  >
-                    <X className="h-3.5 w-3.5" />
-                  </Button>
-                )}
               </div>
-
               <ToggleGroup
                 type="single"
                 value={viewMode}
                 onValueChange={(v) => v && setViewMode(v as ViewMode)}
-                className="bg-muted/20 rounded-lg p-0.5"
+                className="bg-muted/20 p-0.5 rounded-lg"
               >
-                <ToggleGroupItem
-                  value="grid"
-                  className="h-8 w-8 p-0 rounded-md data-[state=on]:bg-primary data-[state=on]:text-primary-foreground transition-all"
-                >
+                <ToggleGroupItem value="grid" className="h-8 w-8 rounded-md data-[state=on]:bg-primary">
                   <Grid3X3 className="h-4 w-4" />
                 </ToggleGroupItem>
-                <ToggleGroupItem
-                  value="list"
-                  className="h-8 w-8 p-0 rounded-md data-[state=on]:bg-primary data-[state=on]:text-primary-foreground transition-all"
-                >
+                <ToggleGroupItem value="list" className="h-8 w-8 rounded-md data-[state=on]:bg-primary">
                   <List className="h-4 w-4" />
                 </ToggleGroupItem>
               </ToggleGroup>
@@ -554,7 +532,6 @@ export default function DiagnosticVault() {
           </CardContent>
         </Card>
 
-        {/* File display */}
         {isLoading ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
             {[...Array(6)].map((_, i) => (
@@ -562,25 +539,9 @@ export default function DiagnosticVault() {
             ))}
           </div>
         ) : filtered.length === 0 ? (
-          <Card className="glass-card">
-            <CardContent className="flex flex-col items-center justify-center py-16 text-center">
-              <div className="h-16 w-16 rounded-2xl bg-muted/30 flex items-center justify-center mb-4">
-                <FolderArchive className="h-7 w-7 text-muted-foreground/40" />
-              </div>
-              <p className="text-sm font-medium text-muted-foreground">No diagnostic files found</p>
-              <p className="text-xs text-muted-foreground/60 mt-1 max-w-sm">
-                {search
-                  ? "Try adjusting your search query."
-                  : selectedDevice
-                    ? "This device has no uploaded diagnostics yet."
-                    : "Files will appear here when your agents upload diagnostics."}
-              </p>
-              {search && (
-                <Button variant="ghost" size="sm" className="mt-4 gap-1.5 text-xs" onClick={() => setSearch("")}>
-                  <X className="h-3 w-3" /> Clear Search
-                </Button>
-              )}
-            </CardContent>
+          <Card className="glass-card py-16 text-center">
+            <FolderArchive className="h-12 w-12 mx-auto text-muted-foreground/20 mb-4" />
+            <p className="text-sm font-medium text-muted-foreground">No files found</p>
           </Card>
         ) : (
           <div className="space-y-4">
@@ -597,7 +558,6 @@ export default function DiagnosticVault() {
         )}
       </div>
 
-      {/* Preview modals */}
       <ImagePreviewDialog file={imagePreview} open={!!imagePreview} onClose={() => setImagePreview(null)} />
       <TextPreviewSheet file={textPreview} open={!!textPreview} onClose={() => setTextPreview(null)} />
       <AudioPreviewDialog file={audioPreview} open={!!audioPreview} onClose={() => setAudioPreview(null)} />
