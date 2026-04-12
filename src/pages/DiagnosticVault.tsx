@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -10,17 +10,18 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from "@/components/ui/breadcrumb";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import {
   Search, Download, Eye, FileImage, FileAudio, FileText,
-  FolderArchive, Grid3X3, List, MoreVertical, Copy, Filter,
-  Image as ImageIcon, Music, FileType, X
+  FolderArchive, Grid3X3, List, MoreVertical, Copy,
+  Music, X, Monitor, ChevronDown, Folder, Layers
 } from "lucide-react";
 import { useTenant } from "@/hooks/use-tenant";
 import { useDiagnosticFiles, DiagnosticEntry } from "@/hooks/use-diagnostic-files";
 import { toast } from "@/hooks/use-toast";
 
 type ViewMode = "grid" | "list";
-type TypeFilter = "all" | "image" | "audio" | "text";
 
 const typeIcons: Record<string, React.ReactNode> = {
   image: <FileImage className="h-4 w-4 text-primary" />,
@@ -32,6 +33,12 @@ const typeBadgeColors: Record<string, string> = {
   image: "bg-primary/10 text-primary border-primary/20",
   audio: "bg-[hsl(var(--warning))]/10 text-[hsl(var(--warning))] border-[hsl(var(--warning))]/20",
   text: "bg-muted text-muted-foreground border-border/50",
+};
+
+const categoryLabels: Record<string, string> = {
+  image: "Screenshots",
+  audio: "Audio Recordings",
+  text: "Text Logs",
 };
 
 function getFileName(url: string) {
@@ -53,6 +60,8 @@ function downloadFile(url: string, name: string) {
   a.click();
   document.body.removeChild(a);
 }
+
+/* ── Sub-components ── */
 
 function AssetActions({ file }: { file: DiagnosticEntry }) {
   return (
@@ -82,13 +91,7 @@ function ImagePreviewDialog({ file, open, onClose }: { file: DiagnosticEntry | n
         <DialogHeader>
           <DialogTitle className="text-sm font-medium truncate">{getFileName(file.file_url)}</DialogTitle>
         </DialogHeader>
-        <div className="mt-2">
-          <img
-            src={file.file_url}
-            alt={getFileName(file.file_url)}
-            className="w-full rounded-lg object-contain max-h-[70vh]"
-          />
-        </div>
+        <img src={file.file_url} alt={getFileName(file.file_url)} className="w-full rounded-lg object-contain max-h-[70vh]" />
         <p className="text-xs text-muted-foreground mt-2">
           Device: <span className="font-mono">{file.target_id}</span> · {new Date(file.created_at).toLocaleString()}
         </p>
@@ -110,12 +113,7 @@ function TextPreviewSheet({ file, open, onClose }: { file: DiagnosticEntry | nul
             Device: <span className="font-mono">{file.target_id}</span> · {new Date(file.created_at).toLocaleString()}
           </p>
           <ScrollArea className="h-[calc(100vh-10rem)] rounded-lg border border-border/30 bg-[hsl(var(--terminal-bg))] p-4">
-            <iframe
-              src={file.file_url}
-              title={getFileName(file.file_url)}
-              className="w-full min-h-[60vh] bg-transparent text-foreground"
-              sandbox=""
-            />
+            <iframe src={file.file_url} title={getFileName(file.file_url)} className="w-full min-h-[60vh] bg-transparent text-foreground" sandbox="" />
           </ScrollArea>
         </div>
       </SheetContent>
@@ -135,9 +133,7 @@ function AudioPreviewDialog({ file, open, onClose }: { file: DiagnosticEntry | n
           <div className="h-20 w-20 rounded-2xl bg-[hsl(var(--warning))]/10 flex items-center justify-center">
             <Music className="h-10 w-10 text-[hsl(var(--warning))]" />
           </div>
-          <audio controls className="w-full" src={file.file_url}>
-            Your browser does not support audio playback.
-          </audio>
+          <audio controls className="w-full" src={file.file_url}>Your browser does not support audio playback.</audio>
           <p className="text-xs text-muted-foreground">
             Device: <span className="font-mono">{file.target_id}</span> · {new Date(file.created_at).toLocaleString()}
           </p>
@@ -147,20 +143,13 @@ function AudioPreviewDialog({ file, open, onClose }: { file: DiagnosticEntry | n
   );
 }
 
-// Grid card for a single asset
 function AssetGridCard({ file, onPreview }: { file: DiagnosticEntry; onPreview: (f: DiagnosticEntry) => void }) {
   return (
-    <Card className="glass-card group hover:border-primary/30 transition-all duration-300 overflow-hidden cursor-pointer"
-      onClick={() => onPreview(file)}
-    >
+    <Card className="glass-card group hover:border-primary/30 transition-all duration-300 overflow-hidden cursor-pointer" onClick={() => onPreview(file)}>
       <div className="relative">
         {file.type === "image" ? (
           <AspectRatio ratio={16 / 10}>
-            <img
-              src={file.file_url}
-              alt={getFileName(file.file_url)}
-              className="object-cover w-full h-full rounded-t-lg group-hover:scale-105 transition-transform duration-500"
-            />
+            <img src={file.file_url} alt={getFileName(file.file_url)} className="object-cover w-full h-full rounded-t-lg group-hover:scale-105 transition-transform duration-500" />
           </AspectRatio>
         ) : file.type === "audio" ? (
           <AspectRatio ratio={16 / 10}>
@@ -179,7 +168,6 @@ function AssetGridCard({ file, onPreview }: { file: DiagnosticEntry; onPreview: 
             </div>
           </AspectRatio>
         )}
-        {/* Overlay on hover */}
         <div className="absolute inset-0 bg-background/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center gap-2 rounded-t-lg">
           <Button size="sm" variant="secondary" className="gap-1.5 text-xs" onClick={(e) => { e.stopPropagation(); onPreview(file); }}>
             <Eye className="h-3.5 w-3.5" /> Preview
@@ -192,9 +180,7 @@ function AssetGridCard({ file, onPreview }: { file: DiagnosticEntry; onPreview: 
           <AssetActions file={file} />
         </div>
         <div className="flex items-center gap-2">
-          <Badge variant="outline" className={`${typeBadgeColors[file.type]} text-[10px] rounded-full`}>
-            {file.type.toUpperCase()}
-          </Badge>
+          <Badge variant="outline" className={`${typeBadgeColors[file.type]} text-[10px] rounded-full`}>{file.type.toUpperCase()}</Badge>
           <span className="text-[10px] text-muted-foreground font-mono truncate">{file.target_id}</span>
         </div>
         <p className="text-[10px] text-muted-foreground/60">{new Date(file.created_at).toLocaleString()}</p>
@@ -203,12 +189,86 @@ function AssetGridCard({ file, onPreview }: { file: DiagnosticEntry; onPreview: 
   );
 }
 
+/* ── File category section (collapsible) ── */
+
+function FileCategorySection({
+  type,
+  files,
+  viewMode,
+  onPreview,
+}: {
+  type: string;
+  files: DiagnosticEntry[];
+  viewMode: ViewMode;
+  onPreview: (f: DiagnosticEntry) => void;
+}) {
+  const [open, setOpen] = useState(true);
+
+  return (
+    <Collapsible open={open} onOpenChange={setOpen}>
+      <CollapsibleTrigger className="flex items-center gap-2 w-full p-3 rounded-lg hover:bg-muted/20 transition-colors group">
+        <Folder className="h-4 w-4 text-primary" />
+        <span className="text-sm font-semibold text-foreground">{categoryLabels[type] || type}</span>
+        <Badge variant="outline" className="ml-1 text-[10px] rounded-full border-border/50">{files.length}</Badge>
+        <ChevronDown className={`h-4 w-4 ml-auto text-muted-foreground transition-transform duration-200 ${open ? "" : "-rotate-90"}`} />
+      </CollapsibleTrigger>
+      <CollapsibleContent className="mt-2">
+        {viewMode === "grid" ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+            {files.map((file) => (
+              <AssetGridCard key={file.id} file={file} onPreview={onPreview} />
+            ))}
+          </div>
+        ) : (
+          <Card className="glass-card">
+            <CardContent className="p-0">
+              <Table>
+                <TableHeader>
+                  <TableRow className="border-border/30 hover:bg-transparent">
+                    <TableHead className="text-xs uppercase tracking-wider text-muted-foreground/60 font-semibold">File</TableHead>
+                    <TableHead className="hidden md:table-cell text-xs uppercase tracking-wider text-muted-foreground/60 font-semibold">Device ID</TableHead>
+                    <TableHead className="hidden lg:table-cell text-xs uppercase tracking-wider text-muted-foreground/60 font-semibold">Timestamp</TableHead>
+                    <TableHead className="text-right text-xs uppercase tracking-wider text-muted-foreground/60 font-semibold">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {files.map((file) => (
+                    <TableRow key={file.id} className="border-border/20 table-row-hover cursor-pointer" onClick={() => onPreview(file)}>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          {typeIcons[file.type]}
+                          <span className="text-sm font-medium truncate max-w-[200px]">{getFileName(file.file_url)}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell className="hidden md:table-cell font-mono text-sm text-muted-foreground">{file.target_id}</TableCell>
+                      <TableCell className="hidden lg:table-cell text-sm text-muted-foreground">{new Date(file.created_at).toLocaleString()}</TableCell>
+                      <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
+                        <div className="flex items-center justify-end gap-1">
+                          <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-primary/10 hover:text-primary transition-colors" onClick={() => onPreview(file)}>
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                          <AssetActions file={file} />
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        )}
+      </CollapsibleContent>
+    </Collapsible>
+  );
+}
+
+/* ── Main Component ── */
+
 export default function DiagnosticVault() {
   const [search, setSearch] = useState("");
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
-  const [typeFilter, setTypeFilter] = useState<TypeFilter>("all");
+  const [selectedDevice, setSelectedDevice] = useState<string | null>(null);
 
-  // Preview state
   const [imagePreview, setImagePreview] = useState<DiagnosticEntry | null>(null);
   const [textPreview, setTextPreview] = useState<DiagnosticEntry | null>(null);
   const [audioPreview, setAudioPreview] = useState<DiagnosticEntry | null>(null);
@@ -216,25 +276,40 @@ export default function DiagnosticVault() {
   const { data: tenant } = useTenant();
   const { data: liveFiles, isLoading } = useDiagnosticFiles(tenant?.tenantId);
 
+  // Derive unique devices with counts
+  const devices = useMemo(() => {
+    const map = new Map<string, number>();
+    (liveFiles || []).forEach((f) => map.set(f.target_id, (map.get(f.target_id) || 0) + 1));
+    return Array.from(map.entries())
+      .map(([id, count]) => ({ id, count }))
+      .sort((a, b) => a.id.localeCompare(b.id));
+  }, [liveFiles]);
+
+  const totalCount = liveFiles?.length || 0;
+
+  // Filter by selected device + search
   const filtered = useMemo(() => {
     return (liveFiles || []).filter((f) => {
+      const matchesDevice = !selectedDevice || f.target_id === selectedDevice;
       const matchesSearch =
         f.target_id.toLowerCase().includes(search.toLowerCase()) ||
         f.file_url.toLowerCase().includes(search.toLowerCase());
-      const matchesType = typeFilter === "all" || f.type === typeFilter;
-      return matchesSearch && matchesType;
+      return matchesDevice && matchesSearch;
     });
-  }, [liveFiles, search, typeFilter]);
+  }, [liveFiles, selectedDevice, search]);
 
-  const stats = useMemo(() => {
-    const all = liveFiles || [];
-    return {
-      total: all.length,
-      images: all.filter((f) => f.type === "image").length,
-      audio: all.filter((f) => f.type === "audio").length,
-      text: all.filter((f) => f.type === "text").length,
-    };
-  }, [liveFiles]);
+  // Group filtered files by type
+  const groupedFiles = useMemo(() => {
+    const groups: Record<string, DiagnosticEntry[]> = {};
+    filtered.forEach((f) => {
+      if (!groups[f.type]) groups[f.type] = [];
+      groups[f.type].push(f);
+    });
+    return groups;
+  }, [filtered]);
+
+  const categoryOrder = ["image", "audio", "text"];
+  const sortedCategories = categoryOrder.filter((t) => groupedFiles[t]?.length);
 
   function handlePreview(file: DiagnosticEntry) {
     if (file.type === "image") setImagePreview(file);
@@ -243,85 +318,102 @@ export default function DiagnosticVault() {
   }
 
   return (
-    <div className="space-y-6 stagger-children">
-      {/* Header */}
-      <div className="space-y-1">
-        <h1 className="text-2xl font-bold text-foreground tracking-tight">Diagnostic Vault</h1>
-        <p className="text-sm text-muted-foreground">Browse, preview, and manage diagnostic assets from your fleet</p>
-      </div>
+    <div className="flex flex-col md:flex-row gap-4 h-full">
+      {/* ── Sidebar ── */}
+      <Card className="glass-card md:w-64 shrink-0">
+        <CardContent className="p-3">
+          <div className="flex items-center gap-2 mb-3 px-1">
+            <Layers className="h-4 w-4 text-primary" />
+            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Devices</span>
+          </div>
 
-      {/* Stats bar */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        {[
-          { label: "Total Assets", value: stats.total, icon: FolderArchive, color: "text-primary" },
-          { label: "Images", value: stats.images, icon: ImageIcon, color: "text-primary" },
-          { label: "Audio", value: stats.audio, icon: Music, color: "text-[hsl(var(--warning))]" },
-          { label: "Text Files", value: stats.text, icon: FileType, color: "text-muted-foreground" },
-        ].map((s) => (
-          <Card key={s.label} className="glass-card p-4 flex items-center gap-3">
-            <div className={`h-10 w-10 rounded-xl bg-muted/30 flex items-center justify-center shrink-0`}>
-              <s.icon className={`h-5 w-5 ${s.color}`} />
-            </div>
-            <div>
-              <p className="text-2xl font-bold">{s.value}</p>
-              <p className="text-[10px] text-muted-foreground uppercase tracking-wider">{s.label}</p>
-            </div>
-          </Card>
-        ))}
-      </div>
-
-      {/* Data scope notice */}
-      <div className="rounded-xl border border-primary/20 bg-primary/5 p-4 text-xs text-muted-foreground flex items-start gap-3">
-        <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-          <FolderArchive className="h-4 w-4 text-primary" />
-        </div>
-        <div>
-          <p className="font-medium text-foreground text-sm mb-1">Data Scope Notice</p>
-          <p>All diagnostic data is limited to standard system metrics — CPU load, RAM usage, and disk health. No personal user data is collected.</p>
-        </div>
-      </div>
-
-      {/* Toolbar */}
-      <Card className="glass-card">
-        <CardContent className="p-4">
-          <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-            {/* Search */}
-            <div className="relative flex-1 group">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
-              <Input
-                placeholder="Search by device ID or filename..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="pl-9 bg-muted/30 border-border/50 focus:border-primary transition-all"
-              />
-            </div>
-
-            {/* Type filter */}
-            <div className="flex items-center gap-2">
-              <Filter className="h-4 w-4 text-muted-foreground shrink-0" />
-              <ToggleGroup
-                type="single"
-                value={typeFilter}
-                onValueChange={(v) => v && setTypeFilter(v as TypeFilter)}
-                className="bg-muted/20 rounded-lg p-0.5"
+          {/* Mobile: horizontal scroll, Desktop: vertical list */}
+          <ScrollArea className="md:h-[calc(100vh-16rem)]">
+            <div className="flex md:flex-col gap-1 overflow-x-auto md:overflow-x-visible pb-1">
+              {/* All Devices */}
+              <button
+                onClick={() => setSelectedDevice(null)}
+                className={`flex items-center gap-2 w-full px-3 py-2.5 rounded-lg text-left text-sm transition-all shrink-0 ${
+                  selectedDevice === null
+                    ? "bg-primary/10 border border-primary/30 text-foreground font-medium"
+                    : "hover:bg-muted/20 text-muted-foreground border border-transparent"
+                }`}
               >
-                <ToggleGroupItem value="all" className="text-xs px-3 h-8 rounded-md data-[state=on]:bg-primary data-[state=on]:text-primary-foreground transition-all">
-                  All
-                </ToggleGroupItem>
-                <ToggleGroupItem value="image" className="text-xs px-3 h-8 rounded-md data-[state=on]:bg-primary data-[state=on]:text-primary-foreground transition-all gap-1">
-                  <ImageIcon className="h-3 w-3" /> Image
-                </ToggleGroupItem>
-                <ToggleGroupItem value="audio" className="text-xs px-3 h-8 rounded-md data-[state=on]:bg-primary data-[state=on]:text-primary-foreground transition-all gap-1">
-                  <Music className="h-3 w-3" /> Audio
-                </ToggleGroupItem>
-                <ToggleGroupItem value="text" className="text-xs px-3 h-8 rounded-md data-[state=on]:bg-primary data-[state=on]:text-primary-foreground transition-all gap-1">
-                  <FileType className="h-3 w-3" /> Text
-                </ToggleGroupItem>
-              </ToggleGroup>
-            </div>
+                <FolderArchive className="h-4 w-4 shrink-0" />
+                <span className="truncate">All Devices</span>
+                <Badge variant="outline" className="ml-auto text-[10px] rounded-full border-border/50 shrink-0">{totalCount}</Badge>
+              </button>
 
-            {/* View mode toggle */}
-            <div className="flex items-center">
+              {devices.map((d) => (
+                <button
+                  key={d.id}
+                  onClick={() => setSelectedDevice(d.id)}
+                  className={`flex items-center gap-2 w-full px-3 py-2.5 rounded-lg text-left text-sm transition-all shrink-0 ${
+                    selectedDevice === d.id
+                      ? "bg-primary/10 border border-primary/30 text-foreground font-medium"
+                      : "hover:bg-muted/20 text-muted-foreground border border-transparent"
+                  }`}
+                >
+                  <Monitor className="h-4 w-4 shrink-0" />
+                  <span className="truncate font-mono text-xs">{d.id}</span>
+                  <Badge variant="outline" className="ml-auto text-[10px] rounded-full border-border/50 shrink-0">{d.count}</Badge>
+                </button>
+              ))}
+
+              {devices.length === 0 && !isLoading && (
+                <p className="text-xs text-muted-foreground/60 px-3 py-4 text-center">No devices found</p>
+              )}
+            </div>
+          </ScrollArea>
+        </CardContent>
+      </Card>
+
+      {/* ── Main Content ── */}
+      <div className="flex-1 space-y-4 min-w-0">
+        {/* Breadcrumb */}
+        <Breadcrumb>
+          <BreadcrumbList>
+            <BreadcrumbItem>
+              <BreadcrumbLink
+                className="cursor-pointer hover:text-primary transition-colors"
+                onClick={() => setSelectedDevice(null)}
+              >
+                Explorer
+              </BreadcrumbLink>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator />
+            <BreadcrumbItem>
+              <BreadcrumbPage className="font-mono text-sm">
+                {selectedDevice || "All Devices"}
+              </BreadcrumbPage>
+            </BreadcrumbItem>
+          </BreadcrumbList>
+        </Breadcrumb>
+
+        {/* Toolbar */}
+        <Card className="glass-card">
+          <CardContent className="p-3">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+              <div className="relative flex-1 group">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
+                <Input
+                  placeholder="Search by device ID or filename..."
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  className="pl-9 bg-muted/30 border-border/50 focus:border-primary transition-all"
+                />
+                {search && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="absolute right-1 top-1/2 -translate-y-1/2 h-7 w-7"
+                    onClick={() => setSearch("")}
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </Button>
+                )}
+              </div>
+
               <ToggleGroup
                 type="single"
                 value={viewMode}
@@ -336,99 +428,51 @@ export default function DiagnosticVault() {
                 </ToggleGroupItem>
               </ToggleGroup>
             </div>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
 
-      {/* Content area */}
-      {isLoading ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {[...Array(6)].map((_, i) => (
-            <div key={i} className="h-56 rounded-xl bg-muted/20 shimmer" />
-          ))}
-        </div>
-      ) : filtered.length === 0 ? (
-        <Card className="glass-card">
-          <CardContent className="flex flex-col items-center justify-center py-16 text-center">
-            <div className="h-16 w-16 rounded-2xl bg-muted/30 flex items-center justify-center mb-4">
-              <FolderArchive className="h-7 w-7 text-muted-foreground/40" />
-            </div>
-            <p className="text-sm font-medium text-muted-foreground">No diagnostic files found</p>
-            <p className="text-xs text-muted-foreground/60 mt-1 max-w-sm">
-              {search || typeFilter !== "all"
-                ? "Try adjusting your filters or search query."
-                : "Files will appear here when your agents upload diagnostics."}
-            </p>
-            {(search || typeFilter !== "all") && (
-              <Button
-                variant="ghost"
-                size="sm"
-                className="mt-4 gap-1.5 text-xs"
-                onClick={() => { setSearch(""); setTypeFilter("all"); }}
-              >
-                <X className="h-3 w-3" /> Clear Filters
-              </Button>
-            )}
-          </CardContent>
-        </Card>
-      ) : viewMode === "grid" ? (
-        /* ─── Grid View ─── */
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 stagger-children">
-          {filtered.map((file) => (
-            <AssetGridCard key={file.id} file={file} onPreview={handlePreview} />
-          ))}
-        </div>
-      ) : (
-        /* ─── List View ─── */
-        <Card className="glass-card">
-          <CardContent className="p-0">
-            <Table>
-              <TableHeader>
-                <TableRow className="border-border/30 hover:bg-transparent">
-                  <TableHead className="text-xs uppercase tracking-wider text-muted-foreground/60 font-semibold">File</TableHead>
-                  <TableHead className="hidden md:table-cell text-xs uppercase tracking-wider text-muted-foreground/60 font-semibold">Device ID</TableHead>
-                  <TableHead className="text-xs uppercase tracking-wider text-muted-foreground/60 font-semibold">Type</TableHead>
-                  <TableHead className="hidden lg:table-cell text-xs uppercase tracking-wider text-muted-foreground/60 font-semibold">Timestamp</TableHead>
-                  <TableHead className="text-right text-xs uppercase tracking-wider text-muted-foreground/60 font-semibold">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody className="stagger-children">
-                {filtered.map((file) => (
-                  <TableRow
-                    key={file.id}
-                    className="border-border/20 table-row-hover cursor-pointer"
-                    onClick={() => handlePreview(file)}
-                  >
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        {typeIcons[file.type]}
-                        <span className="text-sm font-medium truncate max-w-[200px]">{getFileName(file.file_url)}</span>
-                      </div>
-                    </TableCell>
-                    <TableCell className="hidden md:table-cell font-mono text-sm text-muted-foreground">{file.target_id}</TableCell>
-                    <TableCell>
-                      <Badge variant="outline" className={`${typeBadgeColors[file.type]} text-[10px] rounded-full`}>
-                        {file.type.toUpperCase()}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="hidden lg:table-cell text-sm text-muted-foreground">
-                      {new Date(file.created_at).toLocaleString()}
-                    </TableCell>
-                    <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
-                      <div className="flex items-center justify-end gap-1">
-                        <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-primary/10 hover:text-primary transition-colors" onClick={() => handlePreview(file)}>
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                        <AssetActions file={file} />
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
-      )}
+        {/* File display */}
+        {isLoading ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+            {[...Array(6)].map((_, i) => (
+              <div key={i} className="h-56 rounded-xl bg-muted/20 shimmer" />
+            ))}
+          </div>
+        ) : filtered.length === 0 ? (
+          <Card className="glass-card">
+            <CardContent className="flex flex-col items-center justify-center py-16 text-center">
+              <div className="h-16 w-16 rounded-2xl bg-muted/30 flex items-center justify-center mb-4">
+                <FolderArchive className="h-7 w-7 text-muted-foreground/40" />
+              </div>
+              <p className="text-sm font-medium text-muted-foreground">No diagnostic files found</p>
+              <p className="text-xs text-muted-foreground/60 mt-1 max-w-sm">
+                {search
+                  ? "Try adjusting your search query."
+                  : selectedDevice
+                  ? "This device has no uploaded diagnostics yet."
+                  : "Files will appear here when your agents upload diagnostics."}
+              </p>
+              {search && (
+                <Button variant="ghost" size="sm" className="mt-4 gap-1.5 text-xs" onClick={() => setSearch("")}>
+                  <X className="h-3 w-3" /> Clear Search
+                </Button>
+              )}
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="space-y-4">
+            {sortedCategories.map((type) => (
+              <FileCategorySection
+                key={type}
+                type={type}
+                files={groupedFiles[type]}
+                viewMode={viewMode}
+                onPreview={handlePreview}
+              />
+            ))}
+          </div>
+        )}
+      </div>
 
       {/* Preview modals */}
       <ImagePreviewDialog file={imagePreview} open={!!imagePreview} onClose={() => setImagePreview(null)} />
