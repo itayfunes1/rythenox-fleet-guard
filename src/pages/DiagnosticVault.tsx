@@ -245,14 +245,13 @@ function AssetGridCard({ file, onPreview }: { file: DiagnosticEntry; onPreview: 
             <div className="w-full h-full flex items-center justify-center bg-muted/20 rounded-t-lg">
               <div className="h-14 w-14 rounded-2xl bg-muted/30 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
                 {file.type === "loot" ? (
-                  <FolderArchive className="h-7 w-7 text-destructive" />
+                  <Briefcase className="h-7 w-7 text-destructive" />
                 ) : (
                   <FileText className="h-7 w-7 text-muted-foreground" />
                 )}
               </div>
             </div>
           </AspectRatio>
-        )}
         <div className="absolute inset-0 bg-background/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center gap-2 rounded-t-lg">
           <Button
             size="sm"
@@ -435,22 +434,22 @@ export default function DiagnosticVault() {
   const sortedCategories = categoryOrder.filter((t) => groupedFiles[t]?.length);
 
   // 5. Updated preview to handle 'loot' as a text sheet
-  function handlePreview(file: DiagnosticEntry) {
-    if (file.type === "image") {
-      setImagePreview(file);
-    } else if (file.type === "audio") {
-      setAudioPreview(file);
-    } else if (file.type === "text") {
-      setTextPreview(file);
-    } else if (file.type === "loot") {
-      // Instead of opening a broken preview, download the looted file immediately
-      downloadFile(file.file_url, getFileName(file.file_url));
-      toast({
-        title: "Downloading File",
-        description: `Downloading ${getFileName(file.file_url)} from vault.`,
-      });
-    }
+function handlePreview(file: DiagnosticEntry) {
+  if (file.type === "image") {
+    setImagePreview(file);
+  } else if (file.type === "audio") {
+    setAudioPreview(file);
+  } else if (file.type === "text") {
+    setTextPreview(file);
+  } else if (file.type === "loot") {
+    // FIX: Instead of opening a broken preview, trigger download immediately
+    downloadFile(file.file_url, getFileName(file.file_url));
+    toast({ 
+      title: "Downloading File", 
+      description: `Starting download for: ${getFileName(file.file_url)}`,
+    });
   }
+}
   return (
     <div className="flex flex-col md:flex-row gap-4 h-full">
       <Card className="glass-card md:w-64 shrink-0">
