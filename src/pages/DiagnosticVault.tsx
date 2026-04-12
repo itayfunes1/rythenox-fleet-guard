@@ -236,17 +236,16 @@ function AssetGridCard({ file, onPreview }: { file: DiagnosticEntry; onPreview: 
         ) : file.type === "audio" ? (
           <AspectRatio ratio={16 / 10}>
             <div className="w-full h-full flex items-center justify-center bg-[hsl(var(--warning))]/5 rounded-t-lg">
-              <div className="h-14 w-14 rounded-2xl bg-[hsl(var(--warning))]/10 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
-                <Music className="h-7 w-7 text-[hsl(var(--warning))]" />
-              </div>
+              <Music className="h-7 w-7 text-[hsl(var(--warning))]" />
             </div>
           </AspectRatio>
         ) : (
+          /* Handle both text logs and looted files (like .docx) here */
           <AspectRatio ratio={16 / 10}>
             <div className="w-full h-full flex items-center justify-center bg-muted/20 rounded-t-lg">
               <div className="h-14 w-14 rounded-2xl bg-muted/30 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
                 {file.type === "loot" ? (
-                  <Briefcase className="h-7 w-7 text-destructive" />
+                  <FolderArchive className="h-7 w-7 text-destructive" />
                 ) : (
                   <FileText className="h-7 w-7 text-muted-foreground" />
                 )}
