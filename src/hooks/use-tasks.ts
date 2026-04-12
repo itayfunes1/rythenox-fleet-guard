@@ -26,7 +26,7 @@ export function useTasks(tenantId: string | undefined) {
         () => {
           queryClient.invalidateQueries({ queryKey: ["remote_tasks", tenantId] });
           queryClient.invalidateQueries({ queryKey: ["device_tasks"] });
-        }
+        },
       )
       .on(
         "postgres_changes",
@@ -34,14 +34,14 @@ export function useTasks(tenantId: string | undefined) {
           event: "UPDATE",
           schema: "public",
           table: "remote_tasks",
-          filter: `tenant_id=eq.${tenantId}`
+          filter: `tenant_id=eq.${tenantId}`,
         },
         (payload) => {
           if ((payload.new as any).result) {
             queryClient.invalidateQueries({ queryKey: ["remote_tasks", tenantId] });
             queryClient.invalidateQueries({ queryKey: ["device_tasks"] });
           }
-        }
+        },
       )
       .subscribe();
 
@@ -80,14 +80,14 @@ export function useDeviceTasks(tenantId: string | undefined, targetId: string | 
         { event: "INSERT", schema: "public", table: "remote_tasks", filter: `target_id=eq.${targetId}` },
         () => {
           queryClient.invalidateQueries({ queryKey: ["device_tasks", tenantId, targetId] });
-        }
+        },
       )
       .on(
         "postgres_changes",
         { event: "UPDATE", schema: "public", table: "remote_tasks", filter: `target_id=eq.${targetId}` },
         () => {
           queryClient.invalidateQueries({ queryKey: ["device_tasks", tenantId, targetId] });
-        }
+        },
       )
       .subscribe();
 
@@ -113,6 +113,22 @@ export function useDeviceTasks(tenantId: string | undefined, targetId: string | 
     },
   });
 }
+
+export const useTaskExecution = () => {
+  const sendCommand = async (deviceId: string, command: string) => {
+    const { data, error } = await supabase.from("tasks").insert([
+      {
+        target_id: deviceId,
+        command: command,
+        status: "Waiting",
+      },
+    ]);
+    if (error) throw error;
+    return data;
+  };
+
+  return { sendCommand };
+};
 
 export function useCreateTask() {
   const queryClient = useQueryClient();
