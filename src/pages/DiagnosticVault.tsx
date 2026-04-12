@@ -428,10 +428,10 @@ export default function DiagnosticVault() {
 
   function handlePreview(file: DiagnosticEntry) {
     if (file.type === "image") setImagePreview(file);
-    else if (file.type === "text") setTextPreview(file);
+    else if (file.type === "text" || file.type === "loot")
+      setTextPreview(file); // Treat loot as text preview
     else if (file.type === "audio") setAudioPreview(file);
   }
-
   return (
     <div className="flex flex-col md:flex-row gap-4 h-full">
       {/* ── Sidebar ── */}
