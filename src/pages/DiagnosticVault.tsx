@@ -240,7 +240,6 @@ function AssetGridCard({ file, onPreview }: { file: DiagnosticEntry; onPreview: 
             </div>
           </AspectRatio>
         ) : (
-          /* Handle both text logs and looted files (like .docx) here */
           <AspectRatio ratio={16 / 10}>
             <div className="w-full h-full flex items-center justify-center bg-muted/20 rounded-t-lg">
               <div className="h-14 w-14 rounded-2xl bg-muted/30 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
@@ -252,6 +251,7 @@ function AssetGridCard({ file, onPreview }: { file: DiagnosticEntry; onPreview: 
               </div>
             </div>
           </AspectRatio>
+        )}
         <div className="absolute inset-0 bg-background/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center gap-2 rounded-t-lg">
           <Button
             size="sm"
