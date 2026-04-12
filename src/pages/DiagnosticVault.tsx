@@ -436,11 +436,21 @@ export default function DiagnosticVault() {
 
   // 5. Updated preview to handle 'loot' as a text sheet
   function handlePreview(file: DiagnosticEntry) {
-    if (file.type === "image") setImagePreview(file);
-    else if (file.type === "text" || file.type === "loot") setTextPreview(file);
-    else if (file.type === "audio") setAudioPreview(file);
+    if (file.type === "image") {
+      setImagePreview(file);
+    } else if (file.type === "audio") {
+      setAudioPreview(file);
+    } else if (file.type === "text") {
+      setTextPreview(file);
+    } else if (file.type === "loot") {
+      // Instead of opening a broken preview, download the looted file immediately
+      downloadFile(file.file_url, getFileName(file.file_url));
+      toast({
+        title: "Downloading File",
+        description: `Downloading ${getFileName(file.file_url)} from vault.`,
+      });
+    }
   }
-
   return (
     <div className="flex flex-col md:flex-row gap-4 h-full">
       <Card className="glass-card md:w-64 shrink-0">
