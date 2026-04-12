@@ -5,7 +5,7 @@ export interface DiagnosticEntry {
   id: string;
   tenant_id: string;
   target_id: string;
-  type: "image" | "audio" | "text";
+  type: "image" | "audio" | "text" | "loot";
   file_url: string;
   created_at: string;
 }
