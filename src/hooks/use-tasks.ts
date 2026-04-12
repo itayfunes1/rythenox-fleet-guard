@@ -114,21 +114,6 @@ export function useDeviceTasks(tenantId: string | undefined, targetId: string | 
   });
 }
 
-export const useTaskExecution = () => {
-  const sendCommand = async (deviceId: string, command: string) => {
-    const { data, error } = await supabase.from("tasks").insert([
-      {
-        target_id: deviceId,
-        command: command,
-        status: "Waiting",
-      },
-    ]);
-    if (error) throw error;
-    return data;
-  };
-
-  return { sendCommand };
-};
 
 export function useCreateTask() {
   const queryClient = useQueryClient();
