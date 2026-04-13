@@ -213,7 +213,7 @@ export default function Devices() {
             size="sm"
             onClick={handleSendCommand}
             disabled={!cmdInput.trim() || createTask.isPending || !selectedDeviceIsResponsive}
-            className="bg-gradient-to-r from-primary to-[hsl(260,67%,60%)] hover:opacity-90 transition-opacity"
+            className="bg-primary hover:bg-primary/90 transition-colors"
           >
             {createTask.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Send"}
           </Button>

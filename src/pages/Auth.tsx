@@ -46,25 +46,13 @@ export default function AuthPage() {
   };
 
   return (
-    <div className="min-h-screen flex bg-background relative overflow-hidden">
-      {/* Animated background */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute w-[600px] h-[600px] rounded-full bg-primary/8 blur-[120px] -top-64 -left-64 animate-[float_12s_ease-in-out_infinite]" />
-        <div className="absolute w-[500px] h-[500px] rounded-full bg-[hsl(260,67%,60%)]/8 blur-[120px] -bottom-48 -right-48 animate-[float_15s_ease-in-out_infinite_3s]" />
-        <div className="absolute w-[300px] h-[300px] rounded-full bg-success/5 blur-[80px] top-1/3 left-1/3 animate-[float_10s_ease-in-out_infinite_6s]" />
-        <div className="absolute inset-0 opacity-[0.03]" style={{
-          backgroundImage: `linear-gradient(hsl(var(--foreground)) 1px, transparent 1px), linear-gradient(90deg, hsl(var(--foreground)) 1px, transparent 1px)`,
-          backgroundSize: "60px 60px",
-        }} />
-      </div>
-
+    <div className="min-h-screen flex bg-background">
       {/* Left Panel - Branding */}
-      <div className="hidden lg:flex flex-1 flex-col justify-center items-center p-12 relative z-10">
+      <div className="hidden lg:flex flex-1 flex-col justify-center items-center p-12 bg-muted/30 border-r border-border">
         <div className="max-w-md space-y-8">
           <div className="flex items-center gap-3">
-            <div className="relative flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-primary to-[hsl(260,67%,60%)] shadow-lg shadow-primary/30">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary shadow-sm">
               <Zap className="h-6 w-6 text-primary-foreground" />
-              <div className="absolute -inset-[2px] rounded-2xl bg-gradient-to-br from-primary/40 to-[hsl(260,67%,60%,0.4)] blur-md -z-10" />
             </div>
             <div>
               <h1 className="text-2xl font-bold tracking-tight text-foreground">Rythenox</h1>
@@ -75,7 +63,7 @@ export default function AuthPage() {
           <div className="space-y-2">
             <h2 className="text-3xl font-bold text-foreground leading-tight">
               Command your fleet<br />
-              <span className="gradient-text">from anywhere.</span>
+              <span className="text-primary">from anywhere.</span>
             </h2>
             <p className="text-muted-foreground text-sm leading-relaxed">
               Monitor devices, deploy software, and manage your IT infrastructure with real-time visibility and control.
@@ -85,7 +73,7 @@ export default function AuthPage() {
           <div className="space-y-4 pt-4">
             {features.map((f) => (
               <div key={f.label} className="flex items-center gap-3 group">
-                <div className="h-10 w-10 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary group-hover:bg-primary/20 transition-colors">
+                <div className="h-10 w-10 rounded-xl bg-primary/8 border border-primary/15 flex items-center justify-center text-primary group-hover:bg-primary/12 transition-colors">
                   <f.icon className="h-5 w-5" />
                 </div>
                 <div>
@@ -99,13 +87,13 @@ export default function AuthPage() {
       </div>
 
       {/* Right Panel - Auth Form */}
-      <div className="flex-1 flex items-center justify-center p-6 relative z-10">
-        <Card className="w-full max-w-md glass-card border-border/30 animate-scale-in shadow-2xl shadow-primary/5">
+      <div className="flex-1 flex items-center justify-center p-6">
+        <Card className="w-full max-w-md border border-border shadow-sm animate-scale-in">
           {resetMode ? (
             <>
               <CardHeader className="text-center space-y-3 pb-2">
                 <div className="flex justify-center lg:hidden">
-                  <div className="relative flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-primary to-[hsl(260,67%,60%)] shadow-lg shadow-primary/30">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary shadow-sm">
                     <Zap className="h-6 w-6 text-primary-foreground" />
                   </div>
                 </div>
@@ -118,10 +106,10 @@ export default function AuthPage() {
                     <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Email</Label>
                     <div className="relative">
                       <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/50" />
-                      <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required className="pl-10 bg-muted/30 border-border/50 focus:border-primary focus:bg-muted/50 transition-all h-11" placeholder="you@company.com" />
+                      <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required className="pl-10 h-11" placeholder="you@company.com" />
                     </div>
                   </div>
-                  <Button type="submit" className="w-full h-11 bg-gradient-to-r from-primary to-[hsl(260,67%,60%)] hover:opacity-90 transition-opacity shadow-lg shadow-primary/20 font-medium" disabled={loading}>
+                  <Button type="submit" className="w-full h-11 font-medium" disabled={loading}>
                     {loading ? "Sending..." : "Send Reset Link"}
                   </Button>
                   <Button type="button" variant="ghost" className="w-full text-muted-foreground hover:text-foreground text-sm" onClick={() => setResetMode(false)}>
@@ -134,7 +122,7 @@ export default function AuthPage() {
             <>
               <CardHeader className="text-center space-y-3 pb-2">
                 <div className="flex justify-center lg:hidden">
-                  <div className="relative flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-primary to-[hsl(260,67%,60%)] shadow-lg shadow-primary/30">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary shadow-sm">
                     <Zap className="h-6 w-6 text-primary-foreground" />
                   </div>
                 </div>
@@ -149,17 +137,17 @@ export default function AuthPage() {
                     <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Email</Label>
                     <div className="relative">
                       <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/50" />
-                      <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required className="pl-10 bg-muted/30 border-border/50 focus:border-primary focus:bg-muted/50 transition-all h-11" placeholder="you@company.com" />
+                      <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required className="pl-10 h-11" placeholder="you@company.com" />
                     </div>
                   </div>
                   <div className="space-y-2">
                     <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Password</Label>
                     <div className="relative">
                       <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/50" />
-                      <Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required className="pl-10 bg-muted/30 border-border/50 focus:border-primary focus:bg-muted/50 transition-all h-11" placeholder="••••••••" />
+                      <Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required className="pl-10 h-11" placeholder="••••••••" />
                     </div>
                   </div>
-                  <Button type="submit" className="w-full h-11 bg-gradient-to-r from-primary to-[hsl(260,67%,60%)] hover:opacity-90 transition-opacity shadow-lg shadow-primary/20 font-medium" disabled={loading}>
+                  <Button type="submit" className="w-full h-11 font-medium" disabled={loading}>
                     {loading ? "Signing in..." : "Sign In"}
                   </Button>
                   <Button type="button" variant="link" className="w-full text-xs text-muted-foreground hover:text-primary" onClick={() => setResetMode(true)}>

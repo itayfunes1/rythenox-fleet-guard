@@ -275,7 +275,7 @@ export default function TeamChat() {
                         const isMe = msg.user_id === user?.id;
                         return (
                           <div key={msg.id} className={`flex gap-2.5 ${isMe ? "flex-row-reverse" : ""}`}>
-                            <div className="h-7 w-7 rounded-full bg-gradient-to-br from-primary to-[hsl(260,67%,60%)] flex items-center justify-center text-[10px] font-bold text-primary-foreground shrink-0">
+                            <div className="h-7 w-7 rounded-full bg-primary flex items-center justify-center text-[10px] font-bold text-primary-foreground shrink-0">
                               {msg.user_email.substring(0, 2).toUpperCase()}
                             </div>
                             <div className={`max-w-[70%] ${isMe ? "items-end" : "items-start"}`}>
@@ -326,7 +326,7 @@ export default function TeamChat() {
               <Button
                 type="submit"
                 size="icon"
-                className="h-10 w-10 bg-gradient-to-r from-primary to-[hsl(260,67%,60%)] hover:opacity-90 shadow-lg shadow-primary/20 shrink-0"
+                className="h-10 w-10 bg-primary hover:bg-primary/90 shrink-0"
                 disabled={!input.trim() || sendMessage.isPending || !selectedChannelId}
               >
                 <Send className="h-4 w-4" />

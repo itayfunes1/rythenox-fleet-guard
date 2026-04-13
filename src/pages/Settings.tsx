@@ -311,7 +311,7 @@ export default function SettingsPage() {
         </CardContent>
       </Card>
 
-      <Button className="bg-gradient-to-r from-primary to-[hsl(260,67%,60%)] hover:opacity-90 transition-opacity shadow-lg shadow-primary/20">
+      <Button className="bg-primary hover:bg-primary/90 transition-colors">
         Save Settings
       </Button>
     </div>
