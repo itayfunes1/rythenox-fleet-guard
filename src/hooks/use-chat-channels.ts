@@ -24,7 +24,7 @@ export function useChatChannels(tenantId: string | undefined) {
     enabled: !!tenantId,
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("chat_channels" as any)
+        .from("chat_channels")
         .select("*")
         .eq("tenant_id", tenantId!)
         .order("created_at", { ascending: true });
@@ -40,7 +40,7 @@ export function useChannelMembers(channelId: string | undefined) {
     enabled: !!channelId,
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("chat_channel_members" as any)
+        .from("chat_channel_members")
         .select("*")
         .eq("channel_id", channelId!);
       if (error) throw error;
@@ -61,7 +61,7 @@ export function useCreateChannel() {
     }) => {
       // Create channel
       const { data: channel, error } = await supabase
-        .from("chat_channels" as any)
+        .from("chat_channels")
         .insert({
           tenant_id: params.tenant_id,
           name: params.name,
@@ -83,7 +83,7 @@ export function useCreateChannel() {
 
       if (memberRows.length > 0) {
         const { error: memError } = await supabase
-          .from("chat_channel_members" as any)
+          .from("chat_channel_members")
           .insert(memberRows);
         if (memError) throw memError;
       }
@@ -101,7 +101,7 @@ export function useAddChannelMember() {
   return useMutation({
     mutationFn: async (params: { channel_id: string; user_id: string; user_email: string }) => {
       const { error } = await supabase
-        .from("chat_channel_members" as any)
+        .from("chat_channel_members")
         .insert(params);
       if (error) throw error;
     },

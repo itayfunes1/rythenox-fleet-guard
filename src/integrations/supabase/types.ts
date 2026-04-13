@@ -480,6 +480,10 @@ export type Database = {
       }
       get_tenant_api_key: { Args: { _user_id: string }; Returns: string }
       get_user_tenant_id: { Args: { _user_id: string }; Returns: string }
+      is_channel_member: {
+        Args: { _channel_id: string; _user_id: string }
+        Returns: boolean
+      }
       reject_join_request: { Args: { _request_id: string }; Returns: undefined }
     }
     Enums: {
