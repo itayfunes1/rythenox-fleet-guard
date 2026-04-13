@@ -1,10 +1,9 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Monitor, Wifi, WifiOff, Headset, Activity, ArrowUpRight, Rocket, FolderArchive, Network, Shield } from "lucide-react";
+import { Monitor, Wifi, WifiOff, Activity, ArrowUpRight, Rocket, FolderArchive, Network } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useTenant } from "@/hooks/use-tenant";
 import { useDevices } from "@/hooks/use-devices";
 import { useTasks } from "@/hooks/use-tasks";
-import { useActiveSessions } from "@/hooks/use-active-sessions";
 import { useAuth } from "@/components/AuthProvider";
 import { useNavigate } from "react-router-dom";
 
@@ -13,13 +12,13 @@ export default function Dashboard() {
   const { data: tenant } = useTenant();
   const { data: liveDevices, isLoading: devicesLoading } = useDevices(tenant?.tenantId);
   const { data: liveTasks, isLoading: tasksLoading } = useTasks(tenant?.tenantId);
-  const { data: activeSessions } = useActiveSessions(tenant?.tenantId);
+  
   const navigate = useNavigate();
 
   const onlineCount = liveDevices?.filter((d) => d.status === "Online").length ?? 0;
   const offlineCount = liveDevices?.filter((d) => d.status === "Offline").length ?? 0;
   const totalDevices = liveDevices?.length ?? 0;
-  const activeSessionCount = activeSessions?.length ?? 0;
+  
 
   const firstName = user?.user_metadata?.full_name?.split(" ")[0] || user?.email?.split("@")[0] || "there";
 
@@ -27,14 +26,12 @@ export default function Dashboard() {
     { label: "Total Devices", value: totalDevices, icon: Monitor, gradient: "from-primary/20 to-[hsl(260,67%,60%)]/10", iconColor: "text-primary", dotColor: "bg-primary" },
     { label: "Online", value: onlineCount, icon: Wifi, gradient: "from-success/20 to-success/5", iconColor: "text-success", dotColor: "bg-success" },
     { label: "Offline", value: offlineCount, icon: WifiOff, gradient: "from-destructive/20 to-destructive/5", iconColor: "text-destructive", dotColor: "bg-destructive" },
-    { label: "Active Sessions", value: activeSessionCount, icon: Headset, gradient: "from-[hsl(260,67%,60%)]/20 to-primary/5", iconColor: "text-[hsl(260,67%,60%)]", dotColor: "bg-[hsl(260,67%,60%)]" },
   ];
 
   const quickActions = [
     { label: "Deployment Center", desc: "Build & deploy agents", icon: Rocket, path: "/deployment", color: "text-primary" },
-    { label: "Diagnostics", desc: "View diagnostic files", icon: FolderArchive, path: "/diagnostics", color: "text-[hsl(260,67%,60%)]" },
+    { label: "File Explorer", desc: "View diagnostic files", icon: FolderArchive, path: "/diagnostics", color: "text-[hsl(260,67%,60%)]" },
     { label: "Network", desc: "Relay infrastructure", icon: Network, path: "/network", color: "text-success" },
-    { label: "Compliance", desc: "Security & policies", icon: Shield, path: "/compliance", color: "text-warning" },
   ];
 
   const activityItems = (liveTasks || []).slice(0, 10).map((t) => ({
