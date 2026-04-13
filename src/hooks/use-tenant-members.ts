@@ -19,7 +19,7 @@ export function useTenantMembers(tenantId: string | undefined) {
         .select("*")
         .eq("tenant_id", tenantId!);
       if (error) throw error;
-      return (data || []) as TenantMember[];
+      return (data || []) as unknown as TenantMember[];
     },
   });
 }

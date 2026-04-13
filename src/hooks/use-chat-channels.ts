@@ -29,7 +29,7 @@ export function useChatChannels(tenantId: string | undefined) {
         .eq("tenant_id", tenantId!)
         .order("created_at", { ascending: true });
       if (error) throw error;
-      return (data || []) as ChatChannel[];
+      return (data || []) as unknown as ChatChannel[];
     },
   });
 }
@@ -44,7 +44,7 @@ export function useChannelMembers(channelId: string | undefined) {
         .select("*")
         .eq("channel_id", channelId!);
       if (error) throw error;
-      return (data || []) as ChatChannelMember[];
+      return (data || []) as unknown as ChatChannelMember[];
     },
   });
 }
