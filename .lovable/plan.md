@@ -1,49 +1,86 @@
 
 
-## Plan: Restructure DiagnosticVault as Hierarchical File Explorer
+## Plan: Simplify Auth + Team Chat + Multi-Terminal
 
-### Overview
-Rewrite `DiagnosticVault.tsx` from a flat asset gallery into a two-panel file explorer with device sidebar navigation, breadcrumbs, and type-grouped file views. No database changes needed.
+### 1. Simplify Auth Page (Remove Signup)
 
-### Changes
+**File: `src/pages/Auth.tsx`**
+- Remove `Tabs`, `TabsList`, `TabsTrigger`, `TabsContent` imports and usage
+- Remove `fullName` state and `handleSignup` function
+- Remove `User` icon import
+- Render login form directly (no tabs) — email, password, sign in button, forgot password link
+- Keep password reset flow and left branding panel unchanged
 
-**File: `src/pages/DiagnosticVault.tsx`** (full rewrite)
+### 2. Database Migration: Team Chat Table
 
-1. **Layout**: Replace the single-column layout with a two-panel flex layout:
-   - Left: glass-card sidebar (~250px wide, scrollable) listing devices
-   - Right: main content area with breadcrumb header, toolbar, and file display
+```sql
+CREATE TABLE public.team_chat_messages (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  tenant_id uuid NOT NULL,
+  user_id uuid NOT NULL,
+  user_email text NOT NULL,
+  message text NOT NULL,
+  created_at timestamptz NOT NULL DEFAULT now()
+);
 
-2. **Sidebar Device Navigation**:
-   - Derive unique `target_id` values from loaded data with file counts
-   - "All Devices" entry at top (selected by default)
-   - Each device entry shows a Monitor icon, truncated device ID, and a Badge with count
-   - Active item highlighted with `bg-primary/10 border-primary/30`
+ALTER TABLE public.team_chat_messages ENABLE ROW LEVEL SECURITY;
 
-3. **Breadcrumb Header**:
-   - Uses shadcn `Breadcrumb` component
-   - Pattern: `Explorer` > `[Device ID]` (or just `Explorer` > `All Devices`)
-   - Clicking "Explorer" resets to All Devices
+CREATE POLICY "Members can view tenant chat"
+  ON public.team_chat_messages FOR SELECT TO authenticated
+  USING (tenant_id = get_user_tenant_id(auth.uid()));
 
-4. **File Categorization**:
-   - When a device is selected, group filtered files by type into collapsible sections: "Screenshots" (image), "Audio Recordings" (audio), "Text Logs" (text)
-   - Each section header has a Folder icon, category name, and file count
-   - Sections are collapsible using shadcn Collapsible
+CREATE POLICY "Members can send chat messages"
+  ON public.team_chat_messages FOR INSERT TO authenticated
+  WITH CHECK (
+    tenant_id = get_user_tenant_id(auth.uid())
+    AND user_id = auth.uid()
+  );
+```
 
-5. **View Toggle & Toolbar**:
-   - Keep existing Grid/List toggle and search bar
-   - Move type filter toggles into the toolbar alongside view mode
-   - Search filters within the selected device scope
+### 3. Team Chat Feature
 
-6. **Empty State**:
-   - FolderArchive icon centered with contextual message when selected device has no files
+**New file: `src/hooks/use-team-chat.ts`**
+- `useTeamChat(tenantId)` — fetches last 100 messages via `useQuery`
+- Supabase Realtime subscription on INSERT events, appends to query cache
+- `useSendMessage()` mutation — inserts into `team_chat_messages`
 
-7. **Preserve existing sub-components**: `AssetGridCard`, `AssetActions`, `ImagePreviewDialog`, `TextPreviewSheet`, `AudioPreviewDialog` remain largely unchanged
+**New file: `src/pages/TeamChat.tsx`**
+- Full-height chat layout with glass-card styling
+- ScrollArea message list with user avatars (initials), email, timestamp
+- Input bar at bottom with send button
+- Auto-scroll on new messages
 
-### Technical Details
-- All filtering is client-side from the already-fetched `useDiagnosticFiles` data
-- New state: `selectedDevice: string | null` (null = all devices)
-- Derived: `devices` array via `useMemo` extracting unique target_ids with counts
-- Derived: `groupedFiles` via `useMemo` grouping filtered results by type
-- Remove the stats bar and data scope notice to declutter the explorer layout
-- Responsive: sidebar collapses to a horizontal device selector on mobile (`md:` breakpoint)
+### 4. Multi-Terminal Feature
+
+**Refactor: `src/pages/Devices.tsx`**
+- Replace single `selectedDevice` state with `openTerminals: ManagedDevice[]` array and `activeTerminalId: string | null`
+- Tab bar at top of terminal view showing all open terminals (device ID tabs + close button per tab)
+- Clicking a device opens a new tab (or focuses existing one)
+- Each tab maintains its own task history via `useDeviceTasks`
+- Active tab is highlighted; inactive tabs show device name
+- Close button on each tab ends that session
+- Command input shared, sends to the currently active terminal's device
+- Extract terminal panel into a `<TerminalPanel>` sub-component for clarity
+
+**New file: `src/components/TerminalPanel.tsx`**
+- Receives `device`, `tenantId`, `isActive` props
+- Contains the ScrollArea with task history, command input bar
+- Only renders content when `isActive` (or always renders but hides via CSS for preserving scroll position)
+
+### 5. Router & Sidebar Updates
+
+**File: `src/App.tsx`** — Add `/chat` route in `ProtectedRoutes`
+
+**File: `src/components/AppSidebar.tsx`** — Add "Team Chat" entry with `MessageSquare` icon to `mainItems` array
+
+### Summary
+
+| Change | Files |
+|--------|-------|
+| Remove signup from auth | `Auth.tsx` |
+| Chat database table | Migration SQL |
+| Team chat hook | `use-team-chat.ts` (new) |
+| Team chat page | `TeamChat.tsx` (new) |
+| Multi-terminal tabs | `Devices.tsx` refactor + `TerminalPanel.tsx` (new) |
+| Routing & nav | `App.tsx`, `AppSidebar.tsx` |
 
