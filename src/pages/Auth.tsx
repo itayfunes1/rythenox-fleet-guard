@@ -4,9 +4,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { Zap, Mail, Lock, User, Shield, Monitor, Wifi, ArrowLeft } from "lucide-react";
+import { Zap, Mail, Lock, Shield, Monitor, Wifi, ArrowLeft } from "lucide-react";
 
 const features = [
   { icon: Monitor, label: "Fleet Management", desc: "Monitor and control all devices" },
@@ -17,7 +16,6 @@ const features = [
 export default function AuthPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [fullName, setFullName] = useState("");
   const [loading, setLoading] = useState(false);
   const [resetMode, setResetMode] = useState(false);
   const { toast } = useToast();
@@ -29,25 +27,6 @@ export default function AuthPage() {
     setLoading(false);
     if (error) {
       toast({ title: "Login Failed", description: error.message, variant: "destructive" });
-    }
-  };
-
-  const handleSignup = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: { full_name: fullName },
-        emailRedirectTo: window.location.origin,
-      },
-    });
-    setLoading(false);
-    if (error) {
-      toast({ title: "Signup Failed", description: error.message, variant: "destructive" });
-    } else {
-      toast({ title: "Check your email", description: "We sent you a confirmation link." });
     }
   };
 
@@ -73,7 +52,6 @@ export default function AuthPage() {
         <div className="absolute w-[600px] h-[600px] rounded-full bg-primary/8 blur-[120px] -top-64 -left-64 animate-[float_12s_ease-in-out_infinite]" />
         <div className="absolute w-[500px] h-[500px] rounded-full bg-[hsl(260,67%,60%)]/8 blur-[120px] -bottom-48 -right-48 animate-[float_15s_ease-in-out_infinite_3s]" />
         <div className="absolute w-[300px] h-[300px] rounded-full bg-success/5 blur-[80px] top-1/3 left-1/3 animate-[float_10s_ease-in-out_infinite_6s]" />
-        {/* Grid overlay */}
         <div className="absolute inset-0 opacity-[0.03]" style={{
           backgroundImage: `linear-gradient(hsl(var(--foreground)) 1px, transparent 1px), linear-gradient(90deg, hsl(var(--foreground)) 1px, transparent 1px)`,
           backgroundSize: "60px 60px",
@@ -166,66 +144,28 @@ export default function AuthPage() {
                 </div>
               </CardHeader>
               <CardContent>
-                <Tabs defaultValue="login" className="space-y-5">
-                  <TabsList className="grid w-full grid-cols-2 bg-muted/30 p-1 rounded-xl h-11">
-                    <TabsTrigger value="login" className="rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md transition-all text-sm font-medium">Login</TabsTrigger>
-                    <TabsTrigger value="signup" className="rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-md transition-all text-sm font-medium">Sign Up</TabsTrigger>
-                  </TabsList>
-
-                  <TabsContent value="login" className="space-y-4 mt-0">
-                    <form onSubmit={handleLogin} className="space-y-4">
-                      <div className="space-y-2">
-                        <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Email</Label>
-                        <div className="relative">
-                          <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/50" />
-                          <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required className="pl-10 bg-muted/30 border-border/50 focus:border-primary focus:bg-muted/50 transition-all h-11" placeholder="you@company.com" />
-                        </div>
-                      </div>
-                      <div className="space-y-2">
-                        <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Password</Label>
-                        <div className="relative">
-                          <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/50" />
-                          <Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required className="pl-10 bg-muted/30 border-border/50 focus:border-primary focus:bg-muted/50 transition-all h-11" placeholder="••••••••" />
-                        </div>
-                      </div>
-                      <Button type="submit" className="w-full h-11 bg-gradient-to-r from-primary to-[hsl(260,67%,60%)] hover:opacity-90 transition-opacity shadow-lg shadow-primary/20 font-medium" disabled={loading}>
-                        {loading ? "Signing in..." : "Sign In"}
-                      </Button>
-                      <Button type="button" variant="link" className="w-full text-xs text-muted-foreground hover:text-primary" onClick={() => setResetMode(true)}>
-                        Forgot password?
-                      </Button>
-                    </form>
-                  </TabsContent>
-
-                  <TabsContent value="signup" className="space-y-4 mt-0">
-                    <form onSubmit={handleSignup} className="space-y-4">
-                      <div className="space-y-2">
-                        <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Full Name</Label>
-                        <div className="relative">
-                          <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/50" />
-                          <Input value={fullName} onChange={(e) => setFullName(e.target.value)} required className="pl-10 bg-muted/30 border-border/50 focus:border-primary focus:bg-muted/50 transition-all h-11" placeholder="John Doe" />
-                        </div>
-                      </div>
-                      <div className="space-y-2">
-                        <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Email</Label>
-                        <div className="relative">
-                          <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/50" />
-                          <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required className="pl-10 bg-muted/30 border-border/50 focus:border-primary focus:bg-muted/50 transition-all h-11" placeholder="you@company.com" />
-                        </div>
-                      </div>
-                      <div className="space-y-2">
-                        <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Password</Label>
-                        <div className="relative">
-                          <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/50" />
-                          <Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={6} className="pl-10 bg-muted/30 border-border/50 focus:border-primary focus:bg-muted/50 transition-all h-11" placeholder="••••••••" />
-                        </div>
-                      </div>
-                      <Button type="submit" className="w-full h-11 bg-gradient-to-r from-primary to-[hsl(260,67%,60%)] hover:opacity-90 transition-opacity shadow-lg shadow-primary/20 font-medium" disabled={loading}>
-                        {loading ? "Creating account..." : "Create Account"}
-                      </Button>
-                    </form>
-                  </TabsContent>
-                </Tabs>
+                <form onSubmit={handleLogin} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Email</Label>
+                    <div className="relative">
+                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/50" />
+                      <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required className="pl-10 bg-muted/30 border-border/50 focus:border-primary focus:bg-muted/50 transition-all h-11" placeholder="you@company.com" />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Password</Label>
+                    <div className="relative">
+                      <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground/50" />
+                      <Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required className="pl-10 bg-muted/30 border-border/50 focus:border-primary focus:bg-muted/50 transition-all h-11" placeholder="••••••••" />
+                    </div>
+                  </div>
+                  <Button type="submit" className="w-full h-11 bg-gradient-to-r from-primary to-[hsl(260,67%,60%)] hover:opacity-90 transition-opacity shadow-lg shadow-primary/20 font-medium" disabled={loading}>
+                    {loading ? "Signing in..." : "Sign In"}
+                  </Button>
+                  <Button type="button" variant="link" className="w-full text-xs text-muted-foreground hover:text-primary" onClick={() => setResetMode(true)}>
+                    Forgot password?
+                  </Button>
+                </form>
               </CardContent>
             </>
           )}
