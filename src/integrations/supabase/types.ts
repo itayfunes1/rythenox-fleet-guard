@@ -214,6 +214,39 @@ export type Database = {
           },
         ]
       }
+      org_join_requests: {
+        Row: {
+          created_at: string
+          id: string
+          requester_email: string
+          requester_id: string
+          resolved_at: string | null
+          resolved_by: string | null
+          status: string
+          target_tenant_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          requester_email: string
+          requester_id: string
+          resolved_at?: string | null
+          resolved_by?: string | null
+          status?: string
+          target_tenant_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          requester_email?: string
+          requester_id?: string
+          resolved_at?: string | null
+          resolved_by?: string | null
+          status?: string
+          target_tenant_id?: string
+        }
+        Relationships: []
+      }
       relay_nodes: {
         Row: {
           addr: string
@@ -433,9 +466,21 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      approve_join_request: {
+        Args: { _request_id: string }
+        Returns: undefined
+      }
       cleanup_stale_sessions: { Args: never; Returns: undefined }
+      find_tenant_by_name: {
+        Args: { _name: string }
+        Returns: {
+          id: string
+          name: string
+        }[]
+      }
       get_tenant_api_key: { Args: { _user_id: string }; Returns: string }
       get_user_tenant_id: { Args: { _user_id: string }; Returns: string }
+      reject_join_request: { Args: { _request_id: string }; Returns: undefined }
     }
     Enums: {
       [_ in never]: never
