@@ -78,7 +78,7 @@ export default function Dashboard() {
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 stagger-children">
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-4 stagger-children">
         {stats.map((stat) => (
           <Card key={stat.label} className="glass-card glow-card group cursor-default">
             <CardContent className="p-5 relative overflow-hidden">
