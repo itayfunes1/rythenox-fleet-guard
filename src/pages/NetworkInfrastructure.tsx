@@ -152,7 +152,7 @@ export default function NetworkInfrastructure() {
               <div className="relative z-10">
                 <div className="flex items-center justify-between mb-2">
                   <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">{stat.label}</p>
-                  <div className={`h-7 w-7 rounded-lg bg-background/80 backdrop-blur-sm border border-border/50 flex items-center justify-center ${stat.iconColor} transition-transform duration-300 group-hover:scale-110`}>
+                  <div className={`h-7 w-7 rounded-lg border border-border flex items-center justify-center ${stat.iconColor} transition-transform duration-300 group-hover:scale-110`}>
                     <stat.icon className="h-3.5 w-3.5" />
                   </div>
                 </div>
