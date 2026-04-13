@@ -18,19 +18,18 @@ export default function Dashboard() {
   const onlineCount = liveDevices?.filter((d) => d.status === "Online").length ?? 0;
   const offlineCount = liveDevices?.filter((d) => d.status === "Offline").length ?? 0;
   const totalDevices = liveDevices?.length ?? 0;
-  
 
   const firstName = user?.user_metadata?.full_name?.split(" ")[0] || user?.email?.split("@")[0] || "there";
 
   const stats = [
-    { label: "Total Devices", value: totalDevices, icon: Monitor, gradient: "from-primary/20 to-[hsl(260,67%,60%)]/10", iconColor: "text-primary", dotColor: "bg-primary" },
-    { label: "Online", value: onlineCount, icon: Wifi, gradient: "from-success/20 to-success/5", iconColor: "text-success", dotColor: "bg-success" },
-    { label: "Offline", value: offlineCount, icon: WifiOff, gradient: "from-destructive/20 to-destructive/5", iconColor: "text-destructive", dotColor: "bg-destructive" },
+    { label: "Total Devices", value: totalDevices, icon: Monitor, iconColor: "text-primary", bgColor: "bg-primary/8" },
+    { label: "Online", value: onlineCount, icon: Wifi, iconColor: "text-success", bgColor: "bg-success/8" },
+    { label: "Offline", value: offlineCount, icon: WifiOff, iconColor: "text-destructive", bgColor: "bg-destructive/8" },
   ];
 
   const quickActions = [
     { label: "Deployment Center", desc: "Build & deploy agents", icon: Rocket, path: "/deployment", color: "text-primary" },
-    { label: "File Explorer", desc: "View diagnostic files", icon: FolderArchive, path: "/diagnostics", color: "text-[hsl(260,67%,60%)]" },
+    { label: "File Explorer", desc: "View diagnostic files", icon: FolderArchive, path: "/diagnostics", color: "text-muted-foreground" },
     { label: "Network", desc: "Relay infrastructure", icon: Network, path: "/network", color: "text-success" },
   ];
 
@@ -44,9 +43,9 @@ export default function Dashboard() {
   }));
 
   const typeColors: Record<string, string> = {
-    remote_session: "bg-primary/10 text-primary border-primary/20",
-    deployment: "bg-success/10 text-success border-success/20",
-    update: "bg-warning/10 text-warning border-warning/20",
+    remote_session: "bg-primary/8 text-primary border-primary/15",
+    deployment: "bg-success/8 text-success border-success/15",
+    update: "bg-warning/8 text-warning border-warning/15",
     diagnostic: "bg-muted text-muted-foreground border-border",
   };
 
@@ -55,16 +54,14 @@ export default function Dashboard() {
   return (
     <div className="space-y-8">
       {/* Welcome Banner */}
-      <div className="relative overflow-hidden rounded-2xl border border-border/30 p-6 md:p-8">
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-[hsl(260,67%,60%)]/5 to-transparent" />
-        <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-[80px] -translate-y-1/2 translate-x-1/2" />
-        <div className="relative z-10 flex items-center justify-between">
+      <div className="rounded-2xl border border-border bg-card p-6 md:p-8">
+        <div className="flex items-center justify-between">
           <div className="space-y-1">
             <div className="flex items-center gap-3">
               <h1 className="text-2xl font-bold text-foreground tracking-tight">
-                Welcome back, <span className="gradient-text">{firstName}</span>
+                Welcome back, <span className="text-primary">{firstName}</span>
               </h1>
-              <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-success/10 border border-success/20">
+              <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-success/8 border border-success/15">
                 <span className="relative flex h-2 w-2">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-success opacity-75" />
                   <span className="relative inline-flex rounded-full h-2 w-2 bg-success" />
@@ -81,17 +78,16 @@ export default function Dashboard() {
       <div className="grid grid-cols-2 md:grid-cols-3 gap-4 stagger-children">
         {stats.map((stat) => (
           <Card key={stat.label} className="glass-card glow-card group cursor-default">
-            <CardContent className="p-5 relative overflow-hidden">
-              <div className={`absolute inset-0 bg-gradient-to-br ${stat.gradient} opacity-50`} />
-              <div className="relative z-10 space-y-3">
+            <CardContent className="p-5">
+              <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <div className={`flex h-10 w-10 items-center justify-center rounded-xl bg-background/80 backdrop-blur-sm border border-border/50 ${stat.iconColor} transition-transform duration-300 group-hover:scale-110`}>
+                  <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${stat.bgColor} ${stat.iconColor} transition-transform duration-300 group-hover:scale-110`}>
                     <stat.icon className="h-5 w-5" />
                   </div>
-                  <ArrowUpRight className="h-4 w-4 text-muted-foreground/40 group-hover:text-primary transition-colors" />
+                  <ArrowUpRight className="h-4 w-4 text-muted-foreground/30 group-hover:text-primary transition-colors" />
                 </div>
                 <div>
-                  <span className="text-3xl font-bold text-foreground counter-value tabular-nums">{stat.value}</span>
+                  <span className="text-3xl font-bold text-foreground tabular-nums">{stat.value}</span>
                   <p className="text-xs text-muted-foreground mt-0.5 font-medium">{stat.label}</p>
                 </div>
               </div>
@@ -127,7 +123,7 @@ export default function Dashboard() {
           {isLoading ? (
             <div className="space-y-3">
               {[...Array(3)].map((_, i) => (
-                <div key={i} className="h-14 rounded-lg bg-muted/50 shimmer" />
+                <div key={i} className="h-14 rounded-lg bg-muted/50 animate-pulse" />
               ))}
             </div>
           ) : activityItems.length === 0 ? (
@@ -141,7 +137,7 @@ export default function Dashboard() {
           ) : (
             <div className="space-y-2 stagger-children">
               {activityItems.map((item) => (
-                <div key={item.id} className="flex items-center justify-between py-3 px-3 rounded-lg hover:bg-muted/30 transition-colors duration-200 group">
+                <div key={item.id} className="flex items-center justify-between py-3 px-3 rounded-lg hover:bg-muted/50 transition-colors duration-150 group">
                   <div className="flex items-center gap-3 min-w-0">
                     <Badge variant="outline" className={`${typeColors[item.type] || typeColors.diagnostic} text-[10px] font-medium`}>
                       {item.type.replace("_", " ")}
