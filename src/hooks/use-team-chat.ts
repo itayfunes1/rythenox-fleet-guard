@@ -8,23 +8,26 @@ export interface ChatMessage {
   user_id: string;
   user_email: string;
   message: string;
+  channel_id: string | null;
   created_at: string;
 }
 
-export function useTeamChat(tenantId: string | undefined) {
+export function useTeamChat(channelId: string | undefined) {
   const queryClient = useQueryClient();
 
   useEffect(() => {
-    if (!tenantId) return;
+    if (!channelId) return;
 
     const channel = supabase
-      .channel("team_chat_realtime")
+      .channel(`chat_channel_${channelId}`)
       .on(
         "postgres_changes",
-        { event: "INSERT", schema: "public", table: "team_chat_messages", filter: `tenant_id=eq.${tenantId}` },
+        { event: "INSERT", schema: "public", table: "team_chat_messages", filter: `channel_id=eq.${channelId}` },
         (payload) => {
-          queryClient.setQueryData<ChatMessage[]>(["team_chat", tenantId], (old) => {
+          queryClient.setQueryData<ChatMessage[]>(["team_chat", channelId], (old) => {
             if (!old) return [payload.new as ChatMessage];
+            // Deduplicate by id
+            if (old.some((m) => m.id === (payload.new as any).id)) return old;
             return [...old, payload.new as ChatMessage];
           });
         }
@@ -34,30 +37,34 @@ export function useTeamChat(tenantId: string | undefined) {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [tenantId, queryClient]);
+  }, [channelId, queryClient]);
 
   return useQuery({
-    queryKey: ["team_chat", tenantId],
-    enabled: !!tenantId,
+    queryKey: ["team_chat", channelId],
+    enabled: !!channelId,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("team_chat_messages")
         .select("*")
-        .eq("tenant_id", tenantId!)
+        .eq("channel_id", channelId!)
         .order("created_at", { ascending: true })
-        .limit(100);
+        .limit(200);
 
       if (error) throw error;
-      return (data || []) as ChatMessage[];
+      return (data || []) as unknown as ChatMessage[];
     },
   });
 }
 
 export function useSendMessage() {
-  const queryClient = useQueryClient();
-
   return useMutation({
-    mutationFn: async (params: { tenant_id: string; user_id: string; user_email: string; message: string }) => {
+    mutationFn: async (params: {
+      tenant_id: string;
+      user_id: string;
+      user_email: string;
+      message: string;
+      channel_id: string;
+    }) => {
       const { data, error } = await supabase
         .from("team_chat_messages")
         .insert({
@@ -65,15 +72,13 @@ export function useSendMessage() {
           user_id: params.user_id,
           user_email: params.user_email,
           message: params.message,
-        })
+          channel_id: params.channel_id,
+        } as any)
         .select()
         .single();
 
       if (error) throw error;
       return data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["team_chat"] });
     },
   });
 }
