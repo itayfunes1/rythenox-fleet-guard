@@ -73,7 +73,7 @@ export function useSendMessage() {
           user_email: params.user_email,
           message: params.message,
           channel_id: params.channel_id,
-        } as any)
+        })
         .select()
         .single();
 

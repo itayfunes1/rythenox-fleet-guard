@@ -15,7 +15,7 @@ export function useTenantMembers(tenantId: string | undefined) {
     enabled: !!tenantId,
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("tenant_members" as any)
+        .from("tenant_members")
         .select("*")
         .eq("tenant_id", tenantId!);
       if (error) throw error;
