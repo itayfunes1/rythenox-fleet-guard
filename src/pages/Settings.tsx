@@ -106,10 +106,6 @@ export default function SettingsPage() {
           ) : tenant ? (
             <>
               <div className="space-y-2">
-                <Label className="text-xs uppercase tracking-wider text-muted-foreground/60 font-semibold">Tenant</Label>
-                <Input value={tenant.tenantName || ""} readOnly className="bg-muted/30 border-border/50" />
-              </div>
-              <div className="space-y-2">
                 <Label className="text-xs uppercase tracking-wider text-muted-foreground/60 font-semibold">API Key</Label>
                 <div className="flex gap-2">
                   <Input
