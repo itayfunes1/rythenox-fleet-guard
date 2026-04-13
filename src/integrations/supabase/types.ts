@@ -234,50 +234,6 @@ export type Database = {
           },
         ]
       }
-      server_announcements: {
-        Row: {
-          created_at: string
-          id: string
-          message: string
-          resolved_at: string | null
-          status: string
-          tenant_id: string
-          title: string
-          type: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          message: string
-          resolved_at?: string | null
-          status?: string
-          tenant_id: string
-          title: string
-          type?: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          message?: string
-          resolved_at?: string | null
-          status?: string
-          tenant_id?: string
-          title?: string
-          type?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "server_announcements_tenant_id_fkey"
-            columns: ["tenant_id"]
-            isOneToOne: false
-            referencedRelation: "tenants"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       tenant_members: {
         Row: {
           created_at: string
@@ -337,7 +293,6 @@ export type Database = {
     }
     Functions: {
       cleanup_stale_sessions: { Args: never; Returns: undefined }
-      get_tenant_api_key: { Args: { _user_id: string }; Returns: string }
       get_user_tenant_id: { Args: { _user_id: string }; Returns: string }
     }
     Enums: {

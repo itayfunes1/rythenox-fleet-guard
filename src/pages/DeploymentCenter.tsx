@@ -17,16 +17,18 @@ export default function DeploymentCenter() {
   const [downloadUrl, setDownloadUrl] = useState<string | null>(null);
   const [progress, setProgress] = useState(0);
 
+  const storageBaseUrl = `${import.meta.env.VITE_SUPABASE_URL ?? "https://prodlnwtjkomsstrufqr.supabase.co"}/storage/v1/object/public/builds`;
+
+  const getBuildDownloadUrl = (id: string) => `${storageBaseUrl}/${id}.exe`;
+
   const waitForBuildArtifact = async (id: string) => {
-    const fileName = `${id}.exe`;
+    const url = getBuildDownloadUrl(id);
 
     for (let attempt = 0; attempt < 40; attempt += 1) {
       try {
-        const { data } = await supabase.storage
-          .from("builds")
-          .createSignedUrl(fileName, 300);
-        if (data?.signedUrl) {
-          return data.signedUrl;
+        const response = await fetch(url, { method: "HEAD", cache: "no-store" });
+        if (response.ok) {
+          return url;
         }
       } catch {
         // Keep polling until the artifact is uploaded.
