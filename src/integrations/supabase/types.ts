@@ -293,6 +293,7 @@ export type Database = {
     }
     Functions: {
       cleanup_stale_sessions: { Args: never; Returns: undefined }
+      get_tenant_api_key: { Args: { _user_id: string }; Returns: string }
       get_user_tenant_id: { Args: { _user_id: string }; Returns: string }
     }
     Enums: {
