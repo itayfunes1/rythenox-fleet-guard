@@ -134,6 +134,53 @@ export default function SettingsPage() {
         </CardContent>
       </Card>
 
+      {/* Create Organization Section */}
+      <Card className="glass-card glow-card">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-base">
+            <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
+              <Plus className="h-4 w-4 text-primary" />
+            </div>
+            Create Organization
+          </CardTitle>
+          <CardDescription>Create a new organization. You will become the owner and leave your current organization.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex gap-2">
+            <Input
+              placeholder="New organization name..."
+              value={newOrgName}
+              onChange={(e) => setNewOrgName(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && newOrgName.trim() && createOrg.mutate(newOrgName.trim(), {
+                onSuccess: () => {
+                  toast({ title: "Created", description: "Your new organization has been created." });
+                  setNewOrgName("");
+                },
+                onError: (err: any) => toast({ title: "Error", description: err.message, variant: "destructive" }),
+              })}
+              className="bg-muted/30 border-border/50 focus:border-primary"
+            />
+            <Button
+              onClick={() => createOrg.mutate(newOrgName.trim(), {
+                onSuccess: () => {
+                  toast({ title: "Created", description: "Your new organization has been created." });
+                  setNewOrgName("");
+                },
+                onError: (err: any) => toast({ title: "Error", description: err.message, variant: "destructive" }),
+              })}
+              disabled={createOrg.isPending || !newOrgName.trim()}
+              className="shrink-0"
+            >
+              {createOrg.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4 mr-1" />}
+              Create
+            </Button>
+          </div>
+          <div className="rounded-xl border border-warning/20 bg-warning/5 p-3 text-xs text-muted-foreground">
+            <p><strong className="text-foreground">Note:</strong> Creating a new organization will remove you from your current one. All your devices and data will remain with your previous organization.</p>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Join Organization Section */}
       <Card className="glass-card glow-card">
         <CardHeader>
