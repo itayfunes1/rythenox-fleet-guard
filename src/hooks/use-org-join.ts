@@ -93,3 +93,18 @@ export function useRejectJoinRequest() {
     },
   });
 }
+
+export function useCreateOrganization() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (name: string) => {
+      const { data, error } = await supabase.rpc("create_organization" as any, { _name: name });
+      if (error) throw error;
+      return data as string;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["tenant"] });
+      queryClient.invalidateQueries({ queryKey: ["my_join_requests"] });
+    },
+  });
+}

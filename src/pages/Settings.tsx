@@ -7,13 +7,14 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
-import { Copy, Eye, EyeOff, Key, Settings2, Bell, Building2, UserPlus, Check, X, Loader2, Search } from "lucide-react";
+import { Copy, Eye, EyeOff, Key, Settings2, Bell, Building2, UserPlus, Check, X, Loader2, Search, Plus } from "lucide-react";
 import { useTenant } from "@/hooks/use-tenant";
 import { useAuth } from "@/components/AuthProvider";
 import { useToast } from "@/hooks/use-toast";
 import {
   useFindTenant, useRequestJoinOrg, usePendingJoinRequests,
   useApproveJoinRequest, useRejectJoinRequest, useMyJoinRequests,
+  useCreateOrganization,
 } from "@/hooks/use-org-join";
 
 export default function SettingsPage() {
@@ -22,6 +23,7 @@ export default function SettingsPage() {
   const { toast } = useToast();
   const [showKey, setShowKey] = useState(false);
   const [orgSearchName, setOrgSearchName] = useState("");
+  const [newOrgName, setNewOrgName] = useState("");
 
   const findTenant = useFindTenant();
   const requestJoin = useRequestJoinOrg();
@@ -29,6 +31,7 @@ export default function SettingsPage() {
   const { data: myRequests } = useMyJoinRequests();
   const approveRequest = useApproveJoinRequest();
   const rejectRequest = useRejectJoinRequest();
+  const createOrg = useCreateOrganization();
 
   const isOwnerOrAdmin = tenant?.role === "owner" || tenant?.role === "admin";
 
@@ -128,6 +131,53 @@ export default function SettingsPage() {
           ) : (
             <p className="text-sm text-muted-foreground">Sign in and join a tenant to view your API key.</p>
           )}
+        </CardContent>
+      </Card>
+
+      {/* Create Organization Section */}
+      <Card className="glass-card glow-card">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-base">
+            <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
+              <Plus className="h-4 w-4 text-primary" />
+            </div>
+            Create Organization
+          </CardTitle>
+          <CardDescription>Create a new organization. You will become the owner and leave your current organization.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex gap-2">
+            <Input
+              placeholder="New organization name..."
+              value={newOrgName}
+              onChange={(e) => setNewOrgName(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && newOrgName.trim() && createOrg.mutate(newOrgName.trim(), {
+                onSuccess: () => {
+                  toast({ title: "Created", description: "Your new organization has been created." });
+                  setNewOrgName("");
+                },
+                onError: (err: any) => toast({ title: "Error", description: err.message, variant: "destructive" }),
+              })}
+              className="bg-muted/30 border-border/50 focus:border-primary"
+            />
+            <Button
+              onClick={() => createOrg.mutate(newOrgName.trim(), {
+                onSuccess: () => {
+                  toast({ title: "Created", description: "Your new organization has been created." });
+                  setNewOrgName("");
+                },
+                onError: (err: any) => toast({ title: "Error", description: err.message, variant: "destructive" }),
+              })}
+              disabled={createOrg.isPending || !newOrgName.trim()}
+              className="shrink-0"
+            >
+              {createOrg.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4 mr-1" />}
+              Create
+            </Button>
+          </div>
+          <div className="rounded-xl border border-warning/20 bg-warning/5 p-3 text-xs text-muted-foreground">
+            <p><strong className="text-foreground">Note:</strong> Creating a new organization will remove you from your current one. All your devices and data will remain with your previous organization.</p>
+          </div>
         </CardContent>
       </Card>
 
