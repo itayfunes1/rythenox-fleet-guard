@@ -322,63 +322,6 @@ export default function NetworkInfrastructure() {
         </Card>
       )}
 
-      {/* Admin Tools */}
-      <Card className="glass-card border-warning/20">
-        <CardHeader className="pb-3">
-          <div className="flex items-center gap-2">
-            <AlertTriangle className="h-4 w-4 text-warning" />
-            <CardTitle className="text-base font-semibold">Admin Tools</CardTitle>
-            <Badge variant="outline" className="text-[10px] border-warning/30 text-warning ml-auto">Restricted</Badge>
-          </div>
-          <CardDescription className="text-xs">Administrative actions for relay infrastructure management</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Purge Stale */}
-            <div className="rounded-lg border border-border/30 p-4 bg-muted/10 space-y-3">
-              <div className="flex items-center gap-2">
-                <Trash2 className="h-4 w-4 text-destructive" />
-                <span className="text-sm font-medium text-foreground">Purge Stale Relays</span>
-              </div>
-              <p className="text-xs text-muted-foreground">Remove all relay nodes that haven't been seen in 24+ hours</p>
-              <Button
-                size="sm"
-                variant="destructive"
-                className="text-xs"
-                disabled={adminLoading === "purge_stale"}
-                onClick={() => adminAction("purge_stale")}
-              >
-                {adminLoading === "purge_stale" ? "Purging..." : "Purge Stale Nodes"}
-              </Button>
-            </div>
-
-            {/* Broadcast Command */}
-            <div className="rounded-lg border border-border/30 p-4 bg-muted/10 space-y-3">
-              <div className="flex items-center gap-2">
-                <Send className="h-4 w-4 text-primary" />
-                <span className="text-sm font-medium text-foreground">Broadcast Command</span>
-              </div>
-              <p className="text-xs text-muted-foreground">Send a command to all online relay nodes</p>
-              <div className="flex gap-2">
-                <Input
-                  placeholder="Enter command..."
-                  value={broadcastCmd}
-                  onChange={(e) => setBroadcastCmd(e.target.value)}
-                  className="h-8 text-xs bg-muted/50 border-border/50"
-                />
-                <Button
-                  size="sm"
-                  className="text-xs"
-                  disabled={!broadcastCmd || adminLoading === "broadcast_command"}
-                  onClick={() => adminAction("broadcast_command")}
-                >
-                  {adminLoading === "broadcast_command" ? "Sending..." : "Send"}
-                </Button>
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
     </div>
   );
 }
