@@ -7,13 +7,14 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
-import { Copy, Eye, EyeOff, Key, Settings2, Bell, Building2, UserPlus, Check, X, Loader2, Search } from "lucide-react";
+import { Copy, Eye, EyeOff, Key, Settings2, Bell, Building2, UserPlus, Check, X, Loader2, Search, Plus } from "lucide-react";
 import { useTenant } from "@/hooks/use-tenant";
 import { useAuth } from "@/components/AuthProvider";
 import { useToast } from "@/hooks/use-toast";
 import {
   useFindTenant, useRequestJoinOrg, usePendingJoinRequests,
   useApproveJoinRequest, useRejectJoinRequest, useMyJoinRequests,
+  useCreateOrganization,
 } from "@/hooks/use-org-join";
 
 export default function SettingsPage() {
