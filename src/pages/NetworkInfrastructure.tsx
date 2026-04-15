@@ -322,8 +322,9 @@ export default function NetworkInfrastructure() {
         </Card>
       )}
 
-      {/* Admin Tools */}
-      <Card className="glass-card border-warning/20">
+    </div>
+  );
+}
         <CardHeader className="pb-3">
           <div className="flex items-center gap-2">
             <AlertTriangle className="h-4 w-4 text-warning" />
