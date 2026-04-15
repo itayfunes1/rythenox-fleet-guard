@@ -23,6 +23,7 @@ export default function SettingsPage() {
   const { toast } = useToast();
   const [showKey, setShowKey] = useState(false);
   const [orgSearchName, setOrgSearchName] = useState("");
+  const [newOrgName, setNewOrgName] = useState("");
 
   const findTenant = useFindTenant();
   const requestJoin = useRequestJoinOrg();
@@ -30,6 +31,7 @@ export default function SettingsPage() {
   const { data: myRequests } = useMyJoinRequests();
   const approveRequest = useApproveJoinRequest();
   const rejectRequest = useRejectJoinRequest();
+  const createOrg = useCreateOrganization();
 
   const isOwnerOrAdmin = tenant?.role === "owner" || tenant?.role === "admin";
 
