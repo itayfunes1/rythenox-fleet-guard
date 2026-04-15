@@ -471,6 +471,7 @@ export type Database = {
         Returns: undefined
       }
       cleanup_stale_sessions: { Args: never; Returns: undefined }
+      create_organization: { Args: { _name: string }; Returns: string }
       find_tenant_by_name: {
         Args: { _name: string }
         Returns: {
