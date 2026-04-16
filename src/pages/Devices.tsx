@@ -32,95 +32,13 @@ export default function Devices() {
   };
 
   // Terminal view
-  if (currentSelectedDevice) {
+  if (selectedDevice) {
     return (
-      <div className="flex flex-col h-[calc(100vh-4rem)] animate-fade-in">
-        {/* Terminal header */}
-        <div className="flex items-center justify-between px-4 py-3 border-b border-border/50 glass-card rounded-none">
-          <div className="flex items-center gap-3">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-success/10 border border-success/20">
-              <Terminal className="h-4 w-4 text-success" />
-            </div>
-            <div>
-              <h2 className="text-sm font-bold font-mono text-foreground">{currentSelectedDevice.target_id}</h2>
-              <p className="text-xs text-muted-foreground">
-                {currentSelectedDevice.public_ip || "Unknown IP"} · {currentSelectedDevice.os_info || "Unknown OS"} · {currentSelectedDevice.arch || "Unknown Arch"}
-              </p>
-            </div>
-            <StatusBadge status={selectedDeviceIsResponsive ? "online" : "offline"} />
-          </div>
-          <Button variant="ghost" size="icon" onClick={handleCloseTerminal} className="hover:bg-destructive/10 hover:text-destructive transition-colors">
-            <X className="h-4 w-4" />
-          </Button>
-        </div>
-
-        {/* Terminal body */}
-        <ScrollArea className="flex-1 terminal-bg">
-          <div className="p-4 font-mono text-sm space-y-3 min-h-full">
-            <div className="text-success text-xs">
-              ── Connected to {currentSelectedDevice.target_id} ──
-            </div>
-            <div className="text-[hsl(var(--terminal-foreground))] text-xs opacity-60">
-              Commands are queued and picked up by the agent on next poll cycle.
-            </div>
-
-            {!selectedDeviceIsResponsive && (
-              <div className="rounded-lg border border-warning/30 bg-warning/10 px-3 py-2 text-xs text-warning">
-                No heartbeat has been received from this agent since {selectedDeviceLastSeenLabel}. New commands are blocked until it reconnects and polls again.
-              </div>
-            )}
-
-            {(deviceTasks || []).map((task) => (
-              <div key={task.id} className="space-y-1">
-                <div className="flex items-center gap-2">
-                  <span className="text-success">$</span>
-                  <span className="text-[hsl(var(--terminal-foreground))]">{task.command}</span>
-                  <span className={`text-xs ml-auto ${getStatusColor(task.status)}`}>
-                    [{task.status}]
-                  </span>
-                </div>
-                {task.status === "Pending" || task.status === "Sent" ? (
-                  <div className="flex items-center gap-2 pl-4 text-[hsl(var(--terminal-foreground))] opacity-60 text-xs">
-                    <Loader2 className="h-3 w-3 animate-spin" />
-                    {task.status === "Pending"
-                      ? selectedDeviceIsResponsive
-                        ? "Waiting for agent to pick up..."
-                        : `No recent heartbeat from the agent (${selectedDeviceLastSeenLabel}); this task will remain queued until it reconnects.`
-                      : selectedDeviceIsResponsive
-                      ? "Sent to agent, awaiting result..."
-                      : `The task was sent before the agent went offline (${selectedDeviceLastSeenLabel}); waiting for it to report back.`}
-                  </div>
-                ) : task.result ? (
-                  <pre className="pl-4 text-xs text-[hsl(var(--terminal-foreground))] opacity-80 whitespace-pre-wrap break-all">{task.result}</pre>
-                ) : null}
-              </div>
-            ))}
-            <div ref={terminalEndRef} />
-          </div>
-        </ScrollArea>
-
-        {/* Command input */}
-        <div className="flex items-center gap-2 px-4 py-3 border-t border-border/30 terminal-bg">
-          <span className="text-success font-mono text-sm">$</span>
-          <Input
-            ref={inputRef}
-            value={cmdInput}
-            onChange={(e) => setCmdInput(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder="Type a command..."
-            className="flex-1 bg-transparent border-none text-[hsl(var(--terminal-foreground))] font-mono text-sm focus-visible:ring-0 focus-visible:ring-offset-0 placeholder:text-[hsl(var(--terminal-foreground))]/30"
-            disabled={!selectedDeviceIsResponsive || createTask.isPending}
-          />
-          <Button
-            size="sm"
-            onClick={handleSendCommand}
-            disabled={!cmdInput.trim() || createTask.isPending || !selectedDeviceIsResponsive}
-            className="bg-primary hover:bg-primary/90 transition-colors"
-          >
-            {createTask.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Send"}
-          </Button>
-        </div>
-      </div>
+      <DeviceTerminal
+        device={selectedDevice}
+        liveDevices={liveDevices || []}
+        onClose={handleCloseTerminal}
+      />
     );
   }
 
