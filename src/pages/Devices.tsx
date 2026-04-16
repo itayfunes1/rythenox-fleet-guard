@@ -4,20 +4,15 @@ import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
-import { Search, Terminal, RefreshCw, Monitor, X, Minus } from "lucide-react";
+import { Search, Terminal, RefreshCw, Monitor, X, LayoutGrid } from "lucide-react";
 import { useTenant } from "@/hooks/use-tenant";
 import { useDevices, type ManagedDevice } from "@/hooks/use-devices";
 import { DeviceTerminal } from "@/components/DeviceTerminal";
 
-interface TerminalTab {
-  device: ManagedDevice;
-  minimized: boolean;
-}
-
 export default function Devices() {
   const [search, setSearch] = useState("");
-  const [tabs, setTabs] = useState<TerminalTab[]>([]);
-  const [activeTabId, setActiveTabId] = useState<string | null>(null);
+  const [openTerminals, setOpenTerminals] = useState<ManagedDevice[]>([]);
+  const [showDeviceList, setShowDeviceList] = useState(true);
 
   const { data: tenant } = useTenant();
   const { data: liveDevices, isLoading, refetch, isFetching } = useDevices(tenant?.tenantId);
@@ -30,59 +25,25 @@ export default function Devices() {
   );
 
   const handleOpenTerminal = (device: ManagedDevice) => {
-    const existing = tabs.find((t) => t.device.target_id === device.target_id);
-    if (existing) {
-      // Restore if minimized, or just focus
-      setTabs((prev) =>
-        prev.map((t) =>
-          t.device.target_id === device.target_id ? { ...t, minimized: false } : t
-        )
-      );
-      setActiveTabId(device.target_id);
-      return;
-    }
-    if (tabs.length >= 4) {
-      // Close the oldest tab to make room
-      const oldest = tabs[0];
-      setTabs((prev) => [...prev.filter((t) => t.device.target_id !== oldest.device.target_id), { device, minimized: false }]);
-    } else {
-      setTabs((prev) => [...prev, { device, minimized: false }]);
-    }
-    setActiveTabId(device.target_id);
+    if (openTerminals.some((t) => t.target_id === device.target_id)) return;
+    if (openTerminals.length >= 4) return; // max 4
+    setOpenTerminals((prev) => [...prev, device]);
+    setShowDeviceList(false);
   };
 
-  const handleMinimize = (targetId: string) => {
-    setTabs((prev) =>
-      prev.map((t) =>
-        t.device.target_id === targetId ? { ...t, minimized: true } : t
-      )
-    );
-    // Switch to another open tab or go to device list
-    const remaining = tabs.filter((t) => t.device.target_id !== targetId && !t.minimized);
-    setActiveTabId(remaining.length > 0 ? remaining[remaining.length - 1].device.target_id : null);
+  const handleCloseTerminal = (targetId: string) => {
+    setOpenTerminals((prev) => prev.filter((t) => t.target_id !== targetId));
   };
 
-  const handleCloseTab = (targetId: string) => {
-    setTabs((prev) => prev.filter((t) => t.device.target_id !== targetId));
-    if (activeTabId === targetId) {
-      const remaining = tabs.filter((t) => t.device.target_id !== targetId);
-      const nextOpen = remaining.find((t) => !t.minimized);
-      setActiveTabId(nextOpen ? nextOpen.device.target_id : null);
+  const getGridClass = (count: number) => {
+    switch (count) {
+      case 1: return "grid-cols-1 grid-rows-1";
+      case 2: return "grid-cols-2 grid-rows-1";
+      case 3: return "grid-cols-2 grid-rows-2";
+      case 4: return "grid-cols-2 grid-rows-2";
+      default: return "grid-cols-1";
     }
   };
-
-  const handleRestoreTab = (targetId: string) => {
-    setTabs((prev) =>
-      prev.map((t) =>
-        t.device.target_id === targetId ? { ...t, minimized: false } : t
-      )
-    );
-    setActiveTabId(targetId);
-  };
-
-  const activeTab = tabs.find((t) => t.device.target_id === activeTabId && !t.minimized);
-  const showDeviceList = !activeTab;
-  const minimizedTabs = tabs.filter((t) => t.minimized);
 
   // Tab bar (shown when there are any open terminals)
   const tabBar = tabs.length > 0 ? (
