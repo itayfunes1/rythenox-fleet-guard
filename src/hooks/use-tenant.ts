@@ -1,11 +1,14 @@
 import { useQuery } from "@tanstack/react-query";
+import { useAuth } from "@/components/AuthProvider";
 import { supabase } from "@/integrations/supabase/client";
 
 export function useTenant() {
+  const { user } = useAuth();
+
   return useQuery({
-    queryKey: ["tenant"],
+    queryKey: ["tenant", user?.id],
+    enabled: !!user?.id,
     queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
       if (!user) return null;
 
       const { data, error } = await supabase
@@ -18,7 +21,6 @@ export function useTenant() {
       if (error || !data) return null;
       const d = data as any;
 
-      // Fetch API key securely via RPC (owner-only)
       const { data: apiKey } = await supabase.rpc("get_tenant_api_key" as any, {
         _user_id: user.id,
       });
