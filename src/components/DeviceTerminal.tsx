@@ -18,10 +18,9 @@ interface DeviceTerminalProps {
   device: ManagedDevice;
   liveDevices: ManagedDevice[];
   onClose: () => void;
-  onMinimize?: () => void;
 }
 
-export function DeviceTerminal({ device, liveDevices, onClose, onMinimize }: DeviceTerminalProps) {
+export function DeviceTerminal({ device, liveDevices, onClose }: DeviceTerminalProps) {
   const [cmdInput, setCmdInput] = useState("");
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
   const { toast } = useToast();
