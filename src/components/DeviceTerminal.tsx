@@ -18,10 +18,9 @@ interface DeviceTerminalProps {
   device: ManagedDevice;
   liveDevices: ManagedDevice[];
   onClose: () => void;
-  onMinimize?: () => void;
 }
 
-export function DeviceTerminal({ device, liveDevices, onClose, onMinimize }: DeviceTerminalProps) {
+export function DeviceTerminal({ device, liveDevices, onClose }: DeviceTerminalProps) {
   const [cmdInput, setCmdInput] = useState("");
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
   const { toast } = useToast();
@@ -129,11 +128,7 @@ export function DeviceTerminal({ device, liveDevices, onClose, onMinimize }: Dev
               className="h-3 w-3 rounded-full bg-[#ff5f57] hover:brightness-90 transition-all"
               aria-label="Close"
             />
-            <button
-              onClick={onMinimize}
-              className="h-3 w-3 rounded-full bg-[#febc2e] hover:brightness-90 transition-all"
-              aria-label="Minimize"
-            />
+            <div className="h-3 w-3 rounded-full bg-[#febc2e]" />
             <div className="h-3 w-3 rounded-full bg-[#28c840]" />
           </div>
           <div className="flex items-center gap-2">
