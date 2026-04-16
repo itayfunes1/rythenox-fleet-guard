@@ -8,9 +8,9 @@ import { useToast } from "@/hooks/use-toast";
 import { Zap, Mail, Lock, Shield, Monitor, Wifi, ArrowLeft } from "lucide-react";
 
 const features = [
-  { icon: Monitor, label: "Fleet Management", desc: "Monitor and control all devices" },
+  { icon: Monitor, label: "Personal Fleet", desc: "Your own devices, your own API key" },
   { icon: Wifi, label: "Real-time Monitoring", desc: "Live telemetry and status updates" },
-  { icon: Shield, label: "Secure Access", desc: "Enterprise-grade security controls" },
+  { icon: Shield, label: "Secure Access", desc: "Private workspace per account" },
 ];
 
 export default function AuthPage() {
@@ -56,7 +56,7 @@ export default function AuthPage() {
             </div>
             <div>
               <h1 className="text-2xl font-bold tracking-tight text-foreground">Rythenox</h1>
-              <p className="text-xs text-muted-foreground tracking-wide uppercase">Fleet Management</p>
+              <p className="text-xs text-muted-foreground tracking-wide uppercase">Marengo Dashboard</p>
             </div>
           </div>
 

@@ -38,65 +38,6 @@ export type Database = {
         }
         Relationships: []
       }
-      chat_channel_members: {
-        Row: {
-          channel_id: string
-          id: string
-          joined_at: string
-          user_email: string
-          user_id: string
-        }
-        Insert: {
-          channel_id: string
-          id?: string
-          joined_at?: string
-          user_email: string
-          user_id: string
-        }
-        Update: {
-          channel_id?: string
-          id?: string
-          joined_at?: string
-          user_email?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "chat_channel_members_channel_id_fkey"
-            columns: ["channel_id"]
-            isOneToOne: false
-            referencedRelation: "chat_channels"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      chat_channels: {
-        Row: {
-          created_at: string
-          created_by: string
-          id: string
-          name: string | null
-          tenant_id: string
-          type: string
-        }
-        Insert: {
-          created_at?: string
-          created_by: string
-          id?: string
-          name?: string | null
-          tenant_id: string
-          type?: string
-        }
-        Update: {
-          created_at?: string
-          created_by?: string
-          id?: string
-          name?: string | null
-          tenant_id?: string
-          type?: string
-        }
-        Relationships: []
-      }
       diagnostic_vault: {
         Row: {
           created_at: string
@@ -216,39 +157,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
-      }
-      org_join_requests: {
-        Row: {
-          created_at: string
-          id: string
-          requester_email: string
-          requester_id: string
-          resolved_at: string | null
-          resolved_by: string | null
-          status: string
-          target_tenant_id: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          requester_email: string
-          requester_id: string
-          resolved_at?: string | null
-          resolved_by?: string | null
-          status?: string
-          target_tenant_id: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          requester_email?: string
-          requester_id?: string
-          resolved_at?: string | null
-          resolved_by?: string | null
-          status?: string
-          target_tenant_id?: string
-        }
-        Relationships: []
       }
       relay_nodes: {
         Row: {
@@ -373,44 +281,6 @@ export type Database = {
           },
         ]
       }
-      team_chat_messages: {
-        Row: {
-          channel_id: string | null
-          created_at: string
-          id: string
-          message: string
-          tenant_id: string
-          user_email: string
-          user_id: string
-        }
-        Insert: {
-          channel_id?: string | null
-          created_at?: string
-          id?: string
-          message: string
-          tenant_id: string
-          user_email: string
-          user_id: string
-        }
-        Update: {
-          channel_id?: string | null
-          created_at?: string
-          id?: string
-          message?: string
-          tenant_id?: string
-          user_email?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "team_chat_messages_channel_id_fkey"
-            columns: ["channel_id"]
-            isOneToOne: false
-            referencedRelation: "chat_channels"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       tenant_members: {
         Row: {
           created_at: string
@@ -469,28 +339,9 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      add_tenant_member: { Args: { _email: string }; Returns: undefined }
-      approve_join_request: {
-        Args: { _request_id: string }
-        Returns: undefined
-      }
       cleanup_stale_sessions: { Args: never; Returns: undefined }
-      create_organization: { Args: { _name: string }; Returns: string }
-      find_tenant_by_name: {
-        Args: { _name: string }
-        Returns: {
-          id: string
-          name: string
-        }[]
-      }
       get_tenant_api_key: { Args: { _user_id: string }; Returns: string }
       get_user_tenant_id: { Args: { _user_id: string }; Returns: string }
-      is_channel_member: {
-        Args: { _channel_id: string; _user_id: string }
-        Returns: boolean
-      }
-      reject_join_request: { Args: { _request_id: string }; Returns: undefined }
-      remove_tenant_member: { Args: { _member_id: string }; Returns: undefined }
     }
     Enums: {
       [_ in never]: never

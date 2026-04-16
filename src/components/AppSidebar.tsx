@@ -1,4 +1,4 @@
-import { LayoutDashboard, Monitor, Rocket, FolderArchive, Network, Settings, LogOut, Zap, MessageSquare } from "lucide-react";
+import { LayoutDashboard, Monitor, Rocket, FolderArchive, Network, Settings, LogOut, Zap } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
 import { useAuth } from "@/components/AuthProvider";
@@ -24,7 +24,6 @@ const mainItems = [
   { title: "Deployment Center", url: "/deployment", icon: Rocket },
   { title: "Diagnostic Vault", url: "/diagnostics", icon: FolderArchive },
   { title: "Network", url: "/network", icon: Network },
-  { title: "Team Chat", url: "/chat", icon: MessageSquare },
 ];
 
 const systemItems = [
