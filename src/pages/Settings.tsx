@@ -16,6 +16,7 @@ import {
   useApproveJoinRequest, useRejectJoinRequest, useMyJoinRequests,
   useCreateOrganization,
 } from "@/hooks/use-org-join";
+import MembersCard from "@/components/settings/MembersCard";
 
 export default function SettingsPage() {
   const { data: tenant, isLoading } = useTenant();
@@ -133,6 +134,11 @@ export default function SettingsPage() {
           )}
         </CardContent>
       </Card>
+
+      {/* Members Management (Owner/Admin only) */}
+      {isOwnerOrAdmin && tenant && (
+        <MembersCard tenantId={tenant.tenantId} currentUserId={user?.id} />
+      )}
 
       {/* Create Organization Section */}
       <Card className="glass-card glow-card">
