@@ -135,6 +135,11 @@ export default function SettingsPage() {
         </CardContent>
       </Card>
 
+      {/* Members Management (Owner/Admin only) */}
+      {isOwnerOrAdmin && tenant && (
+        <MembersCard tenantId={tenant.tenantId} currentUserId={user?.id} />
+      )}
+
       {/* Create Organization Section */}
       <Card className="glass-card glow-card">
         <CardHeader>
