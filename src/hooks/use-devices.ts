@@ -68,3 +68,20 @@ export function useDevices(tenantId: string | undefined) {
     },
   });
 }
+
+export function useUpdateNickname() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, nickname }: { id: string; nickname: string | null }) => {
+      const { error } = await supabase
+        .from("managed_devices")
+        .update({ nickname } as any)
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["managed_devices"] });
+    },
+  });
+}
