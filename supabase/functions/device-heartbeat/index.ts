@@ -97,7 +97,7 @@ Deno.serve(async (req) => {
 
   const { error: upsertErr } = await supabase
     .from("managed_devices")
-    .upsert(upsertData, { onConflict: "target_id" });
+    .upsert(upsertData, { onConflict: "tenant_id,target_id" });
 
   if (upsertErr) {
     return new Response(JSON.stringify({ error: upsertErr.message }), {
