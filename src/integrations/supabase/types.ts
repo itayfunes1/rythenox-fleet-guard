@@ -466,6 +466,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      add_tenant_member: { Args: { _email: string }; Returns: undefined }
       approve_join_request: {
         Args: { _request_id: string }
         Returns: undefined
@@ -486,6 +487,7 @@ export type Database = {
         Returns: boolean
       }
       reject_join_request: { Args: { _request_id: string }; Returns: undefined }
+      remove_tenant_member: { Args: { _member_id: string }; Returns: undefined }
     }
     Enums: {
       [_ in never]: never
