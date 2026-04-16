@@ -4,131 +4,55 @@ import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
-import { Search, Terminal, RefreshCw, Monitor, X, LayoutGrid } from "lucide-react";
+import { Search, Terminal, RefreshCw, Monitor, Pencil, Check, X } from "lucide-react";
 import { useTenant } from "@/hooks/use-tenant";
 import { useDevices, type ManagedDevice } from "@/hooks/use-devices";
-import { DeviceTerminal } from "@/components/DeviceTerminal";
+import { useTerminals } from "@/components/TerminalContext";
+import { useUpdateNickname } from "@/hooks/use-devices";
 
 export default function Devices() {
   const [search, setSearch] = useState("");
-  const [openTerminals, setOpenTerminals] = useState<ManagedDevice[]>([]);
-  const [showDeviceList, setShowDeviceList] = useState(true);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [nicknameInput, setNicknameInput] = useState("");
 
   const { data: tenant } = useTenant();
   const { data: liveDevices, isLoading, refetch, isFetching } = useDevices(tenant?.tenantId);
+  const { sessions, openTerminal } = useTerminals();
+  const updateNickname = useUpdateNickname();
 
   const filtered = (liveDevices || []).filter(
     (d) =>
       d.target_id.toLowerCase().includes(search.toLowerCase()) ||
+      (d.nickname || "").toLowerCase().includes(search.toLowerCase()) ||
       (d.os_info || "").toLowerCase().includes(search.toLowerCase()) ||
       (d.public_ip || "").toLowerCase().includes(search.toLowerCase())
   );
 
   const handleOpenTerminal = (device: ManagedDevice) => {
-    if (openTerminals.some((t) => t.target_id === device.target_id)) return;
-    if (openTerminals.length >= 4) return; // max 4
-    setOpenTerminals((prev) => [...prev, device]);
-    setShowDeviceList(false);
+    openTerminal(device);
   };
 
-  const handleCloseTerminal = (targetId: string) => {
-    setOpenTerminals((prev) => prev.filter((t) => t.target_id !== targetId));
+  const startEditing = (device: ManagedDevice, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setEditingId(device.id);
+    setNicknameInput(device.nickname || "");
   };
 
-  const getGridClass = (count: number) => {
-    switch (count) {
-      case 1: return "grid-cols-1 grid-rows-1";
-      case 2: return "grid-cols-2 grid-rows-1";
-      case 3: return "grid-cols-2 grid-rows-2";
-      case 4: return "grid-cols-2 grid-rows-2";
-      default: return "grid-cols-1";
-    }
+  const saveNickname = (deviceId: string, e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    updateNickname.mutate({ id: deviceId, nickname: nicknameInput.trim() || null });
+    setEditingId(null);
   };
 
-  // Tab bar (shown when there are any open terminals)
-  const hasTerminals = openTerminals.length > 0;
+  const cancelEditing = (e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    setEditingId(null);
+  };
 
-  // Split-screen terminal view
-  if (hasTerminals && !showDeviceList) {
-    return (
-      <div className="flex flex-col h-[calc(100vh-4rem)]">
-        {/* Toolbar */}
-        <div className="flex items-center gap-2 px-3 py-1.5 bg-[hsl(220,25%,10%)] border-b border-[hsl(220,25%,15%)]">
-          <button
-            onClick={() => setShowDeviceList(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium text-[hsl(var(--terminal-foreground))]/60 hover:text-[hsl(var(--terminal-foreground))] hover:bg-[hsl(220,25%,15%)] transition-colors"
-          >
-            <Monitor className="h-3 w-3" />
-            Devices
-          </button>
-          <div className="w-px h-4 bg-[hsl(var(--terminal-foreground))]/10" />
-          <div className="flex items-center gap-1 text-[10px] font-mono text-[hsl(var(--terminal-foreground))]/40">
-            <LayoutGrid className="h-3 w-3" />
-            {openTerminals.length}/4
-          </div>
-          <div className="flex-1" />
-          {openTerminals.map((t) => (
-            <div key={t.target_id} className="flex items-center gap-1.5 px-2 py-1 rounded text-[10px] font-mono text-[hsl(var(--terminal-foreground))]/50 bg-[hsl(220,25%,15%)]">
-              <div className={`h-1.5 w-1.5 rounded-full ${
-                ((liveDevices || []).find((d) => d.target_id === t.target_id)?.isResponsive) ? "bg-success" : "bg-muted-foreground/40"
-              }`} />
-              <span className="max-w-[100px] truncate">{t.target_id}</span>
-              <button
-                onClick={() => handleCloseTerminal(t.target_id)}
-                className="p-0.5 rounded hover:bg-destructive/20 hover:text-destructive transition-colors"
-              >
-                <X className="h-2.5 w-2.5" />
-              </button>
-            </div>
-          ))}
-        </div>
-
-        {/* Terminal grid */}
-        <div className={`flex-1 grid ${getGridClass(openTerminals.length)} gap-px bg-[hsl(220,25%,15%)] overflow-hidden`}>
-          {openTerminals.map((device) => (
-            <div key={device.target_id} className="flex flex-col min-h-0 overflow-hidden">
-              <DeviceTerminal
-                device={device}
-                liveDevices={liveDevices || []}
-                onClose={() => handleCloseTerminal(device.target_id)}
-              />
-            </div>
-          ))}
-          {/* Fill empty slots in 2x2 grid when 3 terminals */}
-          {openTerminals.length === 3 && (
-            <div className="terminal-bg flex items-center justify-center">
-              <button
-                onClick={() => setShowDeviceList(true)}
-                className="flex flex-col items-center gap-2 text-[hsl(var(--terminal-foreground))]/20 hover:text-[hsl(var(--terminal-foreground))]/40 transition-colors"
-              >
-                <Terminal className="h-6 w-6" />
-                <span className="text-xs font-mono">Open terminal</span>
-              </button>
-            </div>
-          )}
-        </div>
-      </div>
-    );
-  }
-
-  // Device list view
   return (
     <div className="space-y-6">
       <div className="space-y-1">
-        <div className="flex items-center gap-3">
-          <h1 className="text-2xl font-bold text-foreground tracking-tight">Device Management</h1>
-          {hasTerminals && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setShowDeviceList(false)}
-              className="ml-auto border-success/30 text-success hover:bg-success/10 gap-1.5"
-            >
-              <LayoutGrid className="h-3.5 w-3.5" />
-              View Terminals ({openTerminals.length})
-            </Button>
-          )}
-        </div>
+        <h1 className="text-2xl font-bold text-foreground tracking-tight">Device Management</h1>
         <p className="text-sm text-muted-foreground">Corporate asset inventory and remote management</p>
       </div>
 
@@ -168,7 +92,7 @@ export default function Devices() {
             <Table>
               <TableHeader>
                 <TableRow className="border-border/30 hover:bg-transparent">
-                  <TableHead className="text-xs uppercase tracking-wider text-muted-foreground/60 font-semibold">Target ID</TableHead>
+                  <TableHead className="text-xs uppercase tracking-wider text-muted-foreground/60 font-semibold">Device</TableHead>
                   <TableHead className="text-xs uppercase tracking-wider text-muted-foreground/60 font-semibold">Status</TableHead>
                   <TableHead className="hidden md:table-cell text-xs uppercase tracking-wider text-muted-foreground/60 font-semibold">OS</TableHead>
                   <TableHead className="hidden md:table-cell text-xs uppercase tracking-wider text-muted-foreground/60 font-semibold">Arch</TableHead>
@@ -179,16 +103,54 @@ export default function Devices() {
               </TableHeader>
               <TableBody className="stagger-children">
                 {filtered.map((device) => {
-                  const hasTab = openTerminals.some((t) => t.target_id === device.target_id);
+                  const hasTab = sessions.some((s) => s.device.target_id === device.target_id);
+                  const isEditing = editingId === device.id;
                   return (
                     <TableRow
                       key={device.id}
                       className="cursor-pointer table-row-hover border-border/20 transition-all duration-200 hover:bg-primary/5"
                       onClick={() => handleOpenTerminal(device)}
                     >
-                      <TableCell className="font-mono text-sm font-medium text-foreground">
-                        {device.target_id}
-                        {hasTab && <span className="ml-2 text-[10px] text-success">●</span>}
+                      <TableCell>
+                        {isEditing ? (
+                          <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
+                            <Input
+                              value={nicknameInput}
+                              onChange={(e) => setNicknameInput(e.target.value)}
+                              placeholder={device.target_id}
+                              className="h-7 text-sm w-40"
+                              autoFocus
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter") saveNickname(device.id);
+                                if (e.key === "Escape") cancelEditing();
+                              }}
+                            />
+                            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={(e) => saveNickname(device.id, e)}>
+                              <Check className="h-3 w-3 text-success" />
+                            </Button>
+                            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={(e) => cancelEditing(e)}>
+                              <X className="h-3 w-3 text-muted-foreground" />
+                            </Button>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-2 group/name">
+                            <div>
+                              <div className="font-mono text-sm font-medium text-foreground">
+                                {device.nickname || device.target_id}
+                                {hasTab && <span className="ml-2 text-[10px] text-success">●</span>}
+                              </div>
+                              {device.nickname && (
+                                <div className="text-[10px] text-muted-foreground font-mono">{device.target_id}</div>
+                              )}
+                            </div>
+                            <button
+                              onClick={(e) => startEditing(device, e)}
+                              className="opacity-0 group-hover/name:opacity-100 transition-opacity p-1 rounded hover:bg-muted"
+                            >
+                              <Pencil className="h-3 w-3 text-muted-foreground" />
+                            </button>
+                          </div>
+                        )}
                       </TableCell>
                       <TableCell>
                         <StatusBadge status={device.status === "Online" ? "online" : "offline"} />
@@ -204,11 +166,11 @@ export default function Devices() {
                           variant="ghost"
                           size="sm"
                           onClick={(e) => { e.stopPropagation(); handleOpenTerminal(device); }}
-                          disabled={hasTab || openTerminals.length >= 4}
+                          disabled={sessions.length >= 4 && !hasTab}
                           className="hover:bg-success/10 hover:text-success transition-colors"
                         >
                           <Terminal className="h-4 w-4 mr-2" />
-                          {hasTab ? "Open" : "Terminal"}
+                          {hasTab ? "Focus" : "Terminal"}
                         </Button>
                       </TableCell>
                     </TableRow>
