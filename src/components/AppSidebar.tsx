@@ -74,7 +74,7 @@ export function AppSidebar() {
           {!collapsed && (
             <div>
               <h1 className="text-sm font-bold tracking-tight text-sidebar-foreground">Rythenox</h1>
-              <p className="text-[10px] text-muted-foreground tracking-wide uppercase">Fleet Management</p>
+              <p className="text-[10px] text-muted-foreground tracking-wide uppercase">Marengo Dashboard</p>
             </div>
           )}
         </div>
