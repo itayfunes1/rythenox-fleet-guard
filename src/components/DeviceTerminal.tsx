@@ -139,8 +139,13 @@ export function DeviceTerminal({ device, liveDevices, onClose, onMinimize }: Dev
           <div className="flex items-center gap-2">
             <Terminal className="h-3.5 w-3.5 text-[hsl(var(--terminal-foreground))]/60" />
             <span className="text-xs font-medium font-mono text-[hsl(var(--terminal-foreground))]">
-              {currentDevice.target_id}
+              {currentDevice.nickname || currentDevice.target_id}
             </span>
+            {currentDevice.nickname && (
+              <span className="text-[10px] font-mono text-[hsl(var(--terminal-foreground))]/30">
+                {currentDevice.target_id}
+              </span>
+            )}
           </div>
           <StatusBadge status={isResponsive ? "online" : "offline"} />
         </div>
