@@ -18,6 +18,7 @@ interface DeviceTerminalProps {
   device: ManagedDevice;
   liveDevices: ManagedDevice[];
   onClose: () => void;
+  onMinimize?: () => void;
 }
 
 export function DeviceTerminal({ device, liveDevices, onClose }: DeviceTerminalProps) {

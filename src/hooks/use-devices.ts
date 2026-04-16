@@ -12,6 +12,7 @@ export interface ManagedDevice {
   arch: string | null;
   public_ip: string | null;
   last_seen: string | null;
+  nickname: string | null;
   isResponsive: boolean;
 }
 
