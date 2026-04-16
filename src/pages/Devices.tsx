@@ -41,7 +41,13 @@ export default function Devices() {
       setActiveTabId(device.target_id);
       return;
     }
-    setTabs((prev) => [...prev, { device, minimized: false }]);
+    if (tabs.length >= 4) {
+      // Close the oldest tab to make room
+      const oldest = tabs[0];
+      setTabs((prev) => [...prev.filter((t) => t.device.target_id !== oldest.device.target_id), { device, minimized: false }]);
+    } else {
+      setTabs((prev) => [...prev, { device, minimized: false }]);
+    }
     setActiveTabId(device.target_id);
   };
 
