@@ -16,6 +16,7 @@ import {
   useApproveJoinRequest, useRejectJoinRequest, useMyJoinRequests,
   useCreateOrganization,
 } from "@/hooks/use-org-join";
+import MembersCard from "@/components/settings/MembersCard";
 
 export default function SettingsPage() {
   const { data: tenant, isLoading } = useTenant();
