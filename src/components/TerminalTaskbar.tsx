@@ -1,137 +1,93 @@
-import { Terminal, X, Minus, Maximize2, ChevronUp } from "lucide-react";
 import { useTerminals } from "@/components/TerminalContext";
 import { useDevices } from "@/hooks/use-devices";
 import { useTenant } from "@/hooks/use-tenant";
 import { DeviceTerminal } from "@/components/DeviceTerminal";
+import { Terminal, X, Minus, Maximize2 } from "lucide-react";
 
 export function TerminalTaskbar() {
-  const {
-    terminals,
-    expandedTerminalId,
-    closeTerminal,
-    minimizeTerminal,
-    restoreTerminal,
-    expandTerminal,
-    collapseExpanded,
-  } = useTerminals();
-
+  const { sessions, closeTerminal, toggleMinimize, restoreTerminal } = useTerminals();
   const { data: tenant } = useTenant();
   const { data: liveDevices } = useDevices(tenant?.tenantId);
 
-  if (terminals.length === 0) return null;
+  if (sessions.length === 0) return null;
 
-  const expandedEntry = terminals.find(
-    (t) => t.device.target_id === expandedTerminalId && !t.minimized
-  );
+  const expandedSessions = sessions.filter((s) => !s.minimized);
+
+  const getGridClass = (count: number) => {
+    switch (count) {
+      case 1: return "grid-cols-1";
+      case 2: return "grid-cols-2";
+      case 3: return "grid-cols-2 grid-rows-2";
+      case 4: return "grid-cols-2 grid-rows-2";
+      default: return "grid-cols-1";
+    }
+  };
 
   return (
     <>
       {/* Expanded terminal overlay */}
-      {expandedEntry && (
-        <div className="fixed inset-x-0 bottom-9 top-14 z-40 flex flex-col bg-[hsl(220,25%,10%)] border-t border-[hsl(220,25%,18%)] shadow-2xl animate-fade-in">
-          <DeviceTerminal
-            device={expandedEntry.device}
-            liveDevices={liveDevices || []}
-            onClose={() => closeTerminal(expandedEntry.device.target_id)}
-            onMinimize={() => minimizeTerminal(expandedEntry.device.target_id)}
-          />
+      {expandedSessions.length > 0 && (
+        <div className="fixed inset-0 z-50 flex flex-col bg-[hsl(220,25%,8%)]/95 backdrop-blur-sm">
+          <div className={`flex-1 grid ${getGridClass(expandedSessions.length)} gap-px bg-[hsl(220,25%,15%)] overflow-hidden`}>
+            {expandedSessions.map((session) => (
+              <div key={session.device.target_id} className="flex flex-col min-h-0 overflow-hidden">
+                <DeviceTerminal
+                  device={session.device}
+                  liveDevices={liveDevices || []}
+                  onClose={() => closeTerminal(session.device.target_id)}
+                  onMinimize={() => toggleMinimize(session.device.target_id)}
+                />
+              </div>
+            ))}
+            {expandedSessions.length === 3 && (
+              <div className="terminal-bg flex items-center justify-center">
+                <div className="flex flex-col items-center gap-2 text-[hsl(var(--terminal-foreground))]/20">
+                  <Terminal className="h-6 w-6" />
+                  <span className="text-xs font-mono">Empty slot</span>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       )}
 
-      {/* Bottom taskbar */}
-      <div className="fixed bottom-0 inset-x-0 z-50 h-9 flex items-center gap-0.5 px-2 bg-[hsl(220,25%,8%)] border-t border-[hsl(220,25%,15%)]">
-        <div className="flex items-center gap-1 mr-2">
-          <Terminal className="h-3 w-3 text-success/60" />
-          <span className="text-[10px] font-mono text-[hsl(var(--terminal-foreground))]/30">
-            {terminals.length}/4
-          </span>
-        </div>
-
-        {terminals.map((entry) => {
-          const targetId = entry.device.target_id;
-          const isExpanded = expandedTerminalId === targetId && !entry.minimized;
-          const liveDevice = (liveDevices || []).find((d) => d.target_id === targetId);
-          const isOnline = liveDevice
-            ? (liveDevice.isResponsive ?? liveDevice.status === "Online")
-            : false;
+      {/* Windows-style taskbar */}
+      <div className="fixed bottom-0 left-0 right-0 z-[60] flex items-center gap-1 px-2 py-1.5 bg-card border-t border-border shadow-lg">
+        <Terminal className="h-3.5 w-3.5 text-muted-foreground mr-1" />
+        {sessions.map((session) => {
+          const device = (liveDevices || []).find((d) => d.target_id === session.device.target_id) ?? session.device;
+          const label = device.nickname || device.target_id;
+          const isActive = !session.minimized;
 
           return (
-            <div
-              key={targetId}
-              className={`group flex items-center gap-1.5 pl-2.5 pr-1 py-1 rounded text-[11px] font-mono cursor-pointer transition-all ${
-                isExpanded
-                  ? "bg-[hsl(220,25%,20%)] text-[hsl(var(--terminal-foreground))]"
-                  : entry.minimized
-                    ? "text-[hsl(var(--terminal-foreground))]/30 hover:text-[hsl(var(--terminal-foreground))]/60 hover:bg-[hsl(220,25%,12%)]"
-                    : "text-[hsl(var(--terminal-foreground))]/50 hover:text-[hsl(var(--terminal-foreground))]/80 hover:bg-[hsl(220,25%,15%)]"
+            <button
+              key={session.device.target_id}
+              onClick={() => toggleMinimize(session.device.target_id)}
+              className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-medium transition-all max-w-[200px] group ${
+                isActive
+                  ? "bg-primary/10 text-primary border border-primary/20"
+                  : "bg-muted/50 text-muted-foreground hover:bg-muted border border-transparent"
               }`}
-              onClick={() => {
-                if (isExpanded) {
-                  minimizeTerminal(targetId);
-                } else if (entry.minimized) {
-                  restoreTerminal(targetId);
-                } else {
-                  expandTerminal(targetId);
-                }
-              }}
             >
-              <div
-                className={`h-1.5 w-1.5 rounded-full shrink-0 ${
-                  isOnline ? "bg-success" : "bg-muted-foreground/40"
-                }`}
-              />
-              <span className="max-w-[120px] truncate">{targetId}</span>
-
-              {/* Hover actions */}
+              <div className={`h-2 w-2 rounded-full shrink-0 ${device.isResponsive ? "bg-success" : "bg-muted-foreground/40"}`} />
+              <span className="truncate">{label}</span>
               <div className="flex items-center gap-0.5 ml-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                {entry.minimized ? (
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      restoreTerminal(targetId);
-                    }}
-                    className="p-0.5 rounded hover:bg-[hsl(var(--terminal-foreground))]/10"
-                    title="Restore"
-                  >
-                    <ChevronUp className="h-2.5 w-2.5" />
-                  </button>
-                ) : !isExpanded ? (
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      expandTerminal(targetId);
-                    }}
-                    className="p-0.5 rounded hover:bg-[hsl(var(--terminal-foreground))]/10"
-                    title="Expand"
-                  >
-                    <Maximize2 className="h-2.5 w-2.5" />
-                  </button>
+                {session.minimized ? (
+                  <Maximize2 className="h-3 w-3 hover:text-primary" onClick={(e) => { e.stopPropagation(); restoreTerminal(session.device.target_id); }} />
                 ) : (
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      minimizeTerminal(targetId);
-                    }}
-                    className="p-0.5 rounded hover:bg-[hsl(var(--terminal-foreground))]/10"
-                    title="Minimize"
-                  >
-                    <Minus className="h-2.5 w-2.5" />
-                  </button>
+                  <Minus className="h-3 w-3 hover:text-primary" onClick={(e) => { e.stopPropagation(); toggleMinimize(session.device.target_id); }} />
                 )}
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    closeTerminal(targetId);
-                  }}
-                  className="p-0.5 rounded hover:bg-destructive/20 hover:text-destructive"
-                  title="Close"
-                >
-                  <X className="h-2.5 w-2.5" />
-                </button>
+                <X
+                  className="h-3 w-3 hover:text-destructive"
+                  onClick={(e) => { e.stopPropagation(); closeTerminal(session.device.target_id); }}
+                />
               </div>
-            </div>
+            </button>
           );
         })}
+        <div className="ml-auto text-[10px] text-muted-foreground font-mono">
+          {sessions.length}/4
+        </div>
       </div>
     </>
   );

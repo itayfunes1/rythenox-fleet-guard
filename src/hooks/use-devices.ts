@@ -1,4 +1,4 @@
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { isDeviceResponsive, isDeviceVisible } from "@/lib/device-presence";
@@ -12,6 +12,7 @@ export interface ManagedDevice {
   arch: string | null;
   public_ip: string | null;
   last_seen: string | null;
+  nickname: string | null;
   isResponsive: boolean;
 }
 
@@ -64,6 +65,23 @@ export function useDevices(tenantId: string | undefined) {
             isResponsive: responsive,
           } satisfies ManagedDevice;
         });
+    },
+  });
+}
+
+export function useUpdateNickname() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, nickname }: { id: string; nickname: string | null }) => {
+      const { error } = await supabase
+        .from("managed_devices")
+        .update({ nickname } as any)
+        .eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["managed_devices"] });
     },
   });
 }

@@ -4,23 +4,50 @@ import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
-import { Search, Terminal, RefreshCw, Monitor } from "lucide-react";
+import { Search, Terminal, RefreshCw, Monitor, Pencil, Check, X } from "lucide-react";
 import { useTenant } from "@/hooks/use-tenant";
-import { useDevices } from "@/hooks/use-devices";
+import { useDevices, type ManagedDevice } from "@/hooks/use-devices";
 import { useTerminals } from "@/components/TerminalContext";
+import { useUpdateNickname } from "@/hooks/use-devices";
 
 export default function Devices() {
   const [search, setSearch] = useState("");
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [nicknameInput, setNicknameInput] = useState("");
+
   const { data: tenant } = useTenant();
   const { data: liveDevices, isLoading, refetch, isFetching } = useDevices(tenant?.tenantId);
-  const { terminals, openTerminal } = useTerminals();
+  const { sessions, openTerminal } = useTerminals();
+  const updateNickname = useUpdateNickname();
 
   const filtered = (liveDevices || []).filter(
     (d) =>
       d.target_id.toLowerCase().includes(search.toLowerCase()) ||
+      (d.nickname || "").toLowerCase().includes(search.toLowerCase()) ||
       (d.os_info || "").toLowerCase().includes(search.toLowerCase()) ||
       (d.public_ip || "").toLowerCase().includes(search.toLowerCase())
   );
+
+  const handleOpenTerminal = (device: ManagedDevice) => {
+    openTerminal(device);
+  };
+
+  const startEditing = (device: ManagedDevice, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setEditingId(device.id);
+    setNicknameInput(device.nickname || "");
+  };
+
+  const saveNickname = (deviceId: string, e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    updateNickname.mutate({ id: deviceId, nickname: nicknameInput.trim() || null });
+    setEditingId(null);
+  };
+
+  const cancelEditing = (e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    setEditingId(null);
+  };
 
   return (
     <div className="space-y-6">
@@ -65,7 +92,7 @@ export default function Devices() {
             <Table>
               <TableHeader>
                 <TableRow className="border-border/30 hover:bg-transparent">
-                  <TableHead className="text-xs uppercase tracking-wider text-muted-foreground/60 font-semibold">Target ID</TableHead>
+                  <TableHead className="text-xs uppercase tracking-wider text-muted-foreground/60 font-semibold">Device</TableHead>
                   <TableHead className="text-xs uppercase tracking-wider text-muted-foreground/60 font-semibold">Status</TableHead>
                   <TableHead className="hidden md:table-cell text-xs uppercase tracking-wider text-muted-foreground/60 font-semibold">OS</TableHead>
                   <TableHead className="hidden md:table-cell text-xs uppercase tracking-wider text-muted-foreground/60 font-semibold">Arch</TableHead>
@@ -76,16 +103,54 @@ export default function Devices() {
               </TableHeader>
               <TableBody className="stagger-children">
                 {filtered.map((device) => {
-                  const hasTerminal = terminals.some((t) => t.device.target_id === device.target_id);
+                  const hasTab = sessions.some((s) => s.device.target_id === device.target_id);
+                  const isEditing = editingId === device.id;
                   return (
                     <TableRow
                       key={device.id}
                       className="cursor-pointer table-row-hover border-border/20 transition-all duration-200 hover:bg-primary/5"
-                      onClick={() => openTerminal(device)}
+                      onClick={() => handleOpenTerminal(device)}
                     >
-                      <TableCell className="font-mono text-sm font-medium text-foreground">
-                        {device.target_id}
-                        {hasTerminal && <span className="ml-2 text-[10px] text-success">●</span>}
+                      <TableCell>
+                        {isEditing ? (
+                          <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
+                            <Input
+                              value={nicknameInput}
+                              onChange={(e) => setNicknameInput(e.target.value)}
+                              placeholder={device.target_id}
+                              className="h-7 text-sm w-40"
+                              autoFocus
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter") saveNickname(device.id);
+                                if (e.key === "Escape") cancelEditing();
+                              }}
+                            />
+                            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={(e) => saveNickname(device.id, e)}>
+                              <Check className="h-3 w-3 text-success" />
+                            </Button>
+                            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={(e) => cancelEditing(e)}>
+                              <X className="h-3 w-3 text-muted-foreground" />
+                            </Button>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-2 group/name">
+                            <div>
+                              <div className="font-mono text-sm font-medium text-foreground">
+                                {device.nickname || device.target_id}
+                                {hasTab && <span className="ml-2 text-[10px] text-success">●</span>}
+                              </div>
+                              {device.nickname && (
+                                <div className="text-[10px] text-muted-foreground font-mono">{device.target_id}</div>
+                              )}
+                            </div>
+                            <button
+                              onClick={(e) => startEditing(device, e)}
+                              className="opacity-0 group-hover/name:opacity-100 transition-opacity p-1 rounded hover:bg-muted"
+                            >
+                              <Pencil className="h-3 w-3 text-muted-foreground" />
+                            </button>
+                          </div>
+                        )}
                       </TableCell>
                       <TableCell>
                         <StatusBadge status={device.status === "Online" ? "online" : "offline"} />
@@ -100,12 +165,12 @@ export default function Devices() {
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={(e) => { e.stopPropagation(); openTerminal(device); }}
-                          disabled={hasTerminal || terminals.length >= 4}
+                          onClick={(e) => { e.stopPropagation(); handleOpenTerminal(device); }}
+                          disabled={sessions.length >= 4 && !hasTab}
                           className="hover:bg-success/10 hover:text-success transition-colors"
                         >
                           <Terminal className="h-4 w-4 mr-2" />
-                          {hasTerminal ? "Open" : "Terminal"}
+                          {hasTab ? "Focus" : "Terminal"}
                         </Button>
                       </TableCell>
                     </TableRow>
