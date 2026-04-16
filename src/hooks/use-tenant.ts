@@ -16,7 +16,7 @@ export function useTenant() {
         .select("tenant_id, role, tenants:tenant_id(id, name)")
         .eq("user_id", user.id)
         .limit(1)
-        .single();
+        .maybeSingle();
 
       if (error || !data) return null;
       const d = data as any;
