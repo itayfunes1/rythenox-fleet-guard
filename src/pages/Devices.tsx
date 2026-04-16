@@ -49,6 +49,7 @@ export default function Devices() {
       setTabs((prev) => [...prev, { device, minimized: false }]);
     }
     setActiveTabId(device.target_id);
+  };
 
   const handleMinimize = (targetId: string) => {
     setTabs((prev) =>
