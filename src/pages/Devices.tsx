@@ -1,19 +1,13 @@
-import { useState, useRef, useEffect, useCallback, KeyboardEvent } from "react";
+import { useState } from "react";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
-import { Search, Terminal, RefreshCw, X, Loader2, Monitor } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
+import { Search, Terminal, RefreshCw, Monitor } from "lucide-react";
 import { useTenant } from "@/hooks/use-tenant";
 import { useDevices, type ManagedDevice } from "@/hooks/use-devices";
-import { useCreateTask, useDeviceTasks } from "@/hooks/use-tasks";
-import { useStartSession, useEndSession } from "@/hooks/use-active-sessions";
-import { useAuth } from "@/components/AuthProvider";
-import { supabase } from "@/integrations/supabase/client";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { formatLastSeenAge } from "@/lib/device-presence";
+import { DeviceTerminal } from "@/components/DeviceTerminal";
 
 export default function Devices() {
   const [search, setSearch] = useState("");

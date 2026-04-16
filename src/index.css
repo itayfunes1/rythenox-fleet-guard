@@ -148,6 +148,19 @@
     color: hsl(var(--terminal-foreground));
   }
 
+  .terminal-cursor {
+    animation: cursor-blink 1s step-end infinite;
+  }
+
+  @keyframes cursor-blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0; }
+  }
+
+  .terminal-output {
+    font-variant-ligatures: none;
+  }
+
   /* Scrollbar */
   ::-webkit-scrollbar {
     width: 6px;
