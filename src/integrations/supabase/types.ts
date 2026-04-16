@@ -137,6 +137,7 @@ export type Database = {
           arch: string | null
           id: string
           last_seen: string | null
+          nickname: string | null
           os_info: string | null
           public_ip: string | null
           status: string
@@ -147,6 +148,7 @@ export type Database = {
           arch?: string | null
           id?: string
           last_seen?: string | null
+          nickname?: string | null
           os_info?: string | null
           public_ip?: string | null
           status?: string
@@ -157,6 +159,7 @@ export type Database = {
           arch?: string | null
           id?: string
           last_seen?: string | null
+          nickname?: string | null
           os_info?: string | null
           public_ip?: string | null
           status?: string
