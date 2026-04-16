@@ -23,7 +23,7 @@ export function useDevices(tenantId: string | undefined) {
     if (!tenantId) return;
 
     const channel = supabase
-      .channel("managed_devices_realtime")
+      .channel(`managed_devices_realtime_${tenantId}_${Math.random().toString(36).slice(2, 8)}`)
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "managed_devices", filter: `tenant_id=eq.${tenantId}` },
