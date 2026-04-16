@@ -12,19 +12,9 @@ import { DeviceTerminal } from "@/components/DeviceTerminal";
 export default function Devices() {
   const [search, setSearch] = useState("");
   const [selectedDevice, setSelectedDevice] = useState<ManagedDevice | null>(null);
-  const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
-  const [cmdInput, setCmdInput] = useState("");
-  const { toast } = useToast();
-  const terminalEndRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
 
-  const { user } = useAuth();
   const { data: tenant } = useTenant();
   const { data: liveDevices, isLoading, refetch, isFetching } = useDevices(tenant?.tenantId);
-  const createTask = useCreateTask();
-  const startSession = useStartSession();
-  const endSession = useEndSession();
-  const { data: deviceTasks } = useDeviceTasks(tenant?.tenantId, selectedDevice?.target_id);
 
   const filtered = (liveDevices || []).filter(
     (d) =>
@@ -33,94 +23,12 @@ export default function Devices() {
       (d.public_ip || "").toLowerCase().includes(search.toLowerCase())
   );
 
-  const currentSelectedDevice = selectedDevice
-    ? (liveDevices || []).find((device) => device.target_id === selectedDevice.target_id) ?? selectedDevice
-    : null;
-
-  const selectedDeviceIsResponsive = currentSelectedDevice
-    ? currentSelectedDevice.isResponsive ?? currentSelectedDevice.status === "Online"
-    : false;
-
-  const selectedDeviceLastSeenLabel = currentSelectedDevice?.last_seen
-    ? formatLastSeenAge(currentSelectedDevice.last_seen)
-    : "an unknown time";
-
-  useEffect(() => {
-    terminalEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [deviceTasks]);
-
-  useEffect(() => {
-    if (selectedDevice) {
-      setTimeout(() => inputRef.current?.focus(), 100);
-    }
-  }, [selectedDevice]);
-
   const handleOpenTerminal = (device: ManagedDevice) => {
     setSelectedDevice(device);
-    setCmdInput("");
-
-    if (tenant?.tenantId && user?.id) {
-      startSession.mutate(
-        { tenant_id: tenant.tenantId, user_id: user.id, target_id: device.target_id },
-        { onSuccess: (data) => setActiveSessionId(data.id) }
-      );
-    }
   };
 
-  const handleCloseTerminal = useCallback(() => {
-    if (activeSessionId) {
-      endSession.mutate(activeSessionId);
-      setActiveSessionId(null);
-    }
+  const handleCloseTerminal = () => {
     setSelectedDevice(null);
-  }, [activeSessionId, endSession]);
-
-  useEffect(() => {
-    return () => {
-      if (activeSessionId) {
-        supabase.from("active_sessions").delete().eq("id", activeSessionId).then();
-      }
-    };
-  }, [activeSessionId]);
-
-  const handleSendCommand = () => {
-    if (!tenant?.tenantId || !currentSelectedDevice || !cmdInput.trim()) return;
-
-    if (!selectedDeviceIsResponsive) {
-      toast({
-        title: "Device offline",
-        description: `No heartbeat received from ${currentSelectedDevice.target_id} for ${selectedDeviceLastSeenLabel}. Commands will stay queued until the agent reconnects.`,
-        variant: "destructive",
-      });
-      return;
-    }
-
-    createTask.mutate(
-      { tenant_id: tenant.tenantId, target_id: currentSelectedDevice.target_id, command: cmdInput.trim() },
-      {
-        onSuccess: () => setCmdInput(""),
-        onError: (err) => {
-          toast({ title: "Error", description: (err as Error).message, variant: "destructive" });
-        },
-      }
-    );
-  };
-
-  const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      handleSendCommand();
-    }
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "Pending": return "text-warning";
-      case "Sent": return "text-primary";
-      case "Completed": return "text-success";
-      case "Failed": return "text-destructive";
-      default: return "text-muted-foreground";
-    }
   };
 
   // Terminal view
