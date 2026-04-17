@@ -1,4 +1,5 @@
 import { LayoutDashboard, Monitor, Rocket, FolderArchive, Network, Settings, LogOut, Zap } from "lucide-react";
+import rythenoxLogo from "@/assets/rythenox-logo.svg";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
 import { useAuth } from "@/components/AuthProvider";
