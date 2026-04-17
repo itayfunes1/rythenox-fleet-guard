@@ -1,4 +1,5 @@
 import { LayoutDashboard, Monitor, Rocket, FolderArchive, Network, Settings, LogOut, Zap } from "lucide-react";
+import rythenoxLogo from "@/assets/rythenox-logo.svg";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
 import { useAuth } from "@/components/AuthProvider";
@@ -66,17 +67,18 @@ export function AppSidebar() {
   return (
     <Sidebar collapsible="icon" className="sidebar-glow">
       <SidebarHeader className="p-4">
-        <div className="flex items-center gap-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary shadow-sm shrink-0">
-            <Zap className="h-4 w-4 text-primary-foreground" />
-          </div>
-          {!collapsed && (
-            <div>
-              <h1 className="text-sm font-bold tracking-tight text-sidebar-foreground">Rythenox</h1>
-              <p className="text-[10px] text-muted-foreground tracking-wide uppercase">Marengo Dashboard</p>
+        {collapsed ? (
+          <div className="flex justify-center">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary shadow-sm shrink-0">
+              <Zap className="h-4 w-4 text-primary-foreground" />
             </div>
-          )}
-        </div>
+          </div>
+        ) : (
+          <div className="flex flex-col gap-1 items-start">
+            <img src={rythenoxLogo} alt="Rythenox" className="h-7 w-auto" />
+            <p className="text-[10px] text-muted-foreground tracking-wide uppercase pl-1">Marengo Dashboard</p>
+          </div>
+        )}
       </SidebarHeader>
 
       <SidebarContent className="px-2">
