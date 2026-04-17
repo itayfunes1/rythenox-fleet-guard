@@ -9,9 +9,9 @@ import { Mail, Lock, Shield, Monitor, Wifi, ArrowLeft } from "lucide-react";
 import rythenoxLogo from "@/assets/rythenox-logo.svg";
 
 const features = [
-  { icon: Monitor, label: "Personal Fleet", desc: "Your own devices, your own API key" },
-  { icon: Wifi, label: "Real-time Monitoring", desc: "Live telemetry and status updates" },
-  { icon: Shield, label: "Secure Access", desc: "Private workspace per account" },
+  { icon: Monitor, label: "Personal Fleet", desc: "Isolated tenant workspaces with unique RSA-derived API keys and device grouping." },
+  { icon: Wifi, label: "Real-time Monitoring", desc: "Sub-second telemetry polling. Track live status, OS kernels, and hardware architecture in real-time." },
+  { icon: Shield, label: "Secure Access", desc: "Multi-relay PSK authentication. Secure command forwarding with zero-footprint architecture." },
 ];
 
 export default function AuthPage() {
@@ -58,11 +58,11 @@ export default function AuthPage() {
 
           <div className="space-y-2">
             <h2 className="text-3xl font-bold text-foreground leading-tight">
-              Command your fleet<br />
+              Control your agent<br />
               <span className="text-primary">from anywhere.</span>
             </h2>
             <p className="text-muted-foreground text-sm leading-relaxed">
-              Monitor devices, deploy software, and manage your IT infrastructure with real-time visibility and control.
+              High-fidelity device orchestration via multi-node relay architecture. Execute distributed commands, monitor live telemetry, and manage global infrastructure from a single pane of glass.
             </p>
           </div>
 
