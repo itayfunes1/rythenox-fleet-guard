@@ -120,7 +120,7 @@ export function DeviceTerminal({ device, liveDevices, onClose, onMinimize }: Dev
   return (
     <div className="flex flex-col flex-1 animate-fade-in">
       {/* Header */}
-      <div className="flex items-center justify-between px-5 py-3 border-b border-[hsl(var(--terminal-bg))] bg-[hsl(220,25%,10%)]">
+      <div className="shrink-0 flex items-center justify-between px-5 py-3 border-b border-[hsl(var(--terminal-bg))] bg-[hsl(220,25%,10%)]">
         <div className="flex items-center gap-3">
           {/* macOS-style window controls */}
           <div className="flex items-center gap-1.5 mr-2">
