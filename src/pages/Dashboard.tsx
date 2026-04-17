@@ -588,7 +588,7 @@ export default function Dashboard() {
             <CardContent className="space-y-2">
               <QuickAction icon={Monitor} title="Device Management" desc="Terminal & remote access" onClick={() => navigate("/devices")} />
               <QuickAction icon={Rocket} title="Deploy Agent" desc="Build & download binaries" onClick={() => navigate("/deployment")} />
-              <QuickAction icon={FolderArchive} title="Diagnostic Vault" desc="Files & telemetry data" onClick={() => navigate("/diagnostics")} />
+              <QuickAction icon={FolderArchive} title="File Explorer" desc="Files & telemetry data" onClick={() => navigate("/diagnostics")} />
               <QuickAction icon={Network} title="Network Infra" desc="Relay nodes & health" onClick={() => navigate("/network")} />
             </CardContent>
           </Card>
