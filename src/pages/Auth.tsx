@@ -5,7 +5,8 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { Zap, Mail, Lock, Shield, Monitor, Wifi, ArrowLeft } from "lucide-react";
+import { Mail, Lock, Shield, Monitor, Wifi, ArrowLeft } from "lucide-react";
+import rythenoxLogo from "@/assets/rythenox-logo.svg";
 
 const features = [
   { icon: Monitor, label: "Personal Fleet", desc: "Your own devices, your own API key" },
@@ -50,14 +51,9 @@ export default function AuthPage() {
       {/* Left Panel - Branding */}
       <div className="hidden lg:flex flex-1 flex-col justify-center items-center p-12 bg-muted/30 border-r border-border">
         <div className="max-w-md space-y-8">
-          <div className="flex items-center gap-3">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary shadow-sm">
-              <Zap className="h-6 w-6 text-primary-foreground" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold tracking-tight text-foreground">Rythenox</h1>
-              <p className="text-xs text-muted-foreground tracking-wide uppercase">Marengo Dashboard</p>
-            </div>
+          <div className="flex flex-col gap-2">
+            <img src={rythenoxLogo} alt="Rythenox" className="h-12 w-auto" />
+            <p className="text-xs text-muted-foreground tracking-wide uppercase pl-1">Marengo Dashboard</p>
           </div>
 
           <div className="space-y-2">
@@ -93,9 +89,7 @@ export default function AuthPage() {
             <>
               <CardHeader className="text-center space-y-3 pb-2">
                 <div className="flex justify-center lg:hidden">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary shadow-sm">
-                    <Zap className="h-6 w-6 text-primary-foreground" />
-                  </div>
+                  <img src={rythenoxLogo} alt="Rythenox" className="h-10 w-auto" />
                 </div>
                 <CardTitle className="text-xl font-bold">Reset Password</CardTitle>
                 <CardDescription>Enter your email to receive a reset link</CardDescription>
@@ -122,9 +116,7 @@ export default function AuthPage() {
             <>
               <CardHeader className="text-center space-y-3 pb-2">
                 <div className="flex justify-center lg:hidden">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary shadow-sm">
-                    <Zap className="h-6 w-6 text-primary-foreground" />
-                  </div>
+                  <img src={rythenoxLogo} alt="Rythenox" className="h-10 w-auto" />
                 </div>
                 <div>
                   <CardTitle className="text-xl font-bold tracking-tight">Welcome back</CardTitle>
