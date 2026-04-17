@@ -182,7 +182,7 @@ export function DeviceTerminal({ device, liveDevices, onClose, onMinimize }: Dev
       </div>
 
       {/* Terminal body */}
-      <ScrollArea className="flex-1 min-h-0 terminal-bg">
+      <ScrollArea className="flex-1 h-0 min-h-0 terminal-bg">
         <div className="p-5 font-mono text-[13px] leading-relaxed space-y-1">
           {/* Welcome banner */}
           <div className="text-[hsl(var(--terminal-foreground))]/40 text-xs mb-4 space-y-0.5">
