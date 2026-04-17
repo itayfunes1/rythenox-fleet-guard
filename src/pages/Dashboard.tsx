@@ -17,6 +17,7 @@ import { useAuth } from "@/components/AuthProvider";
 import { useNavigate } from "react-router-dom";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Sparkline } from "@/components/dashboard/Sparkline";
+import { isDeviceResponsive } from "@/lib/device-presence";
 import { LivePulseStrip } from "@/components/dashboard/LivePulseStrip";
 import { ActivityHeatmap } from "@/components/dashboard/ActivityHeatmap";
 import { SmartInsights, type Insight } from "@/components/dashboard/SmartInsights";
@@ -219,7 +220,7 @@ export default function Dashboard() {
       });
     }
 
-    const onlineRelays = relayList.filter((r) => r.status === "Online").length;
+    const onlineRelays = relayList.filter((r) => isDeviceResponsive(r.status, r.last_seen, now)).length;
     if (relayList.length > 0 && onlineRelays < relayList.length) {
       out.push({
         id: "relay-degraded",
@@ -292,7 +293,7 @@ export default function Dashboard() {
   }, [tasks, devices, sessions]);
 
   const recentDevices = devices.slice(0, 5);
-  const onlineRelays = relayList.filter((r) => r.status === "Online").length;
+  const onlineRelays = relayList.filter((r) => isDeviceResponsive(r.status, r.last_seen)).length;
   const lastHeartbeat = devices[0]?.last_seen || null;
 
   return (
