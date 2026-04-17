@@ -230,7 +230,7 @@ export function DeviceTerminal({ device, liveDevices, onClose, onMinimize }: Dev
       </ScrollArea>
 
       {/* Input bar */}
-      <div className="flex items-center gap-3 px-5 py-3 border-t border-[hsl(var(--terminal-foreground))]/5 terminal-bg">
+      <div className="shrink-0 flex items-center gap-3 px-5 py-3 border-t border-[hsl(var(--terminal-foreground))]/5 terminal-bg">
         <ChevronRight className="h-3.5 w-3.5 text-success shrink-0" />
         <Input
           ref={inputRef}
