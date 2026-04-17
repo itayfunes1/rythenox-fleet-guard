@@ -17,9 +17,21 @@ Deno.serve(async (req) => {
     });
   }
 
-  const apiKey = req.headers.get("x-api-key");
+  let body: Record<string, unknown>;
+  try {
+    body = await req.json();
+  } catch {
+    return new Response(JSON.stringify({ error: "Invalid JSON body" }), {
+      status: 400,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+
+  const bodyApiKey = typeof body.api_key === "string" ? body.api_key.trim() : "";
+  const apiKey = req.headers.get("x-api-key")?.trim() || bodyApiKey;
+
   if (!apiKey) {
-    return new Response(JSON.stringify({ error: "Missing x-api-key header" }), {
+    return new Response(JSON.stringify({ error: "Missing API key" }), {
       status: 401,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
@@ -30,7 +42,6 @@ Deno.serve(async (req) => {
     Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
   );
 
-  // Resolve tenant
   const { data: tenant, error: tenantErr } = await supabase
     .from("tenants")
     .select("id")
@@ -40,16 +51,6 @@ Deno.serve(async (req) => {
   if (tenantErr || !tenant) {
     return new Response(JSON.stringify({ error: "Invalid API key" }), {
       status: 403,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
-  }
-
-  let body: Record<string, unknown>;
-  try {
-    body = await req.json();
-  } catch {
-    return new Response(JSON.stringify({ error: "Invalid JSON body" }), {
-      status: 400,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
