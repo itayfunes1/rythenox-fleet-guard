@@ -27,6 +27,7 @@ export function DeviceTerminal({ device, liveDevices, onClose, onMinimize }: Dev
   const { toast } = useToast();
   const terminalEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const stickToBottomRef = useRef(true);
 
   const { user } = useAuth();
   const { data: tenant } = useTenant();
@@ -40,7 +41,23 @@ export function DeviceTerminal({ device, liveDevices, onClose, onMinimize }: Dev
   const lastSeenLabel = currentDevice.last_seen ? formatLastSeenAge(currentDevice.last_seen) : "an unknown time";
 
   useEffect(() => {
-    terminalEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    const viewport = terminalEndRef.current?.closest("[data-radix-scroll-area-viewport]") as HTMLDivElement | null;
+    if (!viewport) return;
+
+    const updateStickToBottom = () => {
+      const distanceFromBottom = viewport.scrollHeight - viewport.clientHeight - viewport.scrollTop;
+      stickToBottomRef.current = distanceFromBottom < 80;
+    };
+
+    updateStickToBottom();
+    viewport.addEventListener("scroll", updateStickToBottom);
+
+    return () => viewport.removeEventListener("scroll", updateStickToBottom);
+  }, []);
+
+  useEffect(() => {
+    if (!stickToBottomRef.current) return;
+    terminalEndRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
   }, [deviceTasks]);
 
   useEffect(() => {
@@ -118,7 +135,7 @@ export function DeviceTerminal({ device, liveDevices, onClose, onMinimize }: Dev
   const tasks = deviceTasks || [];
 
   return (
-    <div className="flex flex-col flex-1 animate-fade-in">
+    <div className="flex min-h-0 flex-1 flex-col overflow-hidden animate-fade-in">
       {/* Header */}
       <div className="shrink-0 flex items-center justify-between px-5 py-3 border-b border-[hsl(var(--terminal-bg))] bg-[hsl(220,25%,10%)]">
         <div className="flex items-center gap-3">
