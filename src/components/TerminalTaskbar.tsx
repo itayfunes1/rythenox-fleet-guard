@@ -27,7 +27,7 @@ export function TerminalTaskbar() {
     <>
       {/* Expanded terminal overlay */}
       {expandedSessions.length > 0 && (
-        <div className="fixed inset-0 z-50 flex flex-col bg-[hsl(220,25%,8%)]/95 backdrop-blur-sm">
+        <div className="fixed inset-0 bottom-10 z-50 flex flex-col bg-[hsl(220,25%,8%)]/95 backdrop-blur-sm">
           <div className={`flex-1 grid ${getGridClass(expandedSessions.length)} gap-px bg-[hsl(220,25%,15%)] overflow-hidden`}>
             {expandedSessions.map((session) => (
               <div key={session.device.target_id} className="flex flex-col min-h-0 overflow-hidden">
