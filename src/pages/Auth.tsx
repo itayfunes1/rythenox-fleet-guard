@@ -51,7 +51,7 @@ export default function AuthPage() {
       {/* Left Panel - Branding */}
       <div className="hidden lg:flex flex-1 flex-col justify-center items-center p-12 bg-muted/30 border-r border-border">
         <div className="max-w-md space-y-8">
-          <div className="flex flex-col gap-2">
+          <div className="flex flex-col gap-2 items-start">
             <img src={rythenoxLogo} alt="Rythenox" className="h-12 w-auto" />
             <p className="text-xs text-muted-foreground tracking-wide uppercase pl-1">Marengo Dashboard</p>
           </div>
