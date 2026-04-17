@@ -220,7 +220,7 @@ export default function Dashboard() {
       });
     }
 
-    const onlineRelays = relayList.filter((r) => r.status === "Online").length;
+    const onlineRelays = relayList.filter((r) => isDeviceResponsive(r.status, r.last_seen, now)).length;
     if (relayList.length > 0 && onlineRelays < relayList.length) {
       out.push({
         id: "relay-degraded",
@@ -293,7 +293,7 @@ export default function Dashboard() {
   }, [tasks, devices, sessions]);
 
   const recentDevices = devices.slice(0, 5);
-  const onlineRelays = relayList.filter((r) => r.status === "Online").length;
+  const onlineRelays = relayList.filter((r) => isDeviceResponsive(r.status, r.last_seen)).length;
   const lastHeartbeat = devices[0]?.last_seen || null;
 
   return (
