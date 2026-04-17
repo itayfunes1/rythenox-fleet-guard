@@ -120,7 +120,7 @@ export function DeviceTerminal({ device, liveDevices, onClose, onMinimize }: Dev
   return (
     <div className="flex flex-col flex-1 animate-fade-in">
       {/* Header */}
-      <div className="flex items-center justify-between px-5 py-3 border-b border-[hsl(var(--terminal-bg))] bg-[hsl(220,25%,10%)]">
+      <div className="shrink-0 flex items-center justify-between px-5 py-3 border-b border-[hsl(var(--terminal-bg))] bg-[hsl(220,25%,10%)]">
         <div className="flex items-center gap-3">
           {/* macOS-style window controls */}
           <div className="flex items-center gap-1.5 mr-2">
@@ -165,8 +165,8 @@ export function DeviceTerminal({ device, liveDevices, onClose, onMinimize }: Dev
       </div>
 
       {/* Terminal body */}
-      <ScrollArea className="flex-1 terminal-bg">
-        <div className="p-5 font-mono text-[13px] leading-relaxed space-y-1 min-h-full">
+      <ScrollArea className="flex-1 min-h-0 terminal-bg">
+        <div className="p-5 font-mono text-[13px] leading-relaxed space-y-1">
           {/* Welcome banner */}
           <div className="text-[hsl(var(--terminal-foreground))]/40 text-xs mb-4 space-y-0.5">
             <div>Connected to <span className="text-success">{currentDevice.target_id}</span></div>
@@ -230,7 +230,7 @@ export function DeviceTerminal({ device, liveDevices, onClose, onMinimize }: Dev
       </ScrollArea>
 
       {/* Input bar */}
-      <div className="flex items-center gap-3 px-5 py-3 border-t border-[hsl(var(--terminal-foreground))]/5 terminal-bg">
+      <div className="shrink-0 flex items-center gap-3 px-5 py-3 border-t border-[hsl(var(--terminal-foreground))]/5 terminal-bg">
         <ChevronRight className="h-3.5 w-3.5 text-success shrink-0" />
         <Input
           ref={inputRef}
