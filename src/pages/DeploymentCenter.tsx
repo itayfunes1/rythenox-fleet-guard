@@ -16,10 +16,14 @@ import {
   FileCode,
   Copy,
   ExternalLink,
+  History,
+  Clock,
 } from "lucide-react";
 import { useTenant } from "@/hooks/use-tenant";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useBuildHistory, type BuildHistoryEntry } from "@/hooks/use-build-history";
+import { formatDistanceToNow } from "date-fns";
 
 const wait = (ms: number) => new Promise((resolve) => window.setTimeout(resolve, ms));
 
@@ -34,11 +38,13 @@ const BUILD_STAGES = [
 export default function DeploymentCenter() {
   const { data: tenant } = useTenant();
   const { toast } = useToast();
+  const { data: history, recordBuild, markBuildReady, markBuildFailed } = useBuildHistory();
   const [isBuilding, setIsBuilding] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
   const [buildId, setBuildId] = useState<string | null>(null);
   const [downloadUrl, setDownloadUrl] = useState<string | null>(null);
   const [progress, setProgress] = useState(0);
+  const [redownloadingId, setRedownloadingId] = useState<string | null>(null);
 
   const currentStage = BUILD_STAGES.find((s) => progress <= s.threshold)?.label ?? "Processing";
 
@@ -81,12 +87,17 @@ export default function DeploymentCenter() {
       if (!data?.buildId) throw new Error("The build started, but no build ID was returned.");
 
       setBuildId(data.buildId);
+      await recordBuild(data.buildId);
 
       const readyUrl = await waitForBuildArtifact(data.buildId);
-      if (!readyUrl) throw new Error("The build was triggered, but the executable never became available for download.");
+      if (!readyUrl) {
+        await markBuildFailed(data.buildId);
+        throw new Error("The build was triggered, but the executable never became available for download.");
+      }
 
       setDownloadUrl(readyUrl);
       setProgress(100);
+      await markBuildReady(data.buildId);
       toast({ title: "Build Ready", description: "Your agent executable is ready to download." });
     } catch (error) {
       setBuildId(null);
@@ -96,6 +107,30 @@ export default function DeploymentCenter() {
     } finally {
       window.clearInterval(progressInterval);
       setIsBuilding(false);
+    }
+  };
+
+  const downloadById = async (id: string) => {
+    setRedownloadingId(id);
+    try {
+      const { data, error } = await supabase.storage.from("builds").createSignedUrl(`${id}.exe`, 300);
+      if (error || !data?.signedUrl) throw new Error("Could not generate a download link for this build.");
+      const response = await fetch(data.signedUrl, { cache: "no-store" });
+      if (!response.ok) throw new Error("Unable to fetch the executable.");
+      const blob = await response.blob();
+      const objectUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = objectUrl;
+      link.download = "agent.exe";
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.setTimeout(() => window.URL.revokeObjectURL(objectUrl), 1000);
+      toast({ title: "Download Started", description: "agent.exe has been sent to your browser." });
+    } catch (error) {
+      toast({ title: "Download Failed", description: (error as Error).message, variant: "destructive" });
+    } finally {
+      setRedownloadingId(null);
     }
   };
 
@@ -353,7 +388,87 @@ export default function DeploymentCenter() {
           </div>
         </div>
       </div>
+
+      {/* Build History */}
+      <div className="rounded-2xl border bg-card shadow-sm overflow-hidden">
+        <div className="border-b bg-muted/30 px-6 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <History className="h-4 w-4 text-muted-foreground" />
+            <h3 className="text-sm font-semibold">Build History</h3>
+          </div>
+          <span className="text-[11px] text-muted-foreground">Last 20 builds</span>
+        </div>
+        {!history || history.length === 0 ? (
+          <div className="p-10 text-center text-sm text-muted-foreground">
+            No builds yet. Initialize your first build above.
+          </div>
+        ) : (
+          <ul className="divide-y">
+            {history.map((entry) => (
+              <BuildHistoryRow
+                key={entry.id}
+                entry={entry}
+                isDownloading={redownloadingId === entry.build_id}
+                onDownload={() => downloadById(entry.build_id)}
+              />
+            ))}
+          </ul>
+        )}
+      </div>
     </div>
+  );
+}
+
+function BuildHistoryRow({
+  entry,
+  isDownloading,
+  onDownload,
+}: {
+  entry: BuildHistoryEntry;
+  isDownloading: boolean;
+  onDownload: () => void;
+}) {
+  const statusStyles: Record<string, string> = {
+    ready: "border-emerald-200 bg-emerald-50 text-emerald-700",
+    building: "border-primary/30 bg-primary/5 text-primary",
+    failed: "border-rose-200 bg-rose-50 text-rose-700",
+  };
+  const styles = statusStyles[entry.status] ?? "border-muted bg-muted/30 text-muted-foreground";
+
+  return (
+    <li className="px-6 py-3 flex items-center gap-4 hover:bg-muted/20 transition-colors">
+      <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 shrink-0">
+        <FileCode className="h-4 w-4 text-primary" />
+      </div>
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center gap-2">
+          <span className="text-sm font-medium truncate">agent.exe</span>
+          <Badge variant="outline" className={`gap-1 text-[10px] ${styles}`}>
+            {entry.status === "building" && <Loader2 className="h-2.5 w-2.5 animate-spin" />}
+            {entry.status === "ready" && <Check className="h-2.5 w-2.5" />}
+            {entry.status === "failed" && <AlertCircle className="h-2.5 w-2.5" />}
+            {entry.status}
+          </Badge>
+        </div>
+        <div className="flex items-center gap-3 mt-0.5">
+          <span className="text-[11px] text-muted-foreground flex items-center gap-1">
+            <Clock className="h-3 w-3" />
+            {formatDistanceToNow(new Date(entry.created_at), { addSuffix: true })}
+          </span>
+          <span className="text-[11px] font-mono text-muted-foreground/70 truncate">{entry.build_id}</span>
+        </div>
+      </div>
+      <Button
+        size="sm"
+        variant="outline"
+        className="gap-1.5 shrink-0"
+        disabled={entry.status !== "ready" || isDownloading}
+        onClick={onDownload}
+      >
+        {isDownloading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
+        Download
+      </Button>
+    </li>
   );
 }
 
