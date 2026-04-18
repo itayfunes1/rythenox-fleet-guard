@@ -38,6 +38,44 @@ export type Database = {
         }
         Relationships: []
       }
+      build_history: {
+        Row: {
+          build_id: string
+          completed_at: string | null
+          created_at: string
+          id: string
+          status: string
+          tenant_id: string
+          user_id: string
+        }
+        Insert: {
+          build_id: string
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          status?: string
+          tenant_id: string
+          user_id: string
+        }
+        Update: {
+          build_id?: string
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          status?: string
+          tenant_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "build_history_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       diagnostic_vault: {
         Row: {
           created_at: string

@@ -16,10 +16,14 @@ import {
   FileCode,
   Copy,
   ExternalLink,
+  History,
+  Clock,
 } from "lucide-react";
 import { useTenant } from "@/hooks/use-tenant";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useBuildHistory, type BuildHistoryEntry } from "@/hooks/use-build-history";
+import { formatDistanceToNow } from "date-fns";
 
 const wait = (ms: number) => new Promise((resolve) => window.setTimeout(resolve, ms));
 
@@ -34,11 +38,13 @@ const BUILD_STAGES = [
 export default function DeploymentCenter() {
   const { data: tenant } = useTenant();
   const { toast } = useToast();
+  const { data: history, recordBuild, markBuildReady, markBuildFailed } = useBuildHistory();
   const [isBuilding, setIsBuilding] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
   const [buildId, setBuildId] = useState<string | null>(null);
   const [downloadUrl, setDownloadUrl] = useState<string | null>(null);
   const [progress, setProgress] = useState(0);
+  const [redownloadingId, setRedownloadingId] = useState<string | null>(null);
 
   const currentStage = BUILD_STAGES.find((s) => progress <= s.threshold)?.label ?? "Processing";
 
