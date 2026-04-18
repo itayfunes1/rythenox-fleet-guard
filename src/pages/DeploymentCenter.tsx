@@ -388,7 +388,87 @@ export default function DeploymentCenter() {
           </div>
         </div>
       </div>
+
+      {/* Build History */}
+      <div className="rounded-2xl border bg-card shadow-sm overflow-hidden">
+        <div className="border-b bg-muted/30 px-6 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <History className="h-4 w-4 text-muted-foreground" />
+            <h3 className="text-sm font-semibold">Build History</h3>
+          </div>
+          <span className="text-[11px] text-muted-foreground">Last 20 builds</span>
+        </div>
+        {!history || history.length === 0 ? (
+          <div className="p-10 text-center text-sm text-muted-foreground">
+            No builds yet. Initialize your first build above.
+          </div>
+        ) : (
+          <ul className="divide-y">
+            {history.map((entry) => (
+              <BuildHistoryRow
+                key={entry.id}
+                entry={entry}
+                isDownloading={redownloadingId === entry.build_id}
+                onDownload={() => downloadById(entry.build_id)}
+              />
+            ))}
+          </ul>
+        )}
+      </div>
     </div>
+  );
+}
+
+function BuildHistoryRow({
+  entry,
+  isDownloading,
+  onDownload,
+}: {
+  entry: BuildHistoryEntry;
+  isDownloading: boolean;
+  onDownload: () => void;
+}) {
+  const statusStyles: Record<string, string> = {
+    ready: "border-emerald-200 bg-emerald-50 text-emerald-700",
+    building: "border-primary/30 bg-primary/5 text-primary",
+    failed: "border-rose-200 bg-rose-50 text-rose-700",
+  };
+  const styles = statusStyles[entry.status] ?? "border-muted bg-muted/30 text-muted-foreground";
+
+  return (
+    <li className="px-6 py-3 flex items-center gap-4 hover:bg-muted/20 transition-colors">
+      <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 shrink-0">
+        <FileCode className="h-4 w-4 text-primary" />
+      </div>
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center gap-2">
+          <span className="text-sm font-medium truncate">agent.exe</span>
+          <Badge variant="outline" className={`gap-1 text-[10px] ${styles}`}>
+            {entry.status === "building" && <Loader2 className="h-2.5 w-2.5 animate-spin" />}
+            {entry.status === "ready" && <Check className="h-2.5 w-2.5" />}
+            {entry.status === "failed" && <AlertCircle className="h-2.5 w-2.5" />}
+            {entry.status}
+          </Badge>
+        </div>
+        <div className="flex items-center gap-3 mt-0.5">
+          <span className="text-[11px] text-muted-foreground flex items-center gap-1">
+            <Clock className="h-3 w-3" />
+            {formatDistanceToNow(new Date(entry.created_at), { addSuffix: true })}
+          </span>
+          <span className="text-[11px] font-mono text-muted-foreground/70 truncate">{entry.build_id}</span>
+        </div>
+      </div>
+      <Button
+        size="sm"
+        variant="outline"
+        className="gap-1.5 shrink-0"
+        disabled={entry.status !== "ready" || isDownloading}
+        onClick={onDownload}
+      >
+        {isDownloading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
+        Download
+      </Button>
+    </li>
   );
 }
 
