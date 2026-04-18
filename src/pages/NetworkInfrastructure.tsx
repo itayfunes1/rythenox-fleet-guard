@@ -269,20 +269,6 @@ export default function NetworkInfrastructure() {
                                   <span className={`text-[10px] font-medium ${online ? "text-success" : "text-destructive"}`}>{online ? "Healthy" : "Down"}</span>
                                 </div>
                               </div>
-                              {isRythenox && (
-                                <div className="col-span-2 md:col-span-4 pt-2 border-t border-border/20">
-                                  <Button
-                                    size="sm"
-                                    variant="destructive"
-                                    className="text-xs"
-                                    disabled={adminLoading === `force_offline${relay.id}`}
-                                    onClick={(e) => { e.stopPropagation(); adminAction("force_offline", relay.id); }}
-                                  >
-                                    <ShieldAlert className="h-3 w-3 mr-1" />
-                                    {adminLoading === `force_offline${relay.id}` ? "Forcing..." : "Force Offline"}
-                                  </Button>
-                                </div>
-                              )}
                             </div>
                           </TableCell>
                         </TableRow>
