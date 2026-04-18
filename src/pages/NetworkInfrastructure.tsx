@@ -92,7 +92,6 @@ export default function NetworkInfrastructure() {
 
   const stats = [
     { label: "Relay Nodes", value: totalCount, sub: `${onlineCount} online`, icon: Server, gradient: "from-primary/20 to-[hsl(260,67%,60%)]/10", iconColor: "text-primary" },
-    { label: "Active Bridges", value: totalClients, sub: `Peak: ${peakClients}`, icon: Users, gradient: "from-[hsl(260,67%,60%)]/20 to-primary/5", iconColor: "text-[hsl(260,67%,60%)]" },
     { label: "Avg Uptime", value: formatUptime(avgUptime), sub: "across all relays", icon: Clock, gradient: "from-success/20 to-success/5", iconColor: "text-success" },
     { label: "Throughput", value: totalThroughputMB >= 1024 ? `${(totalThroughputMB / 1024).toFixed(1)} GB` : `${totalThroughputMB.toFixed(1)} MB`, sub: "aggregated", icon: Activity, gradient: "from-warning/20 to-warning/5", iconColor: "text-warning" },
     { label: "Network Health", value: `${healthPercent}%`, sub: `${onlineCount}/${totalCount} nodes`, icon: Wifi, gradient: "from-success/20 to-success/5", iconColor: "text-success" },
