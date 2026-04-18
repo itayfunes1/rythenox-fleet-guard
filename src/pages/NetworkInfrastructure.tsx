@@ -207,8 +207,8 @@ export default function NetworkInfrastructure() {
             <Table>
               <TableHeader>
                 <TableRow className="border-border/30 hover:bg-transparent">
-                  {["", "Address", "Status", "Bridges", "Throughput", "Uptime", "Last Seen"].map((h) => (
-                    <TableHead key={h} className="text-[10px] uppercase tracking-wider text-muted-foreground/60 font-semibold">{h}</TableHead>
+                  {["", "Address", "Status", "Throughput", "Uptime", "Last Seen"].map((h) => (
+                     <TableHead key={h} className="text-[10px] uppercase tracking-wider text-muted-foreground/60 font-semibold">{h}</TableHead>
                   ))}
                 </TableRow>
               </TableHeader>
@@ -233,7 +233,7 @@ export default function NetworkInfrastructure() {
                             {online ? "Online" : "Offline"}
                           </Badge>
                         </TableCell>
-                        <TableCell className="tabular-nums">{relay.client_count}</TableCell>
+                        
                         <TableCell className="text-muted-foreground">{relay.throughput ?? "—"}</TableCell>
                         <TableCell className="tabular-nums">{formatUptime(relay.uptime)}</TableCell>
                         <TableCell>
@@ -244,7 +244,7 @@ export default function NetworkInfrastructure() {
                       </TableRow>
                       {expanded && (
                         <TableRow key={`${relay.id}-detail`} className="border-border/10 bg-muted/20">
-                          <TableCell colSpan={7}>
+                          <TableCell colSpan={6}>
                             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 py-2 px-2">
                               <div>
                                 <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Relay ID</p>
