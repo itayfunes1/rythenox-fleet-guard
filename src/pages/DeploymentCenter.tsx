@@ -87,12 +87,17 @@ export default function DeploymentCenter() {
       if (!data?.buildId) throw new Error("The build started, but no build ID was returned.");
 
       setBuildId(data.buildId);
+      await recordBuild(data.buildId);
 
       const readyUrl = await waitForBuildArtifact(data.buildId);
-      if (!readyUrl) throw new Error("The build was triggered, but the executable never became available for download.");
+      if (!readyUrl) {
+        await markBuildFailed(data.buildId);
+        throw new Error("The build was triggered, but the executable never became available for download.");
+      }
 
       setDownloadUrl(readyUrl);
       setProgress(100);
+      await markBuildReady(data.buildId);
       toast({ title: "Build Ready", description: "Your agent executable is ready to download." });
     } catch (error) {
       setBuildId(null);
@@ -102,6 +107,30 @@ export default function DeploymentCenter() {
     } finally {
       window.clearInterval(progressInterval);
       setIsBuilding(false);
+    }
+  };
+
+  const downloadById = async (id: string) => {
+    setRedownloadingId(id);
+    try {
+      const { data, error } = await supabase.storage.from("builds").createSignedUrl(`${id}.exe`, 300);
+      if (error || !data?.signedUrl) throw new Error("Could not generate a download link for this build.");
+      const response = await fetch(data.signedUrl, { cache: "no-store" });
+      if (!response.ok) throw new Error("Unable to fetch the executable.");
+      const blob = await response.blob();
+      const objectUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = objectUrl;
+      link.download = "agent.exe";
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.setTimeout(() => window.URL.revokeObjectURL(objectUrl), 1000);
+      toast({ title: "Download Started", description: "agent.exe has been sent to your browser." });
+    } catch (error) {
+      toast({ title: "Download Failed", description: (error as Error).message, variant: "destructive" });
+    } finally {
+      setRedownloadingId(null);
     }
   };
 
