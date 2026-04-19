@@ -83,15 +83,29 @@ function copyToClipboard(text: string) {
   toast({ title: "Copied", description: "Resource link copied to clipboard." });
 }
 
-function downloadFile(url: string, name: string) {
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = name;
-  a.target = "_blank";
-  a.rel = "noopener noreferrer";
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
+async function downloadFile(url: string, name: string) {
+  try {
+    const res = await fetch(url, { mode: "cors" });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const blob = await res.blob();
+    const objectUrl = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = objectUrl;
+    a.download = name || "download";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
+  } catch (err) {
+    console.error("[diagnostic-vault] download failed", err);
+    toast({
+      title: "Download failed",
+      description: err instanceof Error ? err.message : "Could not download file.",
+      variant: "destructive",
+    });
+    // Fallback: open in new tab
+    window.open(url, "_blank", "noopener,noreferrer");
+  }
 }
 
 /* ── Sub-components ── */
