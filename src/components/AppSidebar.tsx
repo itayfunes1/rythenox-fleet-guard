@@ -88,11 +88,13 @@ export function AppSidebar() {
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu className="space-y-0.5">
-              {mainItems.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  {renderMenuItem(item)}
-                </SidebarMenuItem>
-              ))}
+              {mainItems
+                .filter((item) => !item.restrictedTo || user?.email === item.restrictedTo)
+                .map((item) => (
+                  <SidebarMenuItem key={item.title}>
+                    {renderMenuItem(item)}
+                  </SidebarMenuItem>
+                ))}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
