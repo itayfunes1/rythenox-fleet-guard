@@ -166,6 +166,20 @@ function ImagePreviewDialog({
   );
 }
 
+function getExtension(url: string) {
+  const name = getFileName(url).split("?")[0];
+  const idx = name.lastIndexOf(".");
+  return idx >= 0 ? name.slice(idx + 1).toLowerCase() : "";
+}
+
+const INLINE_TEXT_EXTENSIONS = new Set([
+  "txt", "log", "json", "xml", "csv", "md", "html", "htm", "css", "js", "ts",
+  "yaml", "yml", "ini", "conf", "cfg", "sh", "bat", "ps1", "py", "go", "c",
+  "cpp", "h", "java", "rb", "php", "sql", "env",
+]);
+const INLINE_IMAGE_EXTENSIONS = new Set(["png", "jpg", "jpeg", "gif", "webp", "svg", "bmp", "ico"]);
+const INLINE_PDF_EXTENSIONS = new Set(["pdf"]);
+
 function TextPreviewSheet({
   file,
   open,
@@ -176,24 +190,52 @@ function TextPreviewSheet({
   onClose: () => void;
 }) {
   if (!file) return null;
+  const ext = getExtension(file.file_url);
+  const isInlineText = INLINE_TEXT_EXTENSIONS.has(ext);
+  const isInlineImage = INLINE_IMAGE_EXTENSIONS.has(ext);
+  const isInlinePdf = INLINE_PDF_EXTENSIONS.has(ext);
+  const canPreviewInline = isInlineText || isInlineImage || isInlinePdf;
+  const fileName = getFileName(file.file_url);
+
   return (
     <Sheet open={open} onOpenChange={(v) => !v && onClose()}>
       <SheetContent className="glass-card border-border/30 w-full sm:max-w-lg">
         <SheetHeader>
-          <SheetTitle className="text-sm font-medium truncate">{getFileName(file.file_url)}</SheetTitle>
+          <SheetTitle className="text-sm font-medium truncate">{fileName}</SheetTitle>
         </SheetHeader>
         <div className="mt-4 flex flex-col gap-2">
           <p className="text-xs text-muted-foreground">
             Device: <span className="font-mono">{file.target_id}</span> · {new Date(file.created_at).toLocaleString()}
           </p>
-          <ScrollArea className="h-[calc(100vh-10rem)] rounded-lg border border-border/30 bg-[hsl(var(--terminal-bg))] p-4">
-            <iframe
-              src={file.file_url}
-              title={getFileName(file.file_url)}
-              className="w-full min-h-[60vh] bg-transparent text-foreground"
-              sandbox=""
-            />
-          </ScrollArea>
+          {canPreviewInline ? (
+            <ScrollArea className="h-[calc(100vh-10rem)] rounded-lg border border-border/30 bg-[hsl(var(--terminal-bg))] p-4">
+              {isInlineImage ? (
+                <img src={file.file_url} alt={fileName} className="w-full h-auto rounded-md" />
+              ) : (
+                <iframe
+                  src={file.file_url}
+                  title={fileName}
+                  className="w-full min-h-[60vh] bg-transparent text-foreground"
+                  sandbox=""
+                />
+              )}
+            </ScrollArea>
+          ) : (
+            <div className="flex flex-col items-center justify-center gap-4 py-12 px-6 rounded-lg border border-border/30 bg-muted/10 text-center">
+              <div className="h-16 w-16 rounded-2xl bg-muted/30 flex items-center justify-center">
+                <FileText className="h-8 w-8 text-muted-foreground" />
+              </div>
+              <div className="space-y-1">
+                <p className="text-sm font-medium">No preview available</p>
+                <p className="text-xs text-muted-foreground">
+                  {ext ? `.${ext} files` : "This file type"} can't be previewed in the browser. Download to open it locally.
+                </p>
+              </div>
+              <Button size="sm" onClick={() => downloadFile(file.file_url, fileName)} className="gap-2">
+                <Download className="h-4 w-4" /> Download file
+              </Button>
+            </div>
+          )}
         </div>
       </SheetContent>
     </Sheet>
