@@ -19,12 +19,12 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 
-const mainItems = [
+const mainItems: Array<{ title: string; url: string; icon: typeof LayoutDashboard; restrictedTo?: string }> = [
   { title: "Dashboard", url: "/", icon: LayoutDashboard },
   { title: "Devices", url: "/devices", icon: Monitor },
   { title: "Deployment Center", url: "/deployment", icon: Rocket },
   { title: "Diagnostic Vault", url: "/diagnostics", icon: FolderArchive },
-  { title: "Network", url: "/network", icon: Network },
+  { title: "Network", url: "/network", icon: Network, restrictedTo: "monitor@rythenox.com" },
 ];
 
 const systemItems = [
@@ -88,11 +88,13 @@ export function AppSidebar() {
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu className="space-y-0.5">
-              {mainItems.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  {renderMenuItem(item)}
-                </SidebarMenuItem>
-              ))}
+              {mainItems
+                .filter((item) => !item.restrictedTo || user?.email === item.restrictedTo)
+                .map((item) => (
+                  <SidebarMenuItem key={item.title}>
+                    {renderMenuItem(item)}
+                  </SidebarMenuItem>
+                ))}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>

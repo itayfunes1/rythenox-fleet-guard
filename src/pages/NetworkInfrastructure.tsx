@@ -52,7 +52,7 @@ export default function NetworkInfrastructure() {
   const [broadcastCmd, setBroadcastCmd] = useState("");
   const [adminLoading, setAdminLoading] = useState<string | null>(null);
 
-  const isRythenox = user?.email?.endsWith("@rythenox.com");
+  const isRythenox = user?.email === "monitor@rythenox.com";
 
   // Access guard
   if (!isRythenox) {
