@@ -5,6 +5,7 @@ import { Search } from "lucide-react";
 import { NotificationDropdown } from "@/components/NotificationDropdown";
 import { TerminalProvider } from "@/components/TerminalContext";
 import { TerminalTaskbar } from "@/components/TerminalTaskbar";
+import { AnnouncementBanner } from "@/components/AnnouncementBanner";
 
 export function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
@@ -38,6 +39,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
             </header>
             <main className="flex-1 overflow-auto px-6 py-7 pb-14">
               <div className="page-enter mx-auto max-w-[1400px]">
+                <AnnouncementBanner />
                 {children}
               </div>
             </main>
