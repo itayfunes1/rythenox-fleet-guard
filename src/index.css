@@ -1,48 +1,67 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
   :root {
-    --background: 220 20% 97%;
-    --foreground: 220 30% 15%;
+    /* Navy Trust palette — polished SaaS */
+    --background: 220 33% 98%;
+    --foreground: 222 47% 11%;
+
     --card: 0 0% 100%;
-    --card-foreground: 220 30% 15%;
+    --card-foreground: 222 47% 11%;
+
     --popover: 0 0% 100%;
-    --popover-foreground: 220 30% 15%;
-    --primary: 225 73% 57%;
-    --primary-foreground: 0 0% 100%;
-    --secondary: 220 14% 96%;
-    --secondary-foreground: 220 30% 25%;
-    --muted: 220 14% 96%;
-    --muted-foreground: 220 10% 46%;
-    --accent: 220 14% 96%;
-    --accent-foreground: 220 30% 25%;
-    --destructive: 0 84% 60%;
+    --popover-foreground: 222 47% 11%;
+
+    /* Deep navy primary */
+    --primary: 222 60% 18%;
+    --primary-foreground: 210 40% 98%;
+    --primary-glow: 215 50% 35%;
+
+    --secondary: 215 25% 95%;
+    --secondary-foreground: 222 47% 18%;
+
+    --muted: 215 28% 96%;
+    --muted-foreground: 215 16% 47%;
+
+    --accent: 213 50% 94%;
+    --accent-foreground: 222 50% 22%;
+
+    --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
-    --border: 220 13% 91%;
-    --input: 220 13% 91%;
-    --ring: 225 73% 57%;
-    --radius: 0.75rem;
 
-    --sidebar-background: 0 0% 100%;
-    --sidebar-foreground: 220 30% 25%;
-    --sidebar-primary: 225 73% 57%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 220 14% 96%;
-    --sidebar-accent-foreground: 220 30% 25%;
-    --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 225 73% 57%;
-
-    --success: 152 69% 40%;
+    --success: 152 65% 38%;
     --success-foreground: 0 0% 100%;
-    --warning: 38 92% 50%;
+    --warning: 32 95% 48%;
     --warning-foreground: 0 0% 100%;
+    --info: 211 60% 48%;
+    --info-foreground: 0 0% 100%;
 
-    --terminal-bg: 220 25% 12%;
-    --terminal-foreground: 0 0% 92%;
+    --border: 215 25% 90%;
+    --input: 215 25% 90%;
+    --ring: 215 60% 40%;
+    --radius: 0.625rem;
+
+    /* Sidebar — slightly tinted navy surface */
+    --sidebar-background: 220 35% 99%;
+    --sidebar-foreground: 222 35% 25%;
+    --sidebar-primary: 222 60% 18%;
+    --sidebar-primary-foreground: 210 40% 98%;
+    --sidebar-accent: 215 30% 94%;
+    --sidebar-accent-foreground: 222 50% 22%;
+    --sidebar-border: 215 25% 90%;
+    --sidebar-ring: 215 60% 40%;
+
+    --terminal-bg: 222 47% 9%;
+    --terminal-foreground: 210 40% 96%;
+
+    --gradient-primary: linear-gradient(135deg, hsl(222 60% 18%), hsl(215 50% 35%));
+    --gradient-subtle: linear-gradient(180deg, hsl(220 33% 99%), hsl(215 28% 96%));
+    --shadow-sm: 0 1px 2px 0 hsl(222 47% 11% / 0.04);
+    --shadow-md: 0 4px 12px -2px hsl(222 47% 11% / 0.06), 0 2px 4px -2px hsl(222 47% 11% / 0.04);
+    --shadow-lg: 0 12px 32px -8px hsl(222 47% 11% / 0.10), 0 4px 8px -4px hsl(222 47% 11% / 0.06);
+    --shadow-ring: 0 0 0 1px hsl(215 25% 90%);
   }
 }
 
@@ -51,33 +70,48 @@
     @apply border-border;
   }
 
+  html {
+    font-feature-settings: "cv11", "ss01", "ss03";
+  }
+
   body {
-    @apply bg-background text-foreground font-sans antialiased;
-    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    @apply bg-background text-foreground antialiased;
+    font-family: 'DM Sans', system-ui, -apple-system, sans-serif;
+    font-feature-settings: "ss01", "cv01";
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Space Grotesk', 'DM Sans', system-ui, sans-serif;
+    letter-spacing: -0.015em;
   }
 }
 
 @layer components {
-  /* Clean elevated card */
+  /* Elevated card */
   .glass-card {
     @apply relative overflow-hidden rounded-xl border border-border bg-card;
-    box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.04), 0 1px 2px -1px rgb(0 0 0 / 0.04);
+    box-shadow: var(--shadow-sm);
   }
 
   /* Hover lift card */
   .glow-card {
     @apply relative overflow-hidden;
-    transition: all 0.2s ease;
+    transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
   }
 
   .glow-card:hover {
     transform: translateY(-1px);
-    box-shadow: 0 4px 12px -2px rgb(0 0 0 / 0.08);
+    box-shadow: var(--shadow-md);
+    border-color: hsl(var(--primary) / 0.18);
   }
 
   /* Gradient text */
   .gradient-text {
-    @apply text-primary font-semibold;
+    background: var(--gradient-primary);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    @apply font-semibold;
   }
 
   /* Animated pulse dot */
@@ -97,9 +131,10 @@
     100% { transform: scale(1); opacity: 0; }
   }
 
-  /* Sidebar border */
+  /* Sidebar surface */
   .sidebar-glow {
-    @apply relative border-r border-border;
+    @apply relative border-r border-sidebar-border;
+    background: linear-gradient(180deg, hsl(var(--sidebar-background)), hsl(220 30% 97%));
   }
 
   .sidebar-glow::after {
@@ -108,7 +143,7 @@
 
   /* Page transition */
   .page-enter {
-    animation: page-fade-in 0.3s ease-out;
+    animation: page-fade-in 0.32s cubic-bezier(0.22, 1, 0.36, 1);
   }
 
   @keyframes page-fade-in {
@@ -116,7 +151,6 @@
     100% { opacity: 1; transform: translateY(0); }
   }
 
-  /* Staggered children animation */
   .stagger-children > * {
     animation: stagger-fade-in 0.4s ease-out both;
   }
@@ -139,7 +173,7 @@
   }
 
   .table-row-hover:hover {
-    background: hsl(var(--primary) / 0.03);
+    background: hsl(var(--primary) / 0.035);
   }
 
   /* Terminal styling */
@@ -161,6 +195,14 @@
     font-variant-ligatures: none;
   }
 
+  /* Subtle elevated surface */
+  .surface-elevated {
+    background: hsl(var(--card));
+    border: 1px solid hsl(var(--border));
+    box-shadow: var(--shadow-sm);
+    @apply rounded-xl;
+  }
+
   /* Scrollbar */
   ::-webkit-scrollbar {
     width: 6px;
@@ -173,10 +215,10 @@
 
   ::-webkit-scrollbar-thumb {
     @apply rounded-full;
-    background: hsl(var(--muted-foreground) / 0.15);
+    background: hsl(var(--muted-foreground) / 0.18);
   }
 
   ::-webkit-scrollbar-thumb:hover {
-    background: hsl(var(--muted-foreground) / 0.25);
+    background: hsl(var(--muted-foreground) / 0.32);
   }
 }

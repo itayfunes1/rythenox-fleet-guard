@@ -69,14 +69,19 @@ export function AppSidebar() {
       <SidebarHeader className="p-4">
         {collapsed ? (
           <div className="flex justify-center">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary shadow-sm shrink-0">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-primary/70 shadow-sm shrink-0 ring-1 ring-primary/20">
               <Zap className="h-4 w-4 text-primary-foreground" />
             </div>
           </div>
         ) : (
-          <div className="flex flex-col gap-1 items-start">
-            <img src={rythenoxLogo} alt="Rythenox" className="h-7 w-auto" />
-            <p className="text-[10px] text-muted-foreground tracking-wide uppercase pl-1">Marengo Dashboard</p>
+          <div className="flex items-center gap-2.5">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-primary/70 shadow-sm shrink-0 ring-1 ring-primary/20">
+              <Zap className="h-4 w-4 text-primary-foreground" />
+            </div>
+            <div className="flex flex-col leading-tight">
+              <span className="font-display text-[15px] font-semibold tracking-tight text-foreground">Rythenox</span>
+              <span className="text-[10px] text-muted-foreground tracking-wide uppercase">Marengo</span>
+            </div>
           </div>
         )}
       </SidebarHeader>
