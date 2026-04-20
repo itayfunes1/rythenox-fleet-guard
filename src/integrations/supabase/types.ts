@@ -286,6 +286,7 @@ export type Database = {
           title: string
           type: string
           user_id: string
+          version: string | null
         }
         Insert: {
           created_at?: string
@@ -297,6 +298,7 @@ export type Database = {
           title: string
           type?: string
           user_id: string
+          version?: string | null
         }
         Update: {
           created_at?: string
@@ -308,6 +310,7 @@ export type Database = {
           title?: string
           type?: string
           user_id?: string
+          version?: string | null
         }
         Relationships: [
           {
