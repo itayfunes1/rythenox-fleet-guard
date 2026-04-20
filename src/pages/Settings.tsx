@@ -11,6 +11,7 @@ import { Copy, Eye, EyeOff, Key, Settings2, Bell } from "lucide-react";
 import { useTenant } from "@/hooks/use-tenant";
 import { useAuth } from "@/components/AuthProvider";
 import { useToast } from "@/hooks/use-toast";
+import { AnnouncementManager } from "@/components/AnnouncementManager";
 export default function SettingsPage() {
   const { data: tenant, isLoading } = useTenant();
   const { user } = useAuth();
@@ -75,6 +76,8 @@ export default function SettingsPage() {
           )}
         </CardContent>
       </Card>
+
+      <AnnouncementManager />
 
       <Card className="glass-card">
         <CardHeader>
