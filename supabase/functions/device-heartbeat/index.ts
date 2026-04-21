@@ -92,8 +92,16 @@ Deno.serve(async (req) => {
   if (arch !== undefined && arch !== null && arch !== "") {
     upsertData.arch = arch;
   }
-  if (public_ip !== undefined && public_ip !== null && public_ip !== "") {
-    upsertData.public_ip = public_ip;
+  // Auto-detect public IP from request headers if not explicitly provided
+  let resolvedPublicIp = public_ip;
+  if (!resolvedPublicIp) {
+    const xff = req.headers.get("x-forwarded-for") || "";
+    const firstIp = xff.split(",")[0]?.trim();
+    const realIp = req.headers.get("x-real-ip")?.trim();
+    resolvedPublicIp = firstIp || realIp || "";
+  }
+  if (resolvedPublicIp) {
+    upsertData.public_ip = resolvedPublicIp;
   }
 
   const { error: upsertErr } = await supabase
