@@ -40,7 +40,7 @@ export function useAnnouncements() {
   useEffect(() => {
     if (!tenantId) return;
     const channel = supabase
-      .channel(`server_announcements-${tenantId}`)
+      .channel(`server_announcements-${tenantId}-${Math.random().toString(36).slice(2)}`)
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "server_announcements", filter: `tenant_id=eq.${tenantId}` },
