@@ -407,6 +407,8 @@ export default function Dashboard() {
                   <Zap className="h-4 w-4 text-primary" />
                   <CardTitle className="text-sm font-semibold">Smart Insights</CardTitle>
                   <Badge variant="outline" className="text-[10px] ml-1">{insights.length}</Badge>
+                </div>
+              </div>
             </CardHeader>
             <CardContent>
               <SmartInsights insights={insights} />
