@@ -49,7 +49,7 @@ export function useJoinRequests(tenantId: string | undefined, canManage: boolean
         .order("created_at", { ascending: false });
 
       if (error) throw error;
-      return (data || []) as OrgJoinRequest[];
+      return ((data || []) as unknown) as OrgJoinRequest[];
     },
   });
 }
