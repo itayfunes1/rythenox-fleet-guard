@@ -25,10 +25,17 @@ export function useTenant() {
         _user_id: user.id,
       });
 
+      const { count: memberCount } = await supabase
+        .from("tenant_members" as any)
+        .select("id", { count: "exact", head: true })
+        .eq("tenant_id", d.tenant_id);
+
       return {
         tenantId: d.tenant_id as string,
         role: d.role as string,
         tenantName: d.tenants?.name as string,
+        memberCount: memberCount || 1,
+        canManageOrganization: ["owner", "admin"].includes(d.role as string),
         apiKey: (apiKey as string) || undefined,
       };
     },
