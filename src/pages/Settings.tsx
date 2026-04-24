@@ -7,21 +7,59 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
-import { Copy, Eye, EyeOff, Key, Settings2, Bell } from "lucide-react";
+import { Building2, Check, Copy, Eye, EyeOff, Key, Search, Settings2, UserPlus, X, Bell } from "lucide-react";
 import { useTenant } from "@/hooks/use-tenant";
 import { useAuth } from "@/components/AuthProvider";
 import { useToast } from "@/hooks/use-toast";
 import { AnnouncementManager } from "@/components/AnnouncementManager";
+import { useJoinRequests, useOrganizationMutations, useOrganizationSearch } from "@/hooks/use-organization";
 export default function SettingsPage() {
   const { data: tenant, isLoading } = useTenant();
   const { user } = useAuth();
   const { toast } = useToast();
   const [showKey, setShowKey] = useState(false);
+  const [orgName, setOrgName] = useState("");
+  const [searchText, setSearchText] = useState("");
+  const [joinMessage, setJoinMessage] = useState("");
+  const canManageOrganization = !!tenant?.canManageOrganization;
+  const organizationSearch = useOrganizationSearch(searchText);
+  const joinRequests = useJoinRequests(tenant?.tenantId, canManageOrganization);
+  const { createOrganization, requestJoin, approveJoinRequest, rejectJoinRequest } = useOrganizationMutations();
 
   const copyApiKey = () => {
     if (tenant?.apiKey) {
       navigator.clipboard.writeText(tenant.apiKey);
-      toast({ title: "Copied", description: "API key copied to clipboard" });
+      toast({ title: "Copied", description: "Organization API key copied to clipboard" });
+    }
+  };
+
+  const handleCreateOrganization = async () => {
+    try {
+      await createOrganization.mutateAsync(orgName);
+      setOrgName("");
+      toast({ title: "Organization created", description: "Your workspace switched to the new organization." });
+    } catch (error: any) {
+      toast({ title: "Organization not created", description: error.message, variant: "destructive" });
+    }
+  };
+
+  const handleRequestJoin = async (tenantId: string, name: string) => {
+    try {
+      await requestJoin.mutateAsync({ tenantId, message: joinMessage });
+      setJoinMessage("");
+      toast({ title: "Request sent", description: `An admin at ${name} can now approve your access.` });
+    } catch (error: any) {
+      toast({ title: "Request not sent", description: error.message, variant: "destructive" });
+    }
+  };
+
+  const handleReviewRequest = async (requestId: string, approve: boolean) => {
+    try {
+      if (approve) await approveJoinRequest.mutateAsync(requestId);
+      else await rejectJoinRequest.mutateAsync(requestId);
+      toast({ title: approve ? "Request approved" : "Request rejected" });
+    } catch (error: any) {
+      toast({ title: "Request update failed", description: error.message, variant: "destructive" });
     }
   };
 
