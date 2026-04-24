@@ -13,7 +13,7 @@ export function useTenant() {
 
       const { data, error } = await supabase
         .from("tenant_members" as any)
-        .select("tenant_id, role, tenants:tenant_id(id, name), member_count:tenant_members!tenant_members_tenant_id_fkey(count)")
+        .select("tenant_id, role, tenants:tenant_id(id, name)")
         .eq("user_id", user.id)
         .limit(1)
         .maybeSingle();
@@ -25,11 +25,16 @@ export function useTenant() {
         _user_id: user.id,
       });
 
+      const { count: memberCount } = await supabase
+        .from("tenant_members" as any)
+        .select("id", { count: "exact", head: true })
+        .eq("tenant_id", d.tenant_id);
+
       return {
         tenantId: d.tenant_id as string,
         role: d.role as string,
         tenantName: d.tenants?.name as string,
-        memberCount: Number(d.member_count?.[0]?.count || 1),
+        memberCount: memberCount || 1,
         canManageOrganization: ["owner", "admin"].includes(d.role as string),
         apiKey: (apiKey as string) || undefined,
       };
