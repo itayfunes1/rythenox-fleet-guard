@@ -196,6 +196,50 @@ export type Database = {
           },
         ]
       }
+      org_join_requests: {
+        Row: {
+          created_at: string
+          id: string
+          message: string | null
+          requester_email: string
+          requester_id: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          tenant_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          message?: string | null
+          requester_email: string
+          requester_id: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          tenant_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          message?: string | null
+          requester_email?: string
+          requester_id?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "org_join_requests_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       relay_nodes: {
         Row: {
           addr: string
@@ -380,9 +424,38 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      approve_join_request: {
+        Args: { _request_id: string }
+        Returns: undefined
+      }
       cleanup_stale_sessions: { Args: never; Returns: undefined }
+      create_organization: {
+        Args: { org_name: string }
+        Returns: {
+          name: string
+          tenant_id: string
+        }[]
+      }
       get_tenant_api_key: { Args: { _user_id: string }; Returns: string }
       get_user_tenant_id: { Args: { _user_id: string }; Returns: string }
+      is_tenant_admin: {
+        Args: { _tenant_id: string; _user_id: string }
+        Returns: boolean
+      }
+      reject_join_request: { Args: { _request_id: string }; Returns: undefined }
+      request_join_organization: {
+        Args: { _message?: string; _tenant_id: string }
+        Returns: string
+      }
+      search_organizations: {
+        Args: { search_text: string }
+        Returns: {
+          has_pending_request: boolean
+          member_count: number
+          name: string
+          tenant_id: string
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never
