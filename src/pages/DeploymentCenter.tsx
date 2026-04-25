@@ -29,6 +29,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { useBuildHistory, type BuildHistoryEntry } from "@/hooks/use-build-history";
 import { formatDistanceToNow } from "date-fns";
+import { useAuth } from "@/components/AuthProvider";
 
 const wait = (ms: number) => new Promise((resolve) => window.setTimeout(resolve, ms));
 
@@ -42,6 +43,7 @@ const BUILD_STAGES = [
 
 export default function DeploymentCenter() {
   const { data: tenant } = useTenant();
+  const { session, loading: authLoading, signOut } = useAuth();
   const { toast } = useToast();
   const { data: history, recordBuild, markBuildReady, markBuildFailed } = useBuildHistory();
   const [isBuilding, setIsBuilding] = useState(false);
@@ -93,8 +95,17 @@ export default function DeploymentCenter() {
     }, 1500);
 
     try {
+      if (authLoading) throw new Error("Authentication is still loading. Try again in a moment.");
+
+      const { data: refreshed, error: refreshError } = await supabase.auth.refreshSession(session ?? undefined);
+      if (refreshError || !refreshed.session?.access_token) {
+        await signOut();
+        throw new Error("Your session expired. Please sign in again, then retry the build.");
+      }
+
       // Updated payload to include the new syscalls flag
       const { data, error } = await supabase.functions.invoke<{ buildId?: string }>("generate-build", {
+        headers: { Authorization: `Bearer ${refreshed.session.access_token}` },
         body: {
           api_key: tenant.apiKey,
           stealth: stealthConfig,
