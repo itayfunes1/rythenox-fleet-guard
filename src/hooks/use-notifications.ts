@@ -35,14 +35,17 @@ export function useNotifications() {
   // Realtime subscription
   useEffect(() => {
     if (!user) return;
+
+    const channelName = `notifications-changes-${user.id}-${crypto.randomUUID()}`;
     const channel = supabase
-      .channel("notifications-changes")
+      .channel(channelName)
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "notifications", filter: `user_id=eq.${user.id}` },
         () => queryClient.invalidateQueries({ queryKey: ["notifications", user.id] })
       )
       .subscribe();
+
     return () => { supabase.removeChannel(channel); };
   }, [user, queryClient]);
 
