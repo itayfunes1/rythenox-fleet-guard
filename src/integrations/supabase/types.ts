@@ -155,6 +155,48 @@ export type Database = {
           },
         ]
       }
+      notification_preferences: {
+        Row: {
+          announcements: boolean
+          build_finished: boolean
+          created_at: string
+          device_enrolled: boolean
+          device_offline: boolean
+          org_requests: boolean
+          task_completed: boolean
+          task_failed: boolean
+          toast_enabled: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          announcements?: boolean
+          build_finished?: boolean
+          created_at?: string
+          device_enrolled?: boolean
+          device_offline?: boolean
+          org_requests?: boolean
+          task_completed?: boolean
+          task_failed?: boolean
+          toast_enabled?: boolean
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          announcements?: boolean
+          build_finished?: boolean
+          created_at?: string
+          device_enrolled?: boolean
+          device_offline?: boolean
+          org_requests?: boolean
+          task_completed?: boolean
+          task_failed?: boolean
+          toast_enabled?: boolean
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       notifications: {
         Row: {
           created_at: string
@@ -436,11 +478,33 @@ export type Database = {
           tenant_id: string
         }[]
       }
+      detect_offline_devices: { Args: never; Returns: undefined }
       get_tenant_api_key: { Args: { _user_id: string }; Returns: string }
       get_user_tenant_id: { Args: { _user_id: string }; Returns: string }
       is_tenant_admin: {
         Args: { _tenant_id: string; _user_id: string }
         Returns: boolean
+      }
+      notify_tenant_admins: {
+        Args: {
+          _category: string
+          _message: string
+          _tenant_id: string
+          _title: string
+          _type?: string
+        }
+        Returns: undefined
+      }
+      notify_user: {
+        Args: {
+          _category: string
+          _message: string
+          _tenant_id: string
+          _title: string
+          _type?: string
+          _user_id: string
+        }
+        Returns: undefined
       }
       reject_join_request: { Args: { _request_id: string }; Returns: undefined }
       request_join_organization: {
