@@ -13,6 +13,7 @@ import { useAuth } from "@/components/AuthProvider";
 import { useToast } from "@/hooks/use-toast";
 import { AnnouncementManager } from "@/components/AnnouncementManager";
 import { useJoinRequests, useOrganizationMutations, useOrganizationSearch } from "@/hooks/use-organization";
+import { NotificationPreferencesCard } from "@/components/settings/NotificationPreferencesCard";
 export default function SettingsPage() {
   const { data: tenant, isLoading } = useTenant();
   const { user } = useAuth();
@@ -244,33 +245,7 @@ export default function SettingsPage() {
         </CardContent>
       </Card>
 
-      <Card className="glass-card">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base">
-            <div className="h-8 w-8 rounded-lg bg-muted/50 flex items-center justify-center">
-              <Bell className="h-4 w-4 text-muted-foreground" />
-            </div>
-            Notifications
-          </CardTitle>
-          <CardDescription>Configure alert preferences</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex items-center justify-between py-1">
-            <Label className="font-normal text-sm">Device offline alerts</Label>
-            <Switch defaultChecked />
-          </div>
-          <Separator className="bg-border/30" />
-          <div className="flex items-center justify-between py-1">
-            <Label className="font-normal text-sm">Failed update notifications</Label>
-            <Switch defaultChecked />
-          </div>
-          <Separator className="bg-border/30" />
-          <div className="flex items-center justify-between py-1">
-            <Label className="font-normal text-sm">Remote session audit emails</Label>
-            <Switch defaultChecked />
-          </div>
-        </CardContent>
-      </Card>
+      <NotificationPreferencesCard />
 
       <Button className="bg-primary hover:bg-primary/90 transition-colors">
         Save Settings
