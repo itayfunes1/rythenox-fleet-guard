@@ -2,7 +2,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
-import { Bell, Monitor, MonitorPlus, CheckCircle2, XCircle, Package, Users, Megaphone } from "lucide-react";
+import { Bell, Monitor, MonitorUp, CheckCircle2, XCircle, Package, Users, Megaphone } from "lucide-react";
 import { useNotificationPreferences, type NotificationCategory } from "@/hooks/use-notification-preferences";
 import { useToast } from "@/hooks/use-toast";
 
@@ -13,7 +13,7 @@ const CATEGORIES: Array<{
   icon: typeof Bell;
 }> = [
   { key: "device_offline", title: "Device went offline", description: "When a managed device stops responding.", icon: Monitor },
-  { key: "device_enrolled", title: "New device enrolled", description: "When a new agent connects for the first time.", icon: MonitorPlus },
+  { key: "device_enrolled", title: "New device enrolled", description: "When a new agent connects for the first time.", icon: MonitorUp },
   { key: "task_completed", title: "Task completed", description: "When a remote task finishes successfully.", icon: CheckCircle2 },
   { key: "task_failed", title: "Task failed", description: "When a remote task fails to execute.", icon: XCircle },
   { key: "build_finished", title: "Build finished", description: "When your agent build is ready or fails.", icon: Package },
