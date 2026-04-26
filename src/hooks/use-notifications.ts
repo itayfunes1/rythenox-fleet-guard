@@ -1,7 +1,9 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/components/AuthProvider";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
+import { toast as sonnerToast } from "sonner";
+import { useNotificationPreferences } from "@/hooks/use-notification-preferences";
 
 export interface Notification {
   id: string;
@@ -17,6 +19,9 @@ export interface Notification {
 export function useNotifications() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const { preferences } = useNotificationPreferences();
+  const prefsRef = useRef(preferences);
+  prefsRef.current = preferences;
 
   const query = useQuery({
     queryKey: ["notifications", user?.id],
@@ -32,7 +37,7 @@ export function useNotifications() {
     enabled: !!user,
   });
 
-  // Realtime subscription
+  // Realtime subscription with toast on insert
   useEffect(() => {
     if (!user) return;
     const channel = supabase
@@ -40,7 +45,19 @@ export function useNotifications() {
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "notifications", filter: `user_id=eq.${user.id}` },
-        () => queryClient.invalidateQueries({ queryKey: ["notifications", user.id] })
+        (payload) => {
+          queryClient.invalidateQueries({ queryKey: ["notifications", user.id] });
+
+          if (payload.eventType === "INSERT" && prefsRef.current.toast_enabled) {
+            const n = payload.new as Notification;
+            const variant =
+              n.type === "error" ? sonnerToast.error :
+              n.type === "warning" ? sonnerToast.warning :
+              n.type === "success" ? sonnerToast.success :
+              sonnerToast.info;
+            variant(n.title, { description: n.message });
+          }
+        }
       )
       .subscribe();
     return () => { supabase.removeChannel(channel); };

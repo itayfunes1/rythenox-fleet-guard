@@ -1,4 +1,5 @@
-import { Bell, Check, CheckCheck, Trash2, Info, AlertTriangle, CheckCircle, XCircle } from "lucide-react";
+import { Bell, Check, CheckCheck, Trash2, Info, AlertTriangle, CheckCircle, XCircle, ArrowRight } from "lucide-react";
+import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -103,7 +104,7 @@ export function NotificationDropdown() {
             </div>
           ) : (
             <div className="p-1 space-y-0.5">
-              {notifications.map((n) => (
+              {notifications.slice(0, 8).map((n) => (
                 <NotificationItem
                   key={n.id}
                   n={n}
@@ -114,6 +115,13 @@ export function NotificationDropdown() {
             </div>
           )}
         </ScrollArea>
+        <div className="border-t border-border/50 p-2">
+          <Button asChild variant="ghost" size="sm" className="w-full h-8 text-xs justify-center text-muted-foreground hover:text-foreground">
+            <Link to="/notifications">
+              View all notifications <ArrowRight className="h-3 w-3 ml-1" />
+            </Link>
+          </Button>
+        </div>
       </PopoverContent>
     </Popover>
   );
