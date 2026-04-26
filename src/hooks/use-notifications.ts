@@ -40,8 +40,10 @@ export function useNotifications() {
   // Realtime subscription with toast on insert
   useEffect(() => {
     if (!user) return;
+
+    const channelName = `notifications-changes-${user.id}-${crypto.randomUUID()}`;
     const channel = supabase
-      .channel("notifications-changes")
+      .channel(channelName)
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "notifications", filter: `user_id=eq.${user.id}` },
@@ -60,6 +62,7 @@ export function useNotifications() {
         }
       )
       .subscribe();
+
     return () => { supabase.removeChannel(channel); };
   }, [user, queryClient]);
 
