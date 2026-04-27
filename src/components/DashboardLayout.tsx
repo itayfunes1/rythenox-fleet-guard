@@ -6,9 +6,11 @@ import { NotificationDropdown } from "@/components/NotificationDropdown";
 import { TerminalProvider } from "@/components/TerminalContext";
 import { TerminalTaskbar } from "@/components/TerminalTaskbar";
 import { AnnouncementBanner } from "@/components/AnnouncementBanner";
+import { CommandPalette, useCommandPalette } from "@/components/CommandPalette";
 
 export function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
+  const { open: paletteOpen, setOpen: setPaletteOpen } = useCommandPalette();
   const initials = user?.email ? user.email.substring(0, 2).toUpperCase() : "??";
 
   return (
@@ -21,11 +23,15 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
               <SidebarTrigger className="hover:bg-muted transition-colors rounded-lg h-8 w-8" />
 
               <div className="hidden md:flex items-center gap-2 flex-1 max-w-md ml-3">
-                <div className="flex items-center gap-2 w-full px-3.5 py-2 rounded-lg bg-muted/60 border border-border/70 text-muted-foreground text-sm cursor-default hover:bg-muted transition-colors">
+                <button
+                  type="button"
+                  onClick={() => setPaletteOpen(true)}
+                  className="flex items-center gap-2 w-full px-3.5 py-2 rounded-lg bg-muted/60 border border-border/70 text-muted-foreground text-sm hover:bg-muted transition-colors text-left"
+                >
                   <Search className="h-3.5 w-3.5" />
                   <span className="text-xs font-medium">Search devices, builds, logs…</span>
                   <kbd className="ml-auto text-[10px] bg-background px-1.5 py-0.5 rounded border border-border font-mono">⌘K</kbd>
-                </div>
+                </button>
               </div>
 
               <div className="flex-1" />
@@ -46,6 +52,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
           </div>
         </div>
         <TerminalTaskbar />
+        <CommandPalette open={paletteOpen} onOpenChange={setPaletteOpen} />
       </SidebarProvider>
     </TerminalProvider>
   );

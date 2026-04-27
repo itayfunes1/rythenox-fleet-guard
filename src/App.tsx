@@ -11,6 +11,9 @@ import DeploymentCenter from "@/pages/DeploymentCenter";
 import DiagnosticVault from "@/pages/DiagnosticVault";
 import NetworkInfrastructure from "@/pages/NetworkInfrastructure";
 import NotificationsPage from "@/pages/Notifications";
+import Playbooks from "@/pages/Playbooks";
+import Schedules from "@/pages/Schedules";
+import AuditLog from "@/pages/AuditLog";
 import SettingsPage from "@/pages/Settings";
 import AuthPage from "@/pages/Auth";
 import ResetPassword from "@/pages/ResetPassword";
@@ -41,6 +44,9 @@ function ProtectedRoutes() {
         <Route path="/deployment" element={<DeploymentCenter />} />
         <Route path="/diagnostics" element={<DiagnosticVault />} />
         <Route path="/network" element={<NetworkInfrastructure />} />
+        <Route path="/playbooks" element={<Playbooks />} />
+        <Route path="/schedules" element={<Schedules />} />
+        <Route path="/audit" element={<AuditLog />} />
         <Route path="/notifications" element={<NotificationsPage />} />
         <Route path="/settings" element={<SettingsPage />} />
         <Route path="*" element={<NotFound />} />

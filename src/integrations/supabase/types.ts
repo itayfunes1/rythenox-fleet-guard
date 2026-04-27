@@ -38,6 +38,42 @@ export type Database = {
         }
         Relationships: []
       }
+      audit_log: {
+        Row: {
+          action: string
+          actor_email: string | null
+          actor_id: string | null
+          created_at: string
+          entity_id: string | null
+          entity_type: string
+          id: string
+          metadata: Json
+          tenant_id: string
+        }
+        Insert: {
+          action: string
+          actor_email?: string | null
+          actor_id?: string | null
+          created_at?: string
+          entity_id?: string | null
+          entity_type: string
+          id?: string
+          metadata?: Json
+          tenant_id: string
+        }
+        Update: {
+          action?: string
+          actor_email?: string | null
+          actor_id?: string | null
+          created_at?: string
+          entity_id?: string | null
+          entity_type?: string
+          id?: string
+          metadata?: Json
+          tenant_id?: string
+        }
+        Relationships: []
+      }
       build_history: {
         Row: {
           build_id: string
@@ -282,6 +318,39 @@ export type Database = {
           },
         ]
       }
+      playbooks: {
+        Row: {
+          created_at: string
+          created_by: string
+          description: string | null
+          id: string
+          name: string
+          steps: Json
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          description?: string | null
+          id?: string
+          name: string
+          steps?: Json
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          id?: string
+          name?: string
+          steps?: Json
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       relay_nodes: {
         Row: {
           addr: string
@@ -360,6 +429,87 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      saved_commands: {
+        Row: {
+          category: string
+          command: string
+          created_at: string
+          created_by: string
+          description: string | null
+          id: string
+          name: string
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          category?: string
+          command: string
+          created_at?: string
+          created_by: string
+          description?: string | null
+          id?: string
+          name: string
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          command?: string
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          id?: string
+          name?: string
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      scheduled_tasks: {
+        Row: {
+          command: string
+          created_at: string
+          created_by: string
+          cron_expression: string
+          enabled: boolean
+          id: string
+          last_run_at: string | null
+          name: string
+          next_run_at: string | null
+          target_ids: string[]
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          command: string
+          created_at?: string
+          created_by: string
+          cron_expression: string
+          enabled?: boolean
+          id?: string
+          last_run_at?: string | null
+          name: string
+          next_run_at?: string | null
+          target_ids?: string[]
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          command?: string
+          created_at?: string
+          created_by?: string
+          cron_expression?: string
+          enabled?: boolean
+          id?: string
+          last_run_at?: string | null
+          name?: string
+          next_run_at?: string | null
+          target_ids?: string[]
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       server_announcements: {
         Row: {
@@ -484,6 +634,17 @@ export type Database = {
       is_tenant_admin: {
         Args: { _tenant_id: string; _user_id: string }
         Returns: boolean
+      }
+      log_audit_event: {
+        Args: {
+          _action: string
+          _actor_id: string
+          _entity_id?: string
+          _entity_type: string
+          _metadata?: Json
+          _tenant_id: string
+        }
+        Returns: undefined
       }
       notify_tenant_admins: {
         Args: {
