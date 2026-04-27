@@ -48,7 +48,7 @@ export function usePlaybooks() {
       if (error) throw error;
       return (data ?? []).map((p) => ({
         ...p,
-        steps: (Array.isArray(p.steps) ? p.steps : []) as PlaybookStep[],
+        steps: (Array.isArray(p.steps) ? (p.steps as unknown as PlaybookStep[]) : []),
       })) as Playbook[];
     },
   });
@@ -84,9 +84,9 @@ export function useUpdatePlaybook() {
   return useMutation({
     mutationFn: async (params: { id: string; name?: string; description?: string | null; steps?: PlaybookStep[] }) => {
       const { id, steps, ...rest } = params;
-      const updates: Record<string, unknown> = { ...rest };
-      if (steps) updates.steps = steps;
-      const { error } = await supabase.from("playbooks").update(updates).eq("id", id);
+      const updates: Record<string, any> = { ...rest };
+      if (steps) updates.steps = steps as any;
+      const { error } = await supabase.from("playbooks").update(updates as any).eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["playbooks"] }),
