@@ -1,4 +1,4 @@
-import { LayoutDashboard, Monitor, Rocket, FolderArchive, Network, Settings, LogOut, Zap, Bell } from "lucide-react";
+import { LayoutDashboard, Monitor, Rocket, FolderArchive, Network, Settings, LogOut, Zap, Bell, BookOpen, Clock, ScrollText } from "lucide-react";
 import rythenoxLogo from "@/assets/rythenox-logo.svg";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
@@ -25,6 +25,12 @@ const mainItems: Array<{ title: string; url: string; icon: typeof LayoutDashboar
   { title: "Deployment Center", url: "/deployment", icon: Rocket },
   { title: "Diagnostic Vault", url: "/diagnostics", icon: FolderArchive },
   { title: "Network", url: "/network", icon: Network, restrictedTo: "monitor@rythenox.com" },
+];
+
+const automationItems = [
+  { title: "Playbooks", url: "/playbooks", icon: BookOpen },
+  { title: "Schedules", url: "/schedules", icon: Clock },
+  { title: "Audit Log", url: "/audit", icon: ScrollText },
 ];
 
 const systemItems = [
