@@ -448,6 +448,7 @@ const groupOrder = ["Start Here", "Agents", "Automation", "Operations", "Account
 export default function Docs() {
   const [query, setQuery] = useState("");
   const [active, setActive] = useState<string>("getting-started");
+  const sectionRefs = useRef<Record<string, HTMLElement | null>>({});
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -466,7 +467,32 @@ export default function Docs() {
     return groupOrder.filter((g) => m.has(g)).map((g) => [g, m.get(g)!] as const);
   }, [filtered]);
 
-  const activeSection = sections.find((s) => s.id === active) ?? sections[0];
+  // Scroll-spy: highlight TOC entry for the section currently nearest the top
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const visible = entries
+          .filter((e) => e.isIntersecting)
+          .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top);
+        if (visible[0]) {
+          const id = visible[0].target.getAttribute("data-section-id");
+          if (id) setActive(id);
+        }
+      },
+      { rootMargin: "-80px 0px -65% 0px", threshold: [0, 1] },
+    );
+    Object.values(sectionRefs.current).forEach((el) => el && observer.observe(el));
+    return () => observer.disconnect();
+  }, [filtered]);
+
+  const handleJump = (id: string) => {
+    setActive(id);
+    const el = sectionRefs.current[id];
+    if (el) {
+      const top = el.getBoundingClientRect().top + window.scrollY - 72;
+      window.scrollTo({ top, behavior: "smooth" });
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -486,7 +512,7 @@ export default function Docs() {
 
       <div className="grid grid-cols-1 lg:grid-cols-[260px_1fr] gap-6">
         {/* Sidebar TOC */}
-        <aside className="space-y-3 lg:sticky lg:top-4 lg:self-start">
+        <aside className="lg:sticky lg:top-4 lg:self-start lg:max-h-[calc(100vh-2rem)] lg:overflow-y-auto space-y-3 pr-1">
           <div className="relative">
             <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
             <Input
@@ -505,15 +531,18 @@ export default function Docs() {
                 <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold mb-1.5 px-2">
                   {group}
                 </p>
-                <ul className="space-y-0.5">
+                <ul className="space-y-0.5 border-l border-border/60">
                   {items.map((s) => {
                     const Icon = s.icon;
                     const isActive = s.id === active;
                     return (
-                      <li key={s.id}>
+                      <li key={s.id} className="relative">
+                        {isActive && (
+                          <span className="absolute left-0 top-1.5 bottom-1.5 w-0.5 bg-primary rounded-r" aria-hidden />
+                        )}
                         <button
-                          onClick={() => setActive(s.id)}
-                          className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-[13px] text-left transition-colors ${
+                          onClick={() => handleJump(s.id)}
+                          className={`w-full flex items-center gap-2 pl-3 pr-2 py-1.5 rounded-r-md text-[13px] text-left transition-colors ${
                             isActive
                               ? "bg-primary/10 text-primary font-medium"
                               : "text-muted-foreground hover:bg-muted hover:text-foreground"
@@ -531,17 +560,39 @@ export default function Docs() {
           </nav>
         </aside>
 
-        {/* Content */}
-        <Card>
-          <CardHeader className="pb-3">
-            <div className="flex items-center gap-2">
-              <activeSection.icon className="h-4 w-4 text-primary" />
-              <CardTitle className="text-lg">{activeSection.title}</CardTitle>
-            </div>
-            <Separator className="mt-3" />
-          </CardHeader>
-          <CardContent>{activeSection.body}</CardContent>
-        </Card>
+        {/* Content — all sections rendered, scroll-spy highlights TOC */}
+        <div className="space-y-4 scroll-smooth">
+          {filtered.map((s) => {
+            const Icon = s.icon;
+            return (
+              <section
+                key={s.id}
+                id={s.id}
+                data-section-id={s.id}
+                ref={(el) => (sectionRefs.current[s.id] = el)}
+                className="scroll-mt-20"
+              >
+                <Card>
+                  <CardHeader className="pb-3">
+                    <div className="flex items-center gap-2">
+                      <Icon className="h-4 w-4 text-primary" />
+                      <CardTitle className="text-lg">{s.title}</CardTitle>
+                    </div>
+                    <Separator className="mt-3" />
+                  </CardHeader>
+                  <CardContent>{s.body}</CardContent>
+                </Card>
+              </section>
+            );
+          })}
+          {filtered.length === 0 && (
+            <Card>
+              <CardContent className="py-10 text-center text-sm text-muted-foreground">
+                No sections match your search.
+              </CardContent>
+            </Card>
+          )}
+        </div>
       </div>
 
       <Card className="border-dashed">
