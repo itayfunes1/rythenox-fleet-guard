@@ -1,4 +1,4 @@
-import { LayoutDashboard, Monitor, Rocket, FolderArchive, Network, Settings, LogOut, Zap, Bell, BookOpen, Clock, ScrollText } from "lucide-react";
+import { LayoutDashboard, Monitor, Rocket, FolderArchive, Network, Settings, LogOut, Zap, Bell, BookOpen, Clock, ScrollText, LifeBuoy } from "lucide-react";
 import rythenoxLogo from "@/assets/rythenox-logo.svg";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
@@ -35,6 +35,7 @@ const automationItems = [
 
 const systemItems = [
   { title: "Notifications", url: "/notifications", icon: Bell },
+  { title: "Documentation", url: "/docs", icon: LifeBuoy },
   { title: "Settings", url: "/settings", icon: Settings },
 ];
 

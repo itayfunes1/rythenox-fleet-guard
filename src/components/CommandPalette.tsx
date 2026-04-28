@@ -21,6 +21,7 @@ import {
   BookOpen,
   Clock,
   ScrollText,
+  LifeBuoy,
   Zap,
 } from "lucide-react";
 import { useDevices } from "@/hooks/use-devices";
@@ -43,6 +44,7 @@ const NAV_ITEMS = [
   { label: "Schedules", path: "/schedules", icon: Clock },
   { label: "Audit Log", path: "/audit", icon: ScrollText },
   { label: "Notifications", path: "/notifications", icon: Bell },
+  { label: "Documentation", path: "/docs", icon: LifeBuoy },
   { label: "Settings", path: "/settings", icon: Settings },
 ];
 
