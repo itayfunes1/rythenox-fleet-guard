@@ -14,6 +14,7 @@ import NotificationsPage from "@/pages/Notifications";
 import Playbooks from "@/pages/Playbooks";
 import Schedules from "@/pages/Schedules";
 import AuditLog from "@/pages/AuditLog";
+import Docs from "@/pages/Docs";
 import SettingsPage from "@/pages/Settings";
 import AuthPage from "@/pages/Auth";
 import ResetPassword from "@/pages/ResetPassword";
@@ -48,6 +49,7 @@ function ProtectedRoutes() {
         <Route path="/schedules" element={<Schedules />} />
         <Route path="/audit" element={<AuditLog />} />
         <Route path="/notifications" element={<NotificationsPage />} />
+        <Route path="/docs" element={<Docs />} />
         <Route path="/settings" element={<SettingsPage />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
