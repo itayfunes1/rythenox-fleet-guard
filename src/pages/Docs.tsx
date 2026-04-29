@@ -107,9 +107,9 @@ const sections: Section[] = [
         <div className="space-y-2">
           <p className="text-sm font-semibold">Sidebar groups</p>
           <ul className="text-sm text-muted-foreground space-y-1.5 list-disc pl-5">
-            <li><strong className="text-foreground">Management</strong> — Dashboard, Devices, Deployment, Diagnostic Vault, Network.</li>
-            <li><strong className="text-foreground">Automation</strong> — Playbooks, Schedules, Audit Log.</li>
-            <li><strong className="text-foreground">System</strong> — Notifications, Settings.</li>
+            <li><strong className="text-foreground">Management</strong> — Dashboard, Devices, Deployment Center, Diagnostic Vault. (Network is reserved for Rythenox staff and is hidden for customers.)</li>
+            <li><strong className="text-foreground">Automation</strong> — AI Assistant, Playbooks, Schedules, Audit Log.</li>
+            <li><strong className="text-foreground">System</strong> — Notifications, Documentation, Settings.</li>
           </ul>
         </div>
         <Tip>
