@@ -6,7 +6,7 @@ import { Separator } from "@/components/ui/separator";
 import {
   BookOpen, Rocket, Monitor, Terminal, BookMarked, Clock, ScrollText,
   Network, FolderArchive, Bell, Settings, Search, Command, Zap, Shield,
-  AlertTriangle, CheckCircle2, ArrowRight,
+  AlertTriangle, CheckCircle2, ArrowRight, Sparkles,
 } from "lucide-react";
 
 type Section = {
@@ -107,9 +107,9 @@ const sections: Section[] = [
         <div className="space-y-2">
           <p className="text-sm font-semibold">Sidebar groups</p>
           <ul className="text-sm text-muted-foreground space-y-1.5 list-disc pl-5">
-            <li><strong className="text-foreground">Management</strong> — Dashboard, Devices, Deployment, Diagnostic Vault, Network.</li>
-            <li><strong className="text-foreground">Automation</strong> — Playbooks, Schedules, Audit Log.</li>
-            <li><strong className="text-foreground">System</strong> — Notifications, Settings.</li>
+            <li><strong className="text-foreground">Management</strong> — Dashboard, Devices, Deployment Center, Diagnostic Vault. (Network is reserved for Rythenox staff and is hidden for customers.)</li>
+            <li><strong className="text-foreground">Automation</strong> — AI Assistant, Playbooks, Schedules, Audit Log.</li>
+            <li><strong className="text-foreground">System</strong> — Notifications, Documentation, Settings.</li>
           </ul>
         </div>
         <Tip>
@@ -227,6 +227,36 @@ const sections: Section[] = [
     ),
   },
   {
+    id: "ai-assistant",
+    group: "Automation",
+    title: "AI Command Assistant",
+    icon: Sparkles,
+    keywords: "ai assistant natural language gpt gemini suggest command llm",
+    body: (
+      <div className="space-y-4">
+        <p className="text-sm text-muted-foreground">
+          Describe what you want to do in plain English and the assistant generates a safe shell command,
+          recommends which online devices to run it on, and flags the risk level.
+        </p>
+        <Step n={1} title="Open the assistant">
+          Sidebar → <Code>AI Assistant</Code> (under Automation), or jump there from <Kbd>⌘K</Kbd>.
+        </Step>
+        <Step n={2} title="Ask in plain English">
+          e.g. <em>"Show disk usage on all Linux boxes"</em> or <em>"Restart the Windows print spooler"</em>.
+          Press <Kbd>⌘/Ctrl + Enter</Kbd> to submit.
+        </Step>
+        <Step n={3} title="Review, edit, and dispatch">
+          The assistant returns a single command, a rationale, a risk badge (LOW / MEDIUM / HIGH), and pre-selects
+          the recommended online devices. Edit the command, adjust targets, then click <strong>Run</strong>.
+        </Step>
+        <Tip variant="warn">
+          Only <strong>Online</strong> devices are pre-selected. If you manually pick offline devices, the task
+          is queued and runs once they reconnect. <strong>HIGH RISK</strong> commands require an extra confirmation.
+        </Tip>
+      </div>
+    ),
+  },
+  {
     id: "playbooks",
     group: "Automation",
     title: "Saved Commands & Playbooks",
@@ -235,24 +265,24 @@ const sections: Section[] = [
     body: (
       <div className="space-y-4">
         <p className="text-sm text-muted-foreground">
-          <strong className="text-foreground">Saved Commands</strong> are reusable one-liners.{" "}
-          <strong className="text-foreground">Playbooks</strong> are ordered sequences of commands you can fire
-          across many devices at once.
+          The <Code>Playbooks</Code> page has two tabs: <strong className="text-foreground">Commands</strong>{" "}
+          (a library of reusable one-liners) and <strong className="text-foreground">Playbooks</strong>{" "}
+          (ordered sequences you fan out across many devices at once).
         </p>
         <Step n={1} title="Save a command">
-          Sidebar → <Code>Playbooks</Code> → <strong>New saved command</strong>. Give it a name, category and the
-          shell text.
+          Sidebar → <Code>Playbooks</Code> → <strong>Commands</strong> tab → fill in name, optional category,
+          and the shell text, then save.
         </Step>
         <Step n={2} title="Build a playbook">
-          Add steps in order. Each step references either a saved command or an inline one. Steps run sequentially
-          per device.
+          Switch to the <strong>Playbooks</strong> tab. Add an ordered list of steps — each step is a shell
+          command. Steps run sequentially per device.
         </Step>
         <Step n={3} title="Bulk execute">
-          Pick the playbook, select target devices (or "All online"), confirm. Live progress shows a per-device
-          per-step status grid.
+          Use <strong>Run</strong> on a playbook, pick target devices, and confirm. Each step is dispatched
+          as a regular task to every selected device.
         </Step>
         <Tip variant="success">
-          Playbooks are great for hardening checklists, log collection sweeps, or pushing config updates fleet-wide.
+          Playbooks are great for hardening checklists, log-collection sweeps, or pushing config updates fleet-wide.
         </Tip>
       </div>
     ),
@@ -339,8 +369,8 @@ const sections: Section[] = [
           throughput, client count, uptime, and last-seen heartbeats.
         </p>
         <Tip variant="warn">
-          This page is restricted to internal Rythenox staff (<Code>@rythenox.com</Code> emails). Customers
-          will not see it in the sidebar.
+          This page is restricted to a designated Rythenox monitoring account and is hidden from the sidebar
+          for everyone else, including customer organization owners.
         </Tip>
       </div>
     ),
@@ -377,13 +407,13 @@ const sections: Section[] = [
           Each user belongs to an organization with one of three roles:
         </p>
         <ul className="text-sm text-muted-foreground space-y-1.5 list-disc pl-5">
-          <li><strong className="text-foreground">Owner</strong> — full control including API key access.</li>
-          <li><strong className="text-foreground">Admin</strong> — manage members, approve join requests, post announcements.</li>
-          <li><strong className="text-foreground">Member</strong> — operate devices and run commands.</li>
+          <li><strong className="text-foreground">Owner</strong> — full control: members, API key, organization settings.</li>
+          <li><strong className="text-foreground">Admin</strong> — manage members, approve join requests, view the API key, post announcements.</li>
+          <li><strong className="text-foreground">Member</strong> — operate devices, run commands, build playbooks.</li>
         </ul>
         <p className="text-sm text-muted-foreground">
-          Users can search for and request to join an existing organization. Owners/admins approve from
-          <Code>Settings → Organization</Code>.
+          New accounts start in their own private workspace. From <Code>Settings</Code> you can either create a
+          shared organization or search for an existing one and request to join — owners/admins approve the request.
         </p>
       </div>
     ),
@@ -393,17 +423,19 @@ const sections: Section[] = [
     group: "Account",
     title: "Settings",
     icon: Settings,
-    keywords: "settings account profile api key preferences",
+    keywords: "settings account organization api key preferences notifications",
     body: (
       <div className="space-y-3">
         <p className="text-sm text-muted-foreground">
-          Settings is split into tabs: <strong>Profile</strong>, <strong>Organization</strong>,
-          <strong> Notifications</strong>, and <strong>API Key</strong> (owners only).
+          The <Code>Settings</Code> page is a single scrollable view with three sections:
+          <strong> Organization</strong> (create / join / manage members),
+          <strong> Organization API Configuration</strong> (the shared agent API key — visible to owners and admins),
+          and <strong> Notification Preferences</strong>.
         </p>
         <ul className="text-sm text-muted-foreground space-y-1.5 list-disc pl-5">
-          <li>Reveal the tenant API key with the show/copy buttons — required by the agent <Code>config.json</Code>.</li>
-          <li>Manage join requests from prospective members.</li>
-          <li>Toggle individual notification categories.</li>
+          <li>Owners and admins can reveal and copy the organization API key — required by the agent <Code>config.json</Code>.</li>
+          <li>Approve or reject pending join requests from prospective members.</li>
+          <li>Toggle which notification categories produce alerts.</li>
         </ul>
       </div>
     ),
