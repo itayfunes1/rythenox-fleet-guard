@@ -407,13 +407,13 @@ const sections: Section[] = [
           Each user belongs to an organization with one of three roles:
         </p>
         <ul className="text-sm text-muted-foreground space-y-1.5 list-disc pl-5">
-          <li><strong className="text-foreground">Owner</strong> — full control including API key access.</li>
-          <li><strong className="text-foreground">Admin</strong> — manage members, approve join requests, post announcements.</li>
-          <li><strong className="text-foreground">Member</strong> — operate devices and run commands.</li>
+          <li><strong className="text-foreground">Owner</strong> — full control: members, API key, organization settings.</li>
+          <li><strong className="text-foreground">Admin</strong> — manage members, approve join requests, view the API key, post announcements.</li>
+          <li><strong className="text-foreground">Member</strong> — operate devices, run commands, build playbooks.</li>
         </ul>
         <p className="text-sm text-muted-foreground">
-          Users can search for and request to join an existing organization. Owners/admins approve from
-          <Code>Settings → Organization</Code>.
+          New accounts start in their own private workspace. From <Code>Settings</Code> you can either create a
+          shared organization or search for an existing one and request to join — owners/admins approve the request.
         </p>
       </div>
     ),
@@ -423,17 +423,19 @@ const sections: Section[] = [
     group: "Account",
     title: "Settings",
     icon: Settings,
-    keywords: "settings account profile api key preferences",
+    keywords: "settings account organization api key preferences notifications",
     body: (
       <div className="space-y-3">
         <p className="text-sm text-muted-foreground">
-          Settings is split into tabs: <strong>Profile</strong>, <strong>Organization</strong>,
-          <strong> Notifications</strong>, and <strong>API Key</strong> (owners only).
+          The <Code>Settings</Code> page is a single scrollable view with three sections:
+          <strong> Organization</strong> (create / join / manage members),
+          <strong> Organization API Configuration</strong> (the shared agent API key — visible to owners and admins),
+          and <strong> Notification Preferences</strong>.
         </p>
         <ul className="text-sm text-muted-foreground space-y-1.5 list-disc pl-5">
-          <li>Reveal the tenant API key with the show/copy buttons — required by the agent <Code>config.json</Code>.</li>
-          <li>Manage join requests from prospective members.</li>
-          <li>Toggle individual notification categories.</li>
+          <li>Owners and admins can reveal and copy the organization API key — required by the agent <Code>config.json</Code>.</li>
+          <li>Approve or reject pending join requests from prospective members.</li>
+          <li>Toggle which notification categories produce alerts.</li>
         </ul>
       </div>
     ),
