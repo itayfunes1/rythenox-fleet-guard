@@ -6,7 +6,7 @@ import { Separator } from "@/components/ui/separator";
 import {
   BookOpen, Rocket, Monitor, Terminal, BookMarked, Clock, ScrollText,
   Network, FolderArchive, Bell, Settings, Search, Command, Zap, Shield,
-  AlertTriangle, CheckCircle2, ArrowRight,
+  AlertTriangle, CheckCircle2, ArrowRight, Sparkles,
 } from "lucide-react";
 
 type Section = {
