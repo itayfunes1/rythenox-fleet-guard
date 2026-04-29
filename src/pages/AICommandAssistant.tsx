@@ -196,8 +196,15 @@ export default function AICommandAssistant() {
             />
 
             <div>
-              <div className="text-xs font-medium uppercase tracking-wide text-muted-foreground mb-2">
-                Targets ({selected.size}/{devices.length})
+              <div className="flex items-center justify-between mb-2">
+                <div className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                  Targets ({selected.size}/{devices.length})
+                </div>
+                {suggestion.fleet && suggestion.fleet.online === 0 && devices.length > 0 && (
+                  <Badge variant="outline" className="bg-amber-500/10 text-amber-700 border-amber-500/30 text-[10px]">
+                    No devices online
+                  </Badge>
+                )}
               </div>
               {devices.length === 0 ? (
                 <p className="text-sm text-muted-foreground">No enrolled devices.</p>
@@ -205,12 +212,13 @@ export default function AICommandAssistant() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-1.5 max-h-72 overflow-auto pr-1">
                   {devices.map((d) => {
                     const recommended = suggestion.target_ids.includes(d.target_id);
+                    const isOnline = d.status === "Online";
                     return (
                       <label
                         key={d.id}
                         className={`flex items-center gap-2 p-2 rounded-md border text-sm cursor-pointer hover:bg-muted/50 ${
                           recommended ? "border-primary/40 bg-primary/5" : "border-border"
-                        }`}
+                        } ${!isOnline ? "opacity-60" : ""}`}
                       >
                         <Checkbox
                           checked={selected.has(d.target_id)}
@@ -220,7 +228,12 @@ export default function AICommandAssistant() {
                           <div className="font-medium truncate text-[13px]">
                             {d.nickname ?? d.target_id}
                           </div>
-                          <div className="text-[11px] text-muted-foreground font-mono truncate">
+                          <div className="text-[11px] text-muted-foreground font-mono truncate flex items-center gap-1.5">
+                            <span
+                              className={`inline-block h-1.5 w-1.5 rounded-full ${
+                                isOnline ? "bg-emerald-500" : "bg-muted-foreground/50"
+                              }`}
+                            />
                             {d.os_info ?? "unknown"} · {d.status}
                           </div>
                         </div>
