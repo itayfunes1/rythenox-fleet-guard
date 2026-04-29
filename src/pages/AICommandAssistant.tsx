@@ -69,6 +69,16 @@ export default function AICommandAssistant() {
 
   const run = async () => {
     if (!tenant?.tenantId || !editedCmd.trim() || selected.size === 0) return;
+
+    const onlineSet = new Set(devices.filter((d) => d.status === "Online").map((d) => d.target_id));
+    const offlinePicked = [...selected].filter((t) => !onlineSet.has(t));
+    if (offlinePicked.length > 0) {
+      const ok = window.confirm(
+        `${offlinePicked.length} selected device(s) are OFFLINE and won't execute the command until they reconnect. Queue the task anyway?`,
+      );
+      if (!ok) return;
+    }
+
     if (suggestion?.risk === "high") {
       const ok = window.confirm(
         "This command is flagged HIGH RISK and may be destructive. Are you absolutely sure you want to run it?",
@@ -88,7 +98,14 @@ export default function AICommandAssistant() {
         console.error("dispatch failed", target, e);
       }
     }
-    toast.success(`Dispatched to ${dispatched} device${dispatched === 1 ? "" : "s"}`);
+    const onlineCount = dispatched - offlinePicked.length;
+    if (offlinePicked.length > 0) {
+      toast.success(
+        `Queued for ${dispatched} device(s) — ${onlineCount} online, ${offlinePicked.length} will run on reconnect`,
+      );
+    } else {
+      toast.success(`Dispatched to ${dispatched} device${dispatched === 1 ? "" : "s"}`);
+    }
   };
 
   const riskColor =
