@@ -175,9 +175,9 @@ ${deviceSummary}`;
       });
     }
 
-    const validTargets = new Set(devices.map((d) => d.target_id));
+    const onlineTargets = new Set(onlineDevices.map((d) => d.target_id));
     const target_ids: string[] = Array.isArray(parsed.target_ids)
-      ? parsed.target_ids.filter((t: any) => typeof t === "string" && validTargets.has(t))
+      ? parsed.target_ids.filter((t: any) => typeof t === "string" && onlineTargets.has(t))
       : [];
 
     return new Response(
