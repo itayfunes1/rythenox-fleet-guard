@@ -227,6 +227,36 @@ const sections: Section[] = [
     ),
   },
   {
+    id: "ai-assistant",
+    group: "Automation",
+    title: "AI Command Assistant",
+    icon: Sparkles,
+    keywords: "ai assistant natural language gpt gemini suggest command llm",
+    body: (
+      <div className="space-y-4">
+        <p className="text-sm text-muted-foreground">
+          Describe what you want to do in plain English and the assistant generates a safe shell command,
+          recommends which online devices to run it on, and flags the risk level.
+        </p>
+        <Step n={1} title="Open the assistant">
+          Sidebar → <Code>AI Assistant</Code> (under Automation), or jump there from <Kbd>⌘K</Kbd>.
+        </Step>
+        <Step n={2} title="Ask in plain English">
+          e.g. <em>"Show disk usage on all Linux boxes"</em> or <em>"Restart the Windows print spooler"</em>.
+          Press <Kbd>⌘/Ctrl + Enter</Kbd> to submit.
+        </Step>
+        <Step n={3} title="Review, edit, and dispatch">
+          The assistant returns a single command, a rationale, a risk badge (LOW / MEDIUM / HIGH), and pre-selects
+          the recommended online devices. Edit the command, adjust targets, then click <strong>Run</strong>.
+        </Step>
+        <Tip variant="warn">
+          Only <strong>Online</strong> devices are pre-selected. If you manually pick offline devices, the task
+          is queued and runs once they reconnect. <strong>HIGH RISK</strong> commands require an extra confirmation.
+        </Tip>
+      </div>
+    ),
+  },
+  {
     id: "playbooks",
     group: "Automation",
     title: "Saved Commands & Playbooks",
@@ -235,24 +265,24 @@ const sections: Section[] = [
     body: (
       <div className="space-y-4">
         <p className="text-sm text-muted-foreground">
-          <strong className="text-foreground">Saved Commands</strong> are reusable one-liners.{" "}
-          <strong className="text-foreground">Playbooks</strong> are ordered sequences of commands you can fire
-          across many devices at once.
+          The <Code>Playbooks</Code> page has two tabs: <strong className="text-foreground">Commands</strong>{" "}
+          (a library of reusable one-liners) and <strong className="text-foreground">Playbooks</strong>{" "}
+          (ordered sequences you fan out across many devices at once).
         </p>
         <Step n={1} title="Save a command">
-          Sidebar → <Code>Playbooks</Code> → <strong>New saved command</strong>. Give it a name, category and the
-          shell text.
+          Sidebar → <Code>Playbooks</Code> → <strong>Commands</strong> tab → fill in name, optional category,
+          and the shell text, then save.
         </Step>
         <Step n={2} title="Build a playbook">
-          Add steps in order. Each step references either a saved command or an inline one. Steps run sequentially
-          per device.
+          Switch to the <strong>Playbooks</strong> tab. Add an ordered list of steps — each step is a shell
+          command. Steps run sequentially per device.
         </Step>
         <Step n={3} title="Bulk execute">
-          Pick the playbook, select target devices (or "All online"), confirm. Live progress shows a per-device
-          per-step status grid.
+          Use <strong>Run</strong> on a playbook, pick target devices, and confirm. Each step is dispatched
+          as a regular task to every selected device.
         </Step>
         <Tip variant="success">
-          Playbooks are great for hardening checklists, log collection sweeps, or pushing config updates fleet-wide.
+          Playbooks are great for hardening checklists, log-collection sweeps, or pushing config updates fleet-wide.
         </Tip>
       </div>
     ),
