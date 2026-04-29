@@ -17,6 +17,7 @@ interface Suggestion {
   rationale: string;
   risk: "low" | "medium" | "high";
   os_target: string;
+  fleet?: { total: number; online: number };
 }
 
 const EXAMPLES = [
