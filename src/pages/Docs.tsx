@@ -369,8 +369,8 @@ const sections: Section[] = [
           throughput, client count, uptime, and last-seen heartbeats.
         </p>
         <Tip variant="warn">
-          This page is restricted to internal Rythenox staff (<Code>@rythenox.com</Code> emails). Customers
-          will not see it in the sidebar.
+          This page is restricted to a designated Rythenox monitoring account and is hidden from the sidebar
+          for everyone else, including customer organization owners.
         </Tip>
       </div>
     ),
