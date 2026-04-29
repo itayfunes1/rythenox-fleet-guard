@@ -23,6 +23,7 @@ import {
   ScrollText,
   LifeBuoy,
   Zap,
+  Sparkles,
 } from "lucide-react";
 import { useDevices } from "@/hooks/use-devices";
 import { useTenant } from "@/hooks/use-tenant";
@@ -40,6 +41,7 @@ const NAV_ITEMS = [
   { label: "Deployment Center", path: "/deployment", icon: Rocket },
   { label: "Diagnostic Vault", path: "/diagnostics", icon: FolderArchive },
   { label: "Network", path: "/network", icon: Network },
+  { label: "AI Assistant", path: "/assistant", icon: Sparkles },
   { label: "Playbooks", path: "/playbooks", icon: BookOpen },
   { label: "Schedules", path: "/schedules", icon: Clock },
   { label: "Audit Log", path: "/audit", icon: ScrollText },

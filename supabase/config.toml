@@ -17,3 +17,6 @@ verify_jwt = false
 
 [functions.dispatch-schedules]
 verify_jwt = false
+
+[functions.ai-command-assistant]
+verify_jwt = true
