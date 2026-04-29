@@ -187,6 +187,7 @@ ${deviceSummary}`;
         rationale: String(parsed.rationale ?? ""),
         risk: ["low", "medium", "high"].includes(parsed.risk) ? parsed.risk : "medium",
         os_target: parsed.os_target ?? "any",
+        fleet: { total: devices.length, online: onlineDevices.length },
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
