@@ -55,11 +55,12 @@ serve(async (req) => {
 
     const devices: DeviceInfo[] = (devicesRaw ?? []) as any;
 
+    const onlineDevices = devices.filter((d) => d.status === "Online");
     const deviceSummary = devices.length
       ? devices
           .map(
             (d) =>
-              `- ${d.target_id}${d.nickname ? ` (${d.nickname})` : ""} | os=${d.os_info ?? "unknown"} | arch=${d.arch ?? "?"} | ${d.status}`,
+              `- ${d.target_id}${d.nickname ? ` (${d.nickname})` : ""} | os=${d.os_info ?? "unknown"} | arch=${d.arch ?? "?"} | status=${d.status}`,
           )
           .join("\n")
       : "(no devices enrolled)";
@@ -69,10 +70,13 @@ serve(async (req) => {
 Rules:
 - Output ONE command line. No explanations, no multi-line scripts unless absolutely needed (use && or ;).
 - Pick the correct command for the target OS (use Windows PowerShell/cmd syntax for Windows targets, POSIX shell for Linux/macOS).
-- If the fleet is mixed and the request applies to a specific OS, only target devices of that OS.
+- ONLY select devices whose status is "Online". Offline devices cannot execute commands. If no Online devices match the request, return an empty target_ids array and explain in the rationale that no online devices are available.
+- If the fleet is mixed and the request applies to a specific OS, only target Online devices of that OS.
 - NEVER suggest destructive commands (rm -rf /, format, dd to disks, shutdown without intent, mkfs, etc.) unless the user explicitly and unambiguously asks for that destruction. When risky, set risk="high" and explain.
 - Prefer read-only / diagnostic commands when the request is ambiguous.
 - If you cannot fulfill the request safely, return an empty command and explain in the rationale.
+
+Currently ${onlineDevices.length} of ${devices.length} enrolled device(s) are Online.
 
 Enrolled devices:
 ${deviceSummary}`;
@@ -171,9 +175,9 @@ ${deviceSummary}`;
       });
     }
 
-    const validTargets = new Set(devices.map((d) => d.target_id));
+    const onlineTargets = new Set(onlineDevices.map((d) => d.target_id));
     const target_ids: string[] = Array.isArray(parsed.target_ids)
-      ? parsed.target_ids.filter((t: any) => typeof t === "string" && validTargets.has(t))
+      ? parsed.target_ids.filter((t: any) => typeof t === "string" && onlineTargets.has(t))
       : [];
 
     return new Response(
@@ -183,6 +187,7 @@ ${deviceSummary}`;
         rationale: String(parsed.rationale ?? ""),
         risk: ["low", "medium", "high"].includes(parsed.risk) ? parsed.risk : "medium",
         os_target: parsed.os_target ?? "any",
+        fleet: { total: devices.length, online: onlineDevices.length },
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
