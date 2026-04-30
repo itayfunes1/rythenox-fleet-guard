@@ -24,6 +24,7 @@ import {
   LifeBuoy,
   Zap,
   Sparkles,
+  MessagesSquare,
 } from "lucide-react";
 import { useDevices } from "@/hooks/use-devices";
 import { useTenant } from "@/hooks/use-tenant";
@@ -45,6 +46,7 @@ const NAV_ITEMS = [
   { label: "Playbooks", path: "/playbooks", icon: BookOpen },
   { label: "Schedules", path: "/schedules", icon: Clock },
   { label: "Audit Log", path: "/audit", icon: ScrollText },
+  { label: "Messages", path: "/messages", icon: MessagesSquare },
   { label: "Notifications", path: "/notifications", icon: Bell },
   { label: "Documentation", path: "/docs", icon: LifeBuoy },
   { label: "Settings", path: "/settings", icon: Settings },
