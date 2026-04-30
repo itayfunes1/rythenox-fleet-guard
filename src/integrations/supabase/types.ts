@@ -112,6 +112,144 @@ export type Database = {
           },
         ]
       }
+      chat_channel_members: {
+        Row: {
+          channel_id: string
+          id: string
+          joined_at: string
+          last_read_at: string
+          tenant_id: string
+          user_id: string
+        }
+        Insert: {
+          channel_id: string
+          id?: string
+          joined_at?: string
+          last_read_at?: string
+          tenant_id: string
+          user_id: string
+        }
+        Update: {
+          channel_id?: string
+          id?: string
+          joined_at?: string
+          last_read_at?: string
+          tenant_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_channel_members_channel_id_fkey"
+            columns: ["channel_id"]
+            isOneToOne: false
+            referencedRelation: "chat_channels"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      chat_channels: {
+        Row: {
+          created_at: string
+          created_by: string
+          description: string | null
+          id: string
+          is_dm: boolean
+          name: string
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          description?: string | null
+          id?: string
+          is_dm?: boolean
+          name: string
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          id?: string
+          is_dm?: boolean
+          name?: string
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      chat_messages: {
+        Row: {
+          author_id: string
+          body: string
+          channel_id: string
+          created_at: string
+          edited_at: string | null
+          id: string
+          mentions: string[]
+          tenant_id: string
+        }
+        Insert: {
+          author_id: string
+          body: string
+          channel_id: string
+          created_at?: string
+          edited_at?: string | null
+          id?: string
+          mentions?: string[]
+          tenant_id: string
+        }
+        Update: {
+          author_id?: string
+          body?: string
+          channel_id?: string
+          created_at?: string
+          edited_at?: string | null
+          id?: string
+          mentions?: string[]
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_messages_channel_id_fkey"
+            columns: ["channel_id"]
+            isOneToOne: false
+            referencedRelation: "chat_channels"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      chat_typing: {
+        Row: {
+          channel_id: string
+          tenant_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          channel_id: string
+          tenant_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          channel_id?: string
+          tenant_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_typing_channel_id_fkey"
+            columns: ["channel_id"]
+            isOneToOne: false
+            referencedRelation: "chat_channels"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       diagnostic_vault: {
         Row: {
           created_at: string
@@ -620,6 +758,7 @@ export type Database = {
         Args: { _request_id: string }
         Returns: undefined
       }
+      chat_channel_tenant: { Args: { _channel_id: string }; Returns: string }
       cleanup_stale_sessions: { Args: never; Returns: undefined }
       create_organization: {
         Args: { org_name: string }
@@ -628,12 +767,32 @@ export type Database = {
           tenant_id: string
         }[]
       }
+      create_team_channel: {
+        Args: { _description?: string; _name: string }
+        Returns: string
+      }
       detect_offline_devices: { Args: never; Returns: undefined }
+      get_or_create_dm_channel: {
+        Args: { _other_user: string }
+        Returns: string
+      }
       get_tenant_api_key: { Args: { _user_id: string }; Returns: string }
       get_user_tenant_id: { Args: { _user_id: string }; Returns: string }
+      is_chat_channel_member: {
+        Args: { _channel_id: string; _user_id: string }
+        Returns: boolean
+      }
       is_tenant_admin: {
         Args: { _tenant_id: string; _user_id: string }
         Returns: boolean
+      }
+      list_tenant_members: {
+        Args: never
+        Returns: {
+          email: string
+          role: string
+          user_id: string
+        }[]
       }
       log_audit_event: {
         Args: {
