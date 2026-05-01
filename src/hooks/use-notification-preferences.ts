@@ -9,7 +9,8 @@ export type NotificationCategory =
   | "task_failed"
   | "build_finished"
   | "org_requests"
-  | "announcements";
+  | "announcements"
+  | "direct_messages";
 
 export interface NotificationPreferences {
   user_id: string;
@@ -20,6 +21,7 @@ export interface NotificationPreferences {
   build_finished: boolean;
   org_requests: boolean;
   announcements: boolean;
+  direct_messages: boolean;
   toast_enabled: boolean;
 }
 
@@ -31,6 +33,7 @@ const DEFAULTS: Omit<NotificationPreferences, "user_id"> = {
   build_finished: true,
   org_requests: true,
   announcements: true,
+  direct_messages: true,
   toast_enabled: true,
 };
 
