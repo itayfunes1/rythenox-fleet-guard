@@ -336,6 +336,7 @@ export type Database = {
           created_at: string
           device_enrolled: boolean
           device_offline: boolean
+          direct_messages: boolean
           org_requests: boolean
           task_completed: boolean
           task_failed: boolean
@@ -349,6 +350,7 @@ export type Database = {
           created_at?: string
           device_enrolled?: boolean
           device_offline?: boolean
+          direct_messages?: boolean
           org_requests?: boolean
           task_completed?: boolean
           task_failed?: boolean
@@ -362,6 +364,7 @@ export type Database = {
           created_at?: string
           device_enrolled?: boolean
           device_offline?: boolean
+          direct_messages?: boolean
           org_requests?: boolean
           task_completed?: boolean
           task_failed?: boolean
