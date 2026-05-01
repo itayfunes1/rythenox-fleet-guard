@@ -2,7 +2,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
-import { Bell, Monitor, MonitorUp, CheckCircle2, XCircle, Package, Users, Megaphone } from "lucide-react";
+import { Bell, Monitor, MonitorUp, CheckCircle2, XCircle, Package, Users, Megaphone, MessageSquare } from "lucide-react";
 import { useNotificationPreferences, type NotificationCategory } from "@/hooks/use-notification-preferences";
 import { useToast } from "@/hooks/use-toast";
 
@@ -12,6 +12,7 @@ const CATEGORIES: Array<{
   description: string;
   icon: typeof Bell;
 }> = [
+  { key: "direct_messages", title: "Direct messages", description: "When a teammate sends you a DM in Messages.", icon: MessageSquare },
   { key: "device_offline", title: "Device went offline", description: "When a managed device stops responding.", icon: Monitor },
   { key: "device_enrolled", title: "New device enrolled", description: "When a new agent connects for the first time.", icon: MonitorUp },
   { key: "task_completed", title: "Task completed", description: "When a remote task finishes successfully.", icon: CheckCircle2 },
