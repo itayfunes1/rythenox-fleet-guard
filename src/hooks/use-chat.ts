@@ -116,7 +116,7 @@ export function useMyMemberships() {
       const { data, error } = await supabase
         .from("chat_channel_members" as any)
         .select("*")
-        .eq("user_id", user!.id);
+        .order("joined_at", { ascending: true });
       if (error) throw error;
       return (data || []) as unknown as ChatMembership[];
     },
