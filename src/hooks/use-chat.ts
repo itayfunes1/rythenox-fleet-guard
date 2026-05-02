@@ -211,6 +211,7 @@ export function useCreateChannel() {
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["chat_channels"] });
+      qc.invalidateQueries({ queryKey: ["chat_memberships"] });
     },
   });
 }
