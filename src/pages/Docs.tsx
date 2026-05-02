@@ -143,33 +143,34 @@ const sections: Section[] = [
     group: "Agents",
     title: "Enrolling Devices (Deployment Center)",
     icon: Rocket,
-    keywords: "agent install enroll provision binary setup wizard config download",
+    keywords: "agent install enroll provision binary setup wizard build hardcoded api key",
     body: (
       <div className="space-y-4">
         <p className="text-sm text-muted-foreground">
-          The <strong className="text-foreground">Deployment Center</strong> walks you through manually
-          provisioning an agent. For security, binaries are <strong className="text-foreground">never</strong>{" "}
-          generated with embedded credentials — you download a static binary and pair it with a config file
-          containing your tenant API key.
+          The <strong className="text-foreground">Deployment Center</strong> builds a custom agent binary
+          on demand. Your <strong className="text-foreground">tenant API key is injected into the binary
+          at build time</strong> by the GitHub Actions runner — there is no <Code>config.json</Code> and
+          no separate credential file to manage.
         </p>
         <Step n={1} title="Open Deployment Center">
           Sidebar → <Code>Deployment Center</Code>. Click <strong>Setup Wizard</strong>.
         </Step>
-        <Step n={2} title="Download the agent binary">
-          Pick the right OS / architecture (Windows, Linux, macOS — amd64 or arm64). The binary is fetched
-          from your latest signed build artifact.
+        <Step n={2} title="Trigger a build">
+          The wizard dispatches a GitHub Actions workflow that compiles the agent with your tenant API key
+          baked into the binary. Build status streams back into the UI.
         </Step>
-        <Step n={3} title="Drop in your config.json">
-          The wizard generates a <Code>config.json</Code> containing your <strong>tenant API key</strong> and the
-          relay endpoint. Place it in the same directory as the binary.
+        <Step n={3} title="Download the agent binary">
+          Once the build completes, download the signed artifact from the wizard. The single executable
+          contains everything it needs to authenticate — no config files required.
         </Step>
         <Step n={4} title="Run the agent">
-          Launch the binary. Within ~90 seconds the device appears under <Code>Devices</Code> with status{" "}
-          <Badge variant="default" className="text-[10px]">Online</Badge>.
+          Launch the binary on the target machine. Within ~90 seconds the device appears under{" "}
+          <Code>Devices</Code> with status <Badge variant="default" className="text-[10px]">Online</Badge>.
         </Step>
         <Tip variant="warn">
-          <strong>Security:</strong> never share your <Code>config.json</Code> or paste your API key into chat —
-          anyone with it can register devices into your tenant. Rotate via Settings → Organization if leaked.
+          <strong>Security:</strong> the compiled binary contains your tenant API key — treat it like a
+          credential. Never share builds publicly. If a binary leaks, rotate your tenant API key via
+          Settings → Organization and re-build.
         </Tip>
       </div>
     ),
@@ -433,7 +434,7 @@ const sections: Section[] = [
           and <strong> Notification Preferences</strong>.
         </p>
         <ul className="text-sm text-muted-foreground space-y-1.5 list-disc pl-5">
-          <li>Owners and admins can reveal and copy the organization API key — required by the agent <Code>config.json</Code>.</li>
+          <li>Owners and admins can reveal and copy the organization API key — it is baked into agent binaries at build time by the Deployment Center.</li>
           <li>Approve or reject pending join requests from prospective members.</li>
           <li>Toggle which notification categories produce alerts.</li>
         </ul>
@@ -453,7 +454,7 @@ const sections: Section[] = [
           <ul className="text-sm text-muted-foreground space-y-1 list-disc pl-5 mt-1">
             <li>Confirm the agent process is running on the host.</li>
             <li>Verify outbound HTTPS to the relay endpoint is allowed by the firewall.</li>
-            <li>Check the API key in <Code>config.json</Code> matches your tenant's current key.</li>
+            <li>If the tenant API key was rotated, re-build and redeploy the agent — the key is hardcoded into the binary.</li>
           </ul>
         </div>
         <div>
