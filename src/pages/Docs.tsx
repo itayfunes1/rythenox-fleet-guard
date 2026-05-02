@@ -454,7 +454,7 @@ const sections: Section[] = [
           <ul className="text-sm text-muted-foreground space-y-1 list-disc pl-5 mt-1">
             <li>Confirm the agent process is running on the host.</li>
             <li>Verify outbound HTTPS to the relay endpoint is allowed by the firewall.</li>
-            <li>Check the API key in <Code>config.json</Code> matches your tenant's current key.</li>
+            <li>If the tenant API key was rotated, re-build and redeploy the agent — the key is hardcoded into the binary.</li>
           </ul>
         </div>
         <div>
