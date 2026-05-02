@@ -434,7 +434,7 @@ const sections: Section[] = [
           and <strong> Notification Preferences</strong>.
         </p>
         <ul className="text-sm text-muted-foreground space-y-1.5 list-disc pl-5">
-          <li>Owners and admins can reveal and copy the organization API key — required by the agent <Code>config.json</Code>.</li>
+          <li>Owners and admins can reveal and copy the organization API key — it is baked into agent binaries at build time by the Deployment Center.</li>
           <li>Approve or reject pending join requests from prospective members.</li>
           <li>Toggle which notification categories produce alerts.</li>
         </ul>
