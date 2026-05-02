@@ -153,14 +153,17 @@ export default function Messages() {
     .map((t) => memberById[t.user_id]?.email?.split("@")[0])
     .filter(Boolean);
 
-  // Resolve DM display label by finding the "other" member from messages or fallback
+  // Resolve DM display label from the other channel member.
   const dmLabelFor = (channel: ChatChannel) => {
-    // Find a message in this channel from someone other than me to identify the peer
-    // (we don't have membership rows for DMs other than mine, so this is a heuristic)
-    const otherAuthor = directChannels.find((c) => c.id === channel.id);
+    const otherMembership = memberships.find(
+      (m) => m.channel_id === channel.id && m.user_id !== user?.id,
+    );
+    const peer = otherMembership ? memberById[otherMembership.user_id] : undefined;
+    if (peer?.email) return peer.email;
+
     if (channel.created_by && channel.created_by !== user?.id) {
-      const peer = memberById[channel.created_by];
-      if (peer) return peer.email;
+      const creator = memberById[channel.created_by];
+      if (creator?.email) return creator.email;
     }
     return "Direct message";
   };
