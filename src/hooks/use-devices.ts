@@ -13,6 +13,7 @@ export interface ManagedDevice {
   public_ip: string | null;
   last_seen: string | null;
   nickname: string | null;
+  tags: string[];
   isResponsive: boolean;
 }
 
