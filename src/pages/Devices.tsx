@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
@@ -6,31 +6,42 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Search, Terminal, RefreshCw, Monitor, Pencil, Check, X } from "lucide-react";
 import { useTenant } from "@/hooks/use-tenant";
-import { useDevices, type ManagedDevice } from "@/hooks/use-devices";
+import { useDevices, useUpdateNickname, type ManagedDevice } from "@/hooks/use-devices";
 import { useTerminals } from "@/components/TerminalContext";
-import { useUpdateNickname } from "@/hooks/use-devices";
+import { DeviceTagsCell } from "@/components/devices/DeviceTagsCell";
+import { DeviceFilterBar } from "@/components/devices/DeviceFilterBar";
+import { matchesTagQuery, type TagQuery } from "@/hooks/use-device-tags";
 
 export default function Devices() {
   const [search, setSearch] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [nicknameInput, setNicknameInput] = useState("");
+  const [tagQuery, setTagQuery] = useState<TagQuery>({});
 
   const { data: tenant } = useTenant();
   const { data: liveDevices, isLoading, refetch, isFetching } = useDevices(tenant?.tenantId);
   const { sessions, openTerminal } = useTerminals();
   const updateNickname = useUpdateNickname();
 
-  const filtered = (liveDevices || []).filter(
-    (d) =>
-      d.target_id.toLowerCase().includes(search.toLowerCase()) ||
-      (d.nickname || "").toLowerCase().includes(search.toLowerCase()) ||
-      (d.os_info || "").toLowerCase().includes(search.toLowerCase()) ||
-      (d.public_ip || "").toLowerCase().includes(search.toLowerCase())
-  );
+  const allTags = useMemo(() => {
+    const set = new Set<string>();
+    (liveDevices || []).forEach((d) => (d.tags || []).forEach((t) => set.add(t)));
+    return Array.from(set).sort();
+  }, [liveDevices]);
 
-  const handleOpenTerminal = (device: ManagedDevice) => {
-    openTerminal(device);
-  };
+  const filtered = (liveDevices || []).filter((d) => {
+    const text = search.toLowerCase();
+    const matchesText =
+      !text ||
+      d.target_id.toLowerCase().includes(text) ||
+      (d.nickname || "").toLowerCase().includes(text) ||
+      (d.os_info || "").toLowerCase().includes(text) ||
+      (d.public_ip || "").toLowerCase().includes(text) ||
+      (d.tags || []).some((t) => t.includes(text));
+    return matchesText && matchesTagQuery(d.tags || [], tagQuery);
+  });
+
+  const handleOpenTerminal = (device: ManagedDevice) => openTerminal(device);
 
   const startEditing = (device: ManagedDevice, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -49,6 +60,12 @@ export default function Devices() {
     setEditingId(null);
   };
 
+  const addTagToFilter = (tag: string) => {
+    const current = tagQuery.all ?? [];
+    if (current.includes(tag)) return;
+    setTagQuery({ ...tagQuery, all: [...current, tag] });
+  };
+
   return (
     <div className="space-y-6">
       <div className="space-y-1">
@@ -56,7 +73,7 @@ export default function Devices() {
         <p className="text-sm text-muted-foreground">Corporate asset inventory and remote management</p>
       </div>
 
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-3 flex-wrap">
         <div className="relative flex-1 max-w-sm group">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground group-focus-within:text-primary transition-colors" />
           <Input
@@ -72,6 +89,13 @@ export default function Devices() {
         </Button>
       </div>
 
+      <DeviceFilterBar
+        tenantId={tenant?.tenantId}
+        allTags={allTags}
+        query={tagQuery}
+        onChange={setTagQuery}
+      />
+
       <Card className="glass-card">
         <CardContent className="p-0">
           {isLoading ? (
@@ -86,7 +110,11 @@ export default function Devices() {
                 <Monitor className="h-6 w-6 text-muted-foreground/50" />
               </div>
               <p className="text-sm font-medium text-muted-foreground">No devices found</p>
-              <p className="text-xs text-muted-foreground/60 mt-1 max-w-xs">Devices will appear here once your Go VPS agents start sending heartbeats</p>
+              <p className="text-xs text-muted-foreground/60 mt-1 max-w-xs">
+                {liveDevices && liveDevices.length > 0
+                  ? "No devices match the current search or tag filter."
+                  : "Devices will appear here once your Go VPS agents start sending heartbeats"}
+              </p>
             </div>
           ) : (
             <Table>
@@ -94,8 +122,8 @@ export default function Devices() {
                 <TableRow className="border-border/30 hover:bg-transparent">
                   <TableHead className="text-xs uppercase tracking-wider text-muted-foreground/60 font-semibold">Device</TableHead>
                   <TableHead className="text-xs uppercase tracking-wider text-muted-foreground/60 font-semibold">Status</TableHead>
+                  <TableHead className="text-xs uppercase tracking-wider text-muted-foreground/60 font-semibold">Tags</TableHead>
                   <TableHead className="hidden md:table-cell text-xs uppercase tracking-wider text-muted-foreground/60 font-semibold">OS</TableHead>
-                  <TableHead className="hidden md:table-cell text-xs uppercase tracking-wider text-muted-foreground/60 font-semibold">Arch</TableHead>
                   <TableHead className="hidden lg:table-cell text-xs uppercase tracking-wider text-muted-foreground/60 font-semibold">Public IP</TableHead>
                   <TableHead className="hidden lg:table-cell text-xs uppercase tracking-wider text-muted-foreground/60 font-semibold">Last Seen</TableHead>
                   <TableHead className="text-right text-xs uppercase tracking-wider text-muted-foreground/60 font-semibold">Actions</TableHead>
@@ -155,8 +183,14 @@ export default function Devices() {
                       <TableCell>
                         <StatusBadge status={device.status === "Online" ? "online" : "offline"} />
                       </TableCell>
+                      <TableCell>
+                        <DeviceTagsCell
+                          targetId={device.target_id}
+                          tags={device.tags || []}
+                          onTagClick={addTagToFilter}
+                        />
+                      </TableCell>
                       <TableCell className="hidden md:table-cell text-sm text-muted-foreground">{device.os_info || "—"}</TableCell>
-                      <TableCell className="hidden md:table-cell text-sm text-muted-foreground">{device.arch || "—"}</TableCell>
                       <TableCell className="hidden lg:table-cell text-sm font-mono text-muted-foreground">{device.public_ip || "—"}</TableCell>
                       <TableCell className="hidden lg:table-cell text-sm text-muted-foreground">
                         {device.last_seen ? new Date(device.last_seen).toLocaleString() : "—"}

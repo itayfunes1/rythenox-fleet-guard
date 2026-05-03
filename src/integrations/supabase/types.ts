@@ -250,6 +250,39 @@ export type Database = {
           },
         ]
       }
+      device_filters: {
+        Row: {
+          created_at: string
+          created_by: string
+          description: string | null
+          id: string
+          name: string
+          tag_query: Json
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          description?: string | null
+          id?: string
+          name: string
+          tag_query?: Json
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          id?: string
+          name?: string
+          tag_query?: Json
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       diagnostic_vault: {
         Row: {
           created_at: string
@@ -294,6 +327,7 @@ export type Database = {
           os_info: string | null
           public_ip: string | null
           status: string
+          tags: string[]
           target_id: string
           tenant_id: string
         }
@@ -305,6 +339,7 @@ export type Database = {
           os_info?: string | null
           public_ip?: string | null
           status?: string
+          tags?: string[]
           target_id: string
           tenant_id: string
         }
@@ -316,6 +351,7 @@ export type Database = {
           os_info?: string | null
           public_ip?: string | null
           status?: string
+          tags?: string[]
           target_id?: string
           tenant_id?: string
         }
@@ -808,6 +844,15 @@ export type Database = {
         }
         Returns: undefined
       }
+      match_devices_by_filter: {
+        Args: { _filter: Json }
+        Returns: {
+          nickname: string
+          status: string
+          tags: string[]
+          target_id: string
+        }[]
+      }
       notify_tenant_admins: {
         Args: {
           _category: string
@@ -842,6 +887,10 @@ export type Database = {
           name: string
           tenant_id: string
         }[]
+      }
+      set_device_tags: {
+        Args: { _tags: string[]; _target_id: string }
+        Returns: undefined
       }
     }
     Enums: {
