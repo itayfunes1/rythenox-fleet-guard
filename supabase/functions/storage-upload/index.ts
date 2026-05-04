@@ -66,7 +66,7 @@ Deno.serve(async (req) => {
 
   if (uploadErr) {
     console.error(`[storage-upload] failed: ${uploadErr.message}`);
-    return new Response(JSON.stringify({ error: uploadErr.message }), {
+    return new Response(JSON.stringify({ error: "Internal server error" }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });

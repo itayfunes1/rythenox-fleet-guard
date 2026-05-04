@@ -33,8 +33,10 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Check @rythenox.com email
-    if (!user.email?.endsWith("@rythenox.com")) {
+    // Authorize via platform_admins allow-list (server-managed, not email-based)
+    const adminClient = createClient(supabaseUrl, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
+    const { data: isAdmin, error: adminErr } = await adminClient.rpc("is_platform_admin", { _user_id: user.id });
+    if (adminErr || !isAdmin) {
       return new Response(JSON.stringify({ error: "Forbidden: admin access required" }), {
         status: 403,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -126,7 +128,8 @@ Deno.serve(async (req) => {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (err) {
-    return new Response(JSON.stringify({ error: err.message }), {
+    console.error("[relay-admin] error:", (err as Error).message);
+    return new Response(JSON.stringify({ error: "Internal server error" }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });

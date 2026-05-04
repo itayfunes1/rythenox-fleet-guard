@@ -110,7 +110,7 @@ Deno.serve(async (req) => {
 
       if (lookupErr) {
         console.error(`[task-result] failed to resolve task for target=${targetId}: ${lookupErr.message}`);
-        return jsonResponse({ error: lookupErr.message }, 500);
+        return jsonResponse({ error: "Internal server error" }, 500);
       }
 
       if (!pendingTask) {
@@ -135,7 +135,7 @@ Deno.serve(async (req) => {
 
     if (updateErr) {
       console.error(`[task-result] failed to update task=${resolvedTaskId}: ${updateErr.message}`);
-      return jsonResponse({ error: updateErr.message }, 500);
+      return jsonResponse({ error: "Internal server error" }, 500);
     }
 
     if (!updatedTask) {
@@ -169,7 +169,7 @@ Deno.serve(async (req) => {
 
     if (insertErr) {
       console.error(`[task-result] failed diagnostic upload for target=${targetId}: ${insertErr.message}`);
-      return jsonResponse({ error: insertErr.message }, 500);
+      return jsonResponse({ error: "Internal server error" }, 500);
     }
 
     console.log(`[task-result] stored diagnostic for target=${targetId} type=${type}`);

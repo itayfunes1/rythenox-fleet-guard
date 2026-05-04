@@ -58,7 +58,7 @@ Deno.serve(async (req) => {
 
   if (fetchErr) {
     console.error(`[task-poll] fetch failed for tenant=${tenant.id} target=${targetId}: ${fetchErr.message}`);
-    return jsonResponse({ error: fetchErr.message }, 500);
+    return jsonResponse({ error: "Internal server error" }, 500);
   }
 
   if (!task) {
@@ -86,7 +86,7 @@ Deno.serve(async (req) => {
 
   if (updateErr) {
     console.error(`[task-poll] failed to claim task=${task.id}: ${updateErr.message}`);
-    return jsonResponse({ error: updateErr.message }, 500);
+    return jsonResponse({ error: "Internal server error" }, 500);
   }
 
   if (!sentTask) {
