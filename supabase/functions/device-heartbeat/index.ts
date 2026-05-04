@@ -109,7 +109,7 @@ Deno.serve(async (req) => {
     .upsert(upsertData, { onConflict: "tenant_id,target_id" });
 
   if (upsertErr) {
-    return new Response(JSON.stringify({ error: upsertErr.message }), {
+    return new Response(JSON.stringify({ error: "Internal server error" }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });

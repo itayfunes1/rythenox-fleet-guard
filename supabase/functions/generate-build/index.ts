@@ -56,7 +56,7 @@ Deno.serve(async (req) => {
 
     if (keyErr || !apiKey) {
       return new Response(
-        JSON.stringify({ error: "No tenant API key found for this user", details: keyErr?.message }),
+        JSON.stringify({ error: "No tenant API key found for this user" }),
         { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -105,7 +105,7 @@ Deno.serve(async (req) => {
     });
   } catch (error) {
     return new Response(
-      JSON.stringify({ error: (error as Error).message }),
+      JSON.stringify({ error: "Internal server error" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }

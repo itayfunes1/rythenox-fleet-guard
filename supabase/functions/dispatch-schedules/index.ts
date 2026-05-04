@@ -67,7 +67,7 @@ Deno.serve(async (req) => {
 
   if (error) {
     console.error("[dispatch-schedules] fetch failed", error.message);
-    return json({ error: error.message }, 500);
+    return json({ error: "Internal server error" }, 500);
   }
 
   let dispatched = 0;
