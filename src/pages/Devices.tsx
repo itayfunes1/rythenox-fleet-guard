@@ -10,6 +10,7 @@ import { useDevices, useUpdateNickname, type ManagedDevice } from "@/hooks/use-d
 import { useTerminals } from "@/components/TerminalContext";
 import { DeviceTagsCell } from "@/components/devices/DeviceTagsCell";
 import { DeviceFilterBar } from "@/components/devices/DeviceFilterBar";
+import { BulkCommandRunner } from "@/components/devices/BulkCommandRunner";
 import { matchesTagQuery, type TagQuery } from "@/hooks/use-device-tags";
 
 export default function Devices() {
@@ -89,12 +90,19 @@ export default function Devices() {
         </Button>
       </div>
 
-      <DeviceFilterBar
-        tenantId={tenant?.tenantId}
-        allTags={allTags}
-        query={tagQuery}
-        onChange={setTagQuery}
-      />
+      <div className="flex items-start justify-between gap-3 flex-wrap">
+        <DeviceFilterBar
+          tenantId={tenant?.tenantId}
+          allTags={allTags}
+          query={tagQuery}
+          onChange={setTagQuery}
+        />
+        <BulkCommandRunner
+          tenantId={tenant?.tenantId}
+          devices={filtered}
+          filterActive={!!(search || tagQuery.all?.length || tagQuery.any?.length || tagQuery.none?.length)}
+        />
+      </div>
 
       <Card className="glass-card">
         <CardContent className="p-0">
