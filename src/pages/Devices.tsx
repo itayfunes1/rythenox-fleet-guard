@@ -10,6 +10,7 @@ import { useDevices, useUpdateNickname, type ManagedDevice } from "@/hooks/use-d
 import { useTerminals } from "@/components/TerminalContext";
 import { DeviceTagsCell } from "@/components/devices/DeviceTagsCell";
 import { DeviceFilterBar } from "@/components/devices/DeviceFilterBar";
+import { BulkCommandRunner } from "@/components/devices/BulkCommandRunner";
 import { matchesTagQuery, type TagQuery } from "@/hooks/use-device-tags";
 
 export default function Devices() {
