@@ -6,8 +6,9 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import {
   Monitor, Wifi, WifiOff, Activity, Rocket, FolderArchive, Network,
-  TrendingUp, ChevronRight, BarChart3, Shield, Server, Zap, Flame, Layers, Globe,
+  TrendingUp, ChevronRight, BarChart3, Shield, Server, Zap, Flame, Layers, Globe, MapPin,
 } from "lucide-react";
+import { DeviceGeoMap } from "@/components/dashboard/DeviceGeoMap";
 import { useTenant } from "@/hooks/use-tenant";
 import { useDevices } from "@/hooks/use-devices";
 import { useTasks } from "@/hooks/use-tasks";
