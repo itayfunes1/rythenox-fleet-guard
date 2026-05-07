@@ -468,6 +468,26 @@ export default function Dashboard() {
             </Card>
           </div>
 
+          {/* Geographic Distribution Map */}
+          <Card className="border border-border">
+            <CardHeader className="pb-3">
+              <div className="flex items-center gap-2">
+                <MapPin className="h-4 w-4 text-primary" />
+                <CardTitle className="text-sm font-semibold">Geographic Distribution</CardTitle>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <DeviceGeoMap
+                devices={devices.map((d) => ({
+                  target_id: d.target_id,
+                  status: d.status,
+                  public_ip: d.public_ip,
+                  nickname: d.nickname,
+                }))}
+              />
+            </CardContent>
+          </Card>
+
           {/* Device Inventory */}
           <Card className="border border-border">
             <CardHeader className="pb-3">
