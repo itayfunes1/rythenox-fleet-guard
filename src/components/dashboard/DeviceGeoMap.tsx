@@ -62,7 +62,25 @@ async function lookupIp(ip: string): Promise<CacheEntry | null> {
   }
 }
 
-export function DeviceGeoMap({ devices }: { devices: DeviceLite[] }) {
+export function DeviceGeoMap() {
+  const { tenantId } = useTenant();
+
+  // Fetch ALL devices with a public_ip — no 24h visibility filter
+  const { data: devices = [] } = useQuery({
+    queryKey: ["geo_map_devices", tenantId],
+    enabled: !!tenantId,
+    refetchInterval: 60_000,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("managed_devices")
+        .select("target_id, status, public_ip, nickname")
+        .eq("tenant_id", tenantId!)
+        .not("public_ip", "is", null);
+      if (error) throw error;
+      return (data || []) as DeviceLite[];
+    },
+  });
+
   const uniqueIps = useMemo(() => {
     const set = new Set<string>();
     devices.forEach((d) => {
