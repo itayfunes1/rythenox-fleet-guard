@@ -477,14 +477,7 @@ export default function Dashboard() {
               </div>
             </CardHeader>
             <CardContent>
-              <DeviceGeoMap
-                devices={devices.map((d) => ({
-                  target_id: d.target_id,
-                  status: d.status,
-                  public_ip: d.public_ip,
-                  nickname: d.nickname,
-                }))}
-              />
+              <DeviceGeoMap />
             </CardContent>
           </Card>
 

@@ -1,6 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { ComposableMap, Geographies, Geography, Marker, ZoomableGroup } from "react-simple-maps";
 import { Loader2, MapPin } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useTenant } from "@/hooks/use-tenant";
+import { useQuery } from "@tanstack/react-query";
 
 interface DeviceLite {
   target_id: string;
@@ -59,7 +62,25 @@ async function lookupIp(ip: string): Promise<CacheEntry | null> {
   }
 }
 
-export function DeviceGeoMap({ devices }: { devices: DeviceLite[] }) {
+export function DeviceGeoMap() {
+  const tenantId = useTenant().data?.tenantId;
+
+  // Fetch ALL devices with a public_ip — no 24h visibility filter
+  const { data: devices = [] } = useQuery({
+    queryKey: ["geo_map_devices", tenantId],
+    enabled: !!tenantId,
+    refetchInterval: 60_000,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("managed_devices")
+        .select("target_id, status, public_ip, nickname")
+        .eq("tenant_id", tenantId!)
+        .not("public_ip", "is", null);
+      if (error) throw error;
+      return (data || []) as DeviceLite[];
+    },
+  });
+
   const uniqueIps = useMemo(() => {
     const set = new Set<string>();
     devices.forEach((d) => {
