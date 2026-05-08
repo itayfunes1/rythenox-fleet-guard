@@ -44,21 +44,18 @@ function saveCache(c: Cache) {
   }
 }
 
-async function lookupIp(ip: string): Promise<CacheEntry | null> {
+async function lookupIps(ips: string[]): Promise<Record<string, CacheEntry>> {
+  if (ips.length === 0) return {};
+
   try {
-    const res = await fetch(`https://ipwho.is/${encodeURIComponent(ip)}`);
-    if (!res.ok) return null;
-    const j = await res.json();
-    if (!j?.success || typeof j.latitude !== "number" || typeof j.longitude !== "number") return null;
-    return {
-      lat: j.latitude,
-      lon: j.longitude,
-      country: j.country,
-      city: j.city,
-      ts: Date.now(),
-    };
+    const { data, error } = await supabase.functions.invoke("geo-lookup", {
+      body: { ips },
+    });
+
+    if (error) throw error;
+    return (data?.results || {}) as Record<string, CacheEntry>;
   } catch {
-    return null;
+    return {};
   }
 }
 
@@ -86,12 +83,11 @@ async function fetchDevicesAndResolve(tenantId: string): Promise<{ devices: Devi
   // Resolve IPs (use cache first)
   const cache = loadCache();
   const uniqueIps = [...ipSet];
-  for (const ip of uniqueIps) {
-    if (cache[ip]) continue;
-    const result = await lookupIp(ip);
-    if (result) cache[ip] = result;
-    await new Promise((r) => setTimeout(r, 120));
-  }
+  const missingIps = uniqueIps.filter((ip) => !cache[ip]);
+  const resolved = await lookupIps(missingIps);
+  Object.entries(resolved).forEach(([ip, entry]) => {
+    cache[ip] = entry;
+  });
   saveCache(cache);
 
   // Build GeoPoints
