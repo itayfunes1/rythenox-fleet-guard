@@ -1,6 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { ComposableMap, Geographies, Geography, Marker, ZoomableGroup } from "react-simple-maps";
 import { Loader2, MapPin } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useTenant } from "@/hooks/use-tenant";
+import { useQuery } from "@tanstack/react-query";
 
 interface DeviceLite {
   target_id: string;
