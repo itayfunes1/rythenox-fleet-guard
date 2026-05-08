@@ -63,7 +63,7 @@ async function lookupIp(ip: string): Promise<CacheEntry | null> {
 }
 
 export function DeviceGeoMap() {
-  const { tenantId } = useTenant();
+  const tenantId = useTenant().data?.tenantId;
 
   // Fetch ALL devices with a public_ip — no 24h visibility filter
   const { data: devices = [] } = useQuery({
