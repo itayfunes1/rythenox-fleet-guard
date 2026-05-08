@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 import { ComposableMap, Geographies, Geography, Marker, ZoomableGroup } from "react-simple-maps";
 import { Loader2, MapPin } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -62,89 +62,81 @@ async function lookupIp(ip: string): Promise<CacheEntry | null> {
   }
 }
 
+/**
+ * Fetches devices then resolves all unique public IPs to geo coords.
+ * Returns the resolved GeoPoints directly — no useEffect needed.
+ */
+async function fetchDevicesAndResolve(tenantId: string): Promise<{ devices: DeviceLite[]; points: GeoPoint[] }> {
+  const { data, error } = await supabase
+    .from("managed_devices")
+    .select("target_id, status, public_ip, nickname")
+    .eq("tenant_id", tenantId)
+    .not("public_ip", "is", null);
+
+  if (error) throw error;
+  const devices = (data || []) as DeviceLite[];
+
+  // Collect unique IPs
+  const ipSet = new Set<string>();
+  devices.forEach((d) => {
+    const ip = d.public_ip?.trim();
+    if (ip && /^\d{1,3}(\.\d{1,3}){3}$/.test(ip)) ipSet.add(ip);
+  });
+
+  // Resolve IPs (use cache first)
+  const cache = loadCache();
+  const uniqueIps = [...ipSet];
+  for (const ip of uniqueIps) {
+    if (cache[ip]) continue;
+    const result = await lookupIp(ip);
+    if (result) cache[ip] = result;
+    await new Promise((r) => setTimeout(r, 120));
+  }
+  saveCache(cache);
+
+  // Build GeoPoints
+  const byKey = new Map<string, GeoPoint>();
+  devices.forEach((d) => {
+    const ip = d.public_ip?.trim();
+    if (!ip) return;
+    const entry = cache[ip];
+    if (!entry) return;
+    const key = `${entry.lat.toFixed(2)}_${entry.lon.toFixed(2)}`;
+    const existing = byKey.get(key);
+    if (existing) {
+      existing.devices.push(d);
+    } else {
+      byKey.set(key, { ip, lat: entry.lat, lon: entry.lon, country: entry.country, city: entry.city, devices: [d] });
+    }
+  });
+
+  return { devices, points: [...byKey.values()] };
+}
+
 export function DeviceGeoMap() {
   const tenantId = useTenant().data?.tenantId;
 
-  // Fetch ALL devices with a public_ip — no 24h visibility filter
-  const { data: devices = [] } = useQuery({
+  const { data, isLoading } = useQuery({
     queryKey: ["geo_map_devices", tenantId],
     enabled: !!tenantId,
     refetchInterval: 60_000,
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("managed_devices")
-        .select("target_id, status, public_ip, nickname")
-        .eq("tenant_id", tenantId!)
-        .not("public_ip", "is", null);
-      if (error) throw error;
-      return (data || []) as DeviceLite[];
-    },
+    staleTime: 30_000,
+    queryFn: () => fetchDevicesAndResolve(tenantId!),
   });
 
-  const uniqueIps = useMemo(() => {
+  const points = data?.points ?? [];
+  const devices = data?.devices ?? [];
+
+  const uniqueIpCount = useMemo(() => {
     const set = new Set<string>();
     devices.forEach((d) => {
       const ip = d.public_ip?.trim();
       if (ip && /^\d{1,3}(\.\d{1,3}){3}$/.test(ip)) set.add(ip);
     });
-    return [...set];
+    return set.size;
   }, [devices]);
 
-  const [cache, setCache] = useState<Cache>(() => loadCache());
-  const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    const missing = uniqueIps.filter((ip) => !cache[ip]);
-    if (missing.length === 0) return;
-    let cancelled = false;
-    setLoading(true);
-    (async () => {
-      const next: Cache = { ...cache };
-      // Sequential with tiny delay to be friendly to free endpoint
-      for (const ip of missing) {
-        if (cancelled) return;
-        const result = await lookupIp(ip);
-        if (result) next[ip] = result;
-        await new Promise((r) => setTimeout(r, 120));
-      }
-      if (cancelled) return;
-      saveCache(next);
-      setCache(next);
-      setLoading(false);
-    })();
-    return () => {
-      cancelled = true;
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [uniqueIps.join(",")]);
-
-  const points: GeoPoint[] = useMemo(() => {
-    const byKey = new Map<string, GeoPoint>();
-    devices.forEach((d) => {
-      const ip = d.public_ip?.trim();
-      if (!ip) return;
-      const entry = cache[ip];
-      if (!entry) return;
-      const key = `${entry.lat.toFixed(2)}_${entry.lon.toFixed(2)}`;
-      const existing = byKey.get(key);
-      if (existing) {
-        existing.devices.push(d);
-      } else {
-        byKey.set(key, {
-          ip,
-          lat: entry.lat,
-          lon: entry.lon,
-          country: entry.country,
-          city: entry.city,
-          devices: [d],
-        });
-      }
-    });
-    return [...byKey.values()];
-  }, [devices, cache]);
-
   const totalLocated = points.reduce((s, p) => s + p.devices.length, 0);
-  const unresolved = uniqueIps.length - Object.keys(cache).filter((k) => uniqueIps.includes(k)).length;
 
   return (
     <div className="space-y-2">
@@ -153,9 +145,9 @@ export function DeviceGeoMap() {
           <MapPin className="h-3 w-3 text-primary" />
           {totalLocated} device{totalLocated === 1 ? "" : "s"} mapped across {points.length} location{points.length === 1 ? "" : "s"}
         </span>
-        {loading && (
+        {isLoading && (
           <span className="flex items-center gap-1">
-            <Loader2 className="h-3 w-3 animate-spin" /> resolving {unresolved} IP{unresolved === 1 ? "" : "s"}…
+            <Loader2 className="h-3 w-3 animate-spin" /> resolving IPs…
           </span>
         )}
       </div>
@@ -206,7 +198,7 @@ export function DeviceGeoMap() {
         </ComposableMap>
       </div>
 
-      {uniqueIps.length === 0 && (
+      {uniqueIpCount === 0 && !isLoading && (
         <p className="text-[11px] text-muted-foreground italic">
           No public IPs reported yet — devices need to send a heartbeat with public_ip.
         </p>
