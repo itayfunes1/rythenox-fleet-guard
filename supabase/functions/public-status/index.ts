@@ -125,7 +125,7 @@ Deno.serve(async (req) => {
       dbLive = "down";
     }
 
-    // Relay network (aggregate across all tenants)
+    // Relay network (aggregate across all tenants) — require recent heartbeat
     let relayLive: Health = "operational";
     try {
       const { data: relays, error } = await supabase
@@ -134,9 +134,14 @@ Deno.serve(async (req) => {
       if (error) {
         relayLive = "degraded";
       } else if (relays && relays.length > 0) {
+        const freshCutoff = now.getTime() - 2 * 60 * 1000; // 2 min
         const total = relays.length;
-        const online = relays.filter((r: any) => r.status === "Online").length;
-        const pct = (online / total) * 100;
+        const healthy = relays.filter((r: any) => {
+          if (r.status !== "Online") return false;
+          if (!r.last_seen) return false;
+          return new Date(r.last_seen).getTime() >= freshCutoff;
+        }).length;
+        const pct = (healthy / total) * 100;
         if (pct === 0) relayLive = "down";
         else if (pct < 80) relayLive = "degraded";
       }
@@ -144,17 +149,30 @@ Deno.serve(async (req) => {
       relayLive = "down";
     }
 
-    // Command center: any tasks stuck > 10 min in Pending/Sent right now?
+    // Command center: tasks stuck in Pending/Sent
+    //   >0 stuck >30min  → down (pipeline wedged)
+    //   >5 stuck >10min  → degraded
     let commandLive: Health = "operational";
     try {
       const tenMinAgo = new Date(now.getTime() - 10 * 60 * 1000).toISOString();
-      const { count, error } = await supabase
-        .from("remote_tasks")
-        .select("id", { count: "exact", head: true })
-        .in("status", ["Pending", "Sent"])
-        .lt("created_at", tenMinAgo);
-      if (error) commandLive = "degraded";
-      else if ((count ?? 0) > 5) commandLive = "degraded";
+      const thirtyMinAgo = new Date(now.getTime() - 30 * 60 * 1000).toISOString();
+
+      const [{ count: stuck10, error: e1 }, { count: stuck30, error: e2 }] = await Promise.all([
+        supabase
+          .from("remote_tasks")
+          .select("id", { count: "exact", head: true })
+          .in("status", ["Pending", "Sent"])
+          .lt("created_at", tenMinAgo),
+        supabase
+          .from("remote_tasks")
+          .select("id", { count: "exact", head: true })
+          .in("status", ["Pending", "Sent"])
+          .lt("created_at", thirtyMinAgo),
+      ]);
+
+      if (e1 || e2) commandLive = "degraded";
+      else if ((stuck30 ?? 0) > 0) commandLive = "down";
+      else if ((stuck10 ?? 0) > 5) commandLive = "degraded";
     } catch {
       commandLive = "degraded";
     }
