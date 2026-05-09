@@ -20,6 +20,7 @@ import Docs from "@/pages/Docs";
 import SettingsPage from "@/pages/Settings";
 import AuthPage from "@/pages/Auth";
 import ResetPassword from "@/pages/ResetPassword";
+import StatusPage from "@/pages/StatusPage";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -78,6 +79,7 @@ const App = () => (
           <Routes>
             <Route path="/auth" element={<AuthRoute />} />
             <Route path="/reset-password" element={<ResetPassword />} />
+            <Route path="/status" element={<StatusPage />} />
             <Route path="/*" element={<ProtectedRoutes />} />
           </Routes>
         </AuthProvider>

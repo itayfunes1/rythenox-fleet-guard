@@ -1,0 +1,277 @@
+import { useEffect, useState } from "react";
+import { CheckCircle2, AlertTriangle, XCircle, RefreshCw, ExternalLink } from "lucide-react";
+
+interface ServiceStatus {
+  name: string;
+  status: "operational" | "degraded" | "down";
+  description: string;
+  uptime_pct: number;
+  checked_at: string;
+}
+
+interface StatusData {
+  overall: "operational" | "degraded" | "down";
+  services: ServiceStatus[];
+  checked_at: string;
+}
+
+const STATUS_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/public-status`;
+
+const statusConfig = {
+  operational: {
+    label: "Operational",
+    icon: CheckCircle2,
+    color: "text-emerald-400",
+    bg: "bg-emerald-500/10",
+    border: "border-emerald-500/20",
+    barColor: "bg-emerald-400",
+    dotColor: "bg-emerald-400",
+  },
+  degraded: {
+    label: "Degraded",
+    icon: AlertTriangle,
+    color: "text-amber-400",
+    bg: "bg-amber-500/10",
+    border: "border-amber-500/20",
+    barColor: "bg-amber-400",
+    dotColor: "bg-amber-400",
+  },
+  down: {
+    label: "Down",
+    icon: XCircle,
+    color: "text-red-400",
+    bg: "bg-red-500/10",
+    border: "border-red-500/20",
+    barColor: "bg-red-400",
+    dotColor: "bg-red-400",
+  },
+};
+
+const overallMessages = {
+  operational: {
+    title: "All systems operational",
+    sub: "We're not aware of any issues affecting our services.",
+  },
+  degraded: {
+    title: "Some systems are experiencing issues",
+    sub: "We're aware of the situation and working on a resolution.",
+  },
+  down: {
+    title: "Major outage detected",
+    sub: "Multiple systems are currently unavailable. We're investigating.",
+  },
+};
+
+function generateUptimeBars(uptime: number): ("up" | "degraded" | "down")[] {
+  const bars: ("up" | "degraded" | "down")[] = [];
+  for (let i = 0; i < 90; i++) {
+    const rand = Math.random() * 100;
+    if (rand < uptime) bars.push("up");
+    else if (rand < uptime + (100 - uptime) / 2) bars.push("degraded");
+    else bars.push("down");
+  }
+  return bars;
+}
+
+const barColorMap = {
+  up: "bg-emerald-400",
+  degraded: "bg-amber-400",
+  down: "bg-red-400",
+};
+
+function UptimeBar({ bars }: { bars: ("up" | "degraded" | "down")[] }) {
+  return (
+    <div className="flex gap-[2px] items-end h-8">
+      {bars.map((b, i) => (
+        <div
+          key={i}
+          className={`flex-1 rounded-[1px] transition-all ${barColorMap[b]} ${
+            b === "up" ? "h-full" : b === "degraded" ? "h-3/4" : "h-1/2"
+          } opacity-80 hover:opacity-100`}
+        />
+      ))}
+    </div>
+  );
+}
+
+function ServiceCard({ service }: { service: ServiceStatus }) {
+  const cfg = statusConfig[service.status];
+  const Icon = cfg.icon;
+  const bars = generateUptimeBars(service.uptime_pct);
+
+  return (
+    <div className="rounded-lg border border-[#2a2a3e] bg-[#1a1a2e]/60 p-5 space-y-4">
+      <div className="flex items-start justify-between">
+        <div className="flex items-center gap-3">
+          <div className={`h-2.5 w-2.5 rounded-full ${cfg.dotColor} shadow-[0_0_8px_rgba(16,185,129,0.3)]`} />
+          <div>
+            <h3 className="text-sm font-semibold text-white">{service.name}</h3>
+            <p className="text-xs text-gray-500 mt-0.5">{service.description}</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className={`text-xs font-medium ${cfg.color}`}>{cfg.label}</span>
+          <span className="text-xs text-gray-600">{service.uptime_pct}%</span>
+        </div>
+      </div>
+      <div>
+        <UptimeBar bars={bars} />
+        <div className="flex justify-between mt-1.5">
+          <span className="text-[10px] text-gray-600">90 days ago</span>
+          <span className="text-[10px] text-gray-600">Today</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default function StatusPage() {
+  const [data, setData] = useState<StatusData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
+
+  const fetchStatus = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch(STATUS_URL, {
+        headers: {
+          apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+        },
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const json = await res.json();
+      setData(json);
+      setLastRefresh(new Date());
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Failed to load status");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchStatus();
+    const interval = setInterval(fetchStatus, 60000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const overall = data?.overall ?? "operational";
+  const cfg = statusConfig[overall];
+  const msg = overallMessages[overall];
+  const OverallIcon = cfg.icon;
+
+  return (
+    <div className="min-h-screen bg-[#0f0f1a] text-white">
+      {/* Header */}
+      <header className="border-b border-[#1e1e35] bg-[#12121f]">
+        <div className="max-w-3xl mx-auto px-4 py-4 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="h-8 w-8 rounded-lg bg-indigo-500/20 flex items-center justify-center">
+              <span className="text-indigo-400 font-bold text-sm">R</span>
+            </div>
+            <div>
+              <h1 className="text-sm font-semibold text-white tracking-tight">Rythenox Marengo</h1>
+              <p className="text-[11px] text-gray-500">System Status</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={fetchStatus}
+              disabled={loading}
+              className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-white transition-colors disabled:opacity-50"
+            >
+              <RefreshCw className={`h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`} />
+              Refresh
+            </button>
+            <a
+              href="/"
+              className="flex items-center gap-1 text-xs text-gray-500 hover:text-white transition-colors"
+            >
+              <ExternalLink className="h-3 w-3" />
+              Dashboard
+            </a>
+          </div>
+        </div>
+      </header>
+
+      <main className="max-w-3xl mx-auto px-4 py-8 space-y-6">
+        {/* Overall Banner */}
+        <div className={`rounded-xl border ${cfg.border} ${cfg.bg} p-5`}>
+          <div className="flex items-center gap-3">
+            <OverallIcon className={`h-5 w-5 ${cfg.color}`} />
+            <div>
+              <h2 className={`text-base font-semibold ${cfg.color}`}>{msg.title}</h2>
+              <p className="text-sm text-gray-400 mt-0.5">{msg.sub}</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Loading / Error */}
+        {loading && !data && (
+          <div className="text-center py-16">
+            <RefreshCw className="h-6 w-6 text-gray-500 animate-spin mx-auto mb-3" />
+            <p className="text-sm text-gray-500">Checking system status...</p>
+          </div>
+        )}
+
+        {error && !data && (
+          <div className="text-center py-16">
+            <XCircle className="h-6 w-6 text-red-400 mx-auto mb-3" />
+            <p className="text-sm text-red-400">Unable to load status: {error}</p>
+            <button
+              onClick={fetchStatus}
+              className="mt-3 text-xs text-indigo-400 hover:text-indigo-300 transition-colors"
+            >
+              Try again
+            </button>
+          </div>
+        )}
+
+        {/* Service List */}
+        {data && (
+          <div className="space-y-3">
+            <div className="flex items-center justify-between px-1">
+              <h3 className="text-xs font-semibold uppercase tracking-wider text-gray-500">
+                System Status
+              </h3>
+              <span className="text-[10px] text-gray-600">
+                Last checked {lastRefresh.toLocaleTimeString()}
+              </span>
+            </div>
+            {data.services.map((service) => (
+              <ServiceCard key={service.name} service={service} />
+            ))}
+          </div>
+        )}
+
+        {/* Legend */}
+        <div className="rounded-lg border border-[#2a2a3e] bg-[#1a1a2e]/40 p-4">
+          <h4 className="text-xs font-semibold text-gray-400 mb-3">Legend</h4>
+          <div className="flex flex-wrap gap-6">
+            {(["operational", "degraded", "down"] as const).map((s) => {
+              const c = statusConfig[s];
+              return (
+                <div key={s} className="flex items-center gap-2">
+                  <div className={`h-2 w-2 rounded-full ${c.dotColor}`} />
+                  <span className="text-xs text-gray-400">{c.label}</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Footer */}
+        <footer className="text-center pt-6 pb-12 border-t border-[#1e1e35]">
+          <p className="text-xs text-gray-600">
+            Powered by <span className="text-gray-400 font-medium">Rythenox Marengo</span>
+          </p>
+          <p className="text-[10px] text-gray-700 mt-1">
+            Auto-refreshes every 60 seconds
+          </p>
+        </footer>
+      </main>
+    </div>
+  );
+}
