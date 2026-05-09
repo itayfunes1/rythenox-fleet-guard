@@ -278,7 +278,7 @@ export default function StatusPage() {
               <span className="text-indigo-400 font-bold text-sm">R</span>
             </div>
             <div>
-              <h1 className="text-sm font-semibold text-white tracking-tight">Rythenox Marengo</h1>
+              <h1 className="text-sm font-semibold text-white tracking-tight">Rythenox Wraith</h1>
               <p className="text-[11px] text-gray-500">System Status</p>
             </div>
           </div>
@@ -404,7 +404,7 @@ export default function StatusPage() {
         {/* Footer */}
         <footer className="text-center pt-6 pb-12 border-t border-[#1e1e35]">
           <p className="text-xs text-gray-600">
-            Powered by <span className="text-gray-400 font-medium">Rythenox Marengo</span>
+            Powered by <span className="text-gray-400 font-medium">Rythenox Wraith</span>
           </p>
           <p className="text-[10px] text-gray-700 mt-1">
             Auto-refreshes every 60 seconds

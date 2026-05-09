@@ -92,7 +92,7 @@ export function AppSidebar() {
             </div>
             <div className="flex flex-col leading-tight">
               <span className="font-display text-[15px] font-semibold tracking-tight text-foreground">Rythenox</span>
-              <span className="text-[10px] text-muted-foreground tracking-wide uppercase">Marengo</span>
+              <span className="text-[10px] text-muted-foreground tracking-wide uppercase">Wraith</span>
             </div>
           </div>
         )}

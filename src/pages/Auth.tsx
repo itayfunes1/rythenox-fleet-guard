@@ -53,7 +53,7 @@ export default function AuthPage() {
         <div className="max-w-md space-y-8">
           <div className="flex flex-col gap-2 items-start">
             <img src={rythenoxLogo} alt="Rythenox" className="h-12 w-auto" />
-            <p className="text-xs text-muted-foreground tracking-wide uppercase pl-1">Marengo Dashboard</p>
+            <p className="text-xs text-muted-foreground tracking-wide uppercase pl-1">Wraith Dashboard</p>
           </div>
 
           <div className="space-y-2">

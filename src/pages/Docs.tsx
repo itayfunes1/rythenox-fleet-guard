@@ -71,7 +71,7 @@ const sections: Section[] = [
     body: (
       <div className="space-y-4">
         <p className="text-sm text-muted-foreground">
-          Rythenox Marengo is a multi-tenant fleet management platform. Your account belongs to an
+          Rythenox Wraith is a multi-tenant fleet management platform. Your account belongs to an
           <strong className="text-foreground"> organization</strong>, and every device, command, build, and
           notification is scoped to it. This guide walks you through everything from enrolling your first
           agent to running automated playbooks.
@@ -527,7 +527,7 @@ export default function Docs() {
             <BookOpen className="h-5 w-5 text-primary" /> Documentation
           </h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Everything you need to operate Rythenox Marengo — onboarding, agents, automation, and troubleshooting.
+            Everything you need to operate Rythenox Wraith — onboarding, agents, automation, and troubleshooting.
           </p>
         </div>
         <Badge variant="outline" className="gap-1.5">
