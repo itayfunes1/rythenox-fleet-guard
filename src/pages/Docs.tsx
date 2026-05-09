@@ -221,7 +221,7 @@ const sections: Section[] = [
           inline with auto-scroll.
         </Step>
         <Tip variant="warn">
-          Live remote file system traversal is not supported. Use the <strong>Diagnostic Vault</strong> for
+          Live remote file system traversal is not supported. Use the <strong>File Explorer</strong> for
           files an agent has uploaded.
         </Tip>
       </div>
