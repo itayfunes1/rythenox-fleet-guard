@@ -753,6 +753,48 @@ export type Database = {
           },
         ]
       }
+      status_incidents: {
+        Row: {
+          affected_services: string[]
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          impact: string
+          resolved_at: string | null
+          started_at: string
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          affected_services?: string[]
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          impact?: string
+          resolved_at?: string | null
+          started_at?: string
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          affected_services?: string[]
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          impact?: string
+          resolved_at?: string | null
+          started_at?: string
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       tenant_members: {
         Row: {
           created_at: string
