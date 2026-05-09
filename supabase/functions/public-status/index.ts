@@ -223,6 +223,59 @@ Deno.serve(async (req) => {
       };
     });
 
+    // ---------- Auto-incident open/close ----------
+    // Auto incidents are identified by created_by IS NULL and a "[Auto]" title prefix.
+    // Open one when live is down/degraded, resolve when back to operational.
+    try {
+      const { data: openAuto } = await supabase
+        .from("status_incidents")
+        .select("id, title, impact, affected_services")
+        .is("resolved_at", null)
+        .is("created_by", null)
+        .ilike("title", "[Auto]%");
+
+      const openByService = new Map<string, { id: string; impact: string }>();
+      for (const inc of openAuto ?? []) {
+        const token = (inc.affected_services ?? [])[0];
+        if (token) openByService.set(token, { id: inc.id, impact: inc.impact });
+      }
+
+      for (const d of definitions) {
+        const token = (SERVICE_MATCHERS[d.name] ?? [d.name])[0];
+        const open = openByService.get(token);
+
+        if (d.live === "operational") {
+          if (open) {
+            await supabase
+              .from("status_incidents")
+              .update({ status: "resolved", resolved_at: now.toISOString() })
+              .eq("id", open.id);
+          }
+        } else {
+          const desiredImpact = d.live === "down" ? "major" : "minor";
+          if (!open) {
+            await supabase.from("status_incidents").insert({
+              title: `[Auto] ${d.name} ${d.live === "down" ? "outage" : "degradation"} detected`,
+              description:
+                "Automatically opened by the public-status probe. Will resolve when the service returns to operational.",
+              status: "investigating",
+              impact: desiredImpact,
+              affected_services: [token],
+              started_at: now.toISOString(),
+            });
+          } else if (open.impact === "minor" && desiredImpact === "major") {
+            // Escalate from degraded to down
+            await supabase
+              .from("status_incidents")
+              .update({ impact: "major", status: "identified" })
+              .eq("id", open.id);
+          }
+        }
+      }
+    } catch (autoErr) {
+      console.error("auto-incident logic failed:", autoErr);
+    }
+
     const hasDown = services.some((s) => s.status === "down");
     const hasDegraded = services.some((s) => s.status === "degraded");
     const overall: Health = hasDown ? "down" : hasDegraded ? "degraded" : "operational";
