@@ -19,6 +19,7 @@ import {
   History,
   Clock,
 } from "lucide-react";
+import { PageHeader } from "@/components/PageHeader";
 import { useTenant } from "@/hooks/use-tenant";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -179,27 +180,19 @@ export default function DeploymentCenter() {
   };
 
   return (
-    <div className="p-8 space-y-8 max-w-7xl mx-auto">
-      {/* Header */}
-      <div className="flex items-start justify-between gap-6 flex-wrap">
-        <div className="space-y-2">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10">
-              <Rocket className="h-5 w-5 text-primary" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold tracking-tight">Deployment Center</h1>
-              <p className="text-sm text-muted-foreground">
-                Provision and distribute signed agent binaries to your fleet.
-              </p>
-            </div>
-          </div>
-        </div>
-        <Badge variant="outline" className="gap-1.5 border-emerald-200 bg-emerald-50 text-emerald-700">
-          <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
-          Build pipeline online
-        </Badge>
-      </div>
+    <div className="p-2 sm:p-4 space-y-6 max-w-7xl mx-auto">
+      <PageHeader
+        eyebrow="Provisioning"
+        icon={<Rocket className="h-5 w-5" />}
+        title="Deployment Center"
+        description="Provision and distribute signed agent binaries to your fleet."
+        actions={
+          <Badge variant="outline" className="gap-1.5 border-emerald-200 bg-emerald-50 text-emerald-700">
+            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+            Build pipeline online
+          </Badge>
+        }
+      />
 
       {/* Spec strip */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">

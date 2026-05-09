@@ -25,6 +25,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Clock, Plus, Trash2 } from "lucide-react";
+import { PageHeader } from "@/components/PageHeader";
 import { toast } from "sonner";
 
 const PRESETS = [
@@ -73,22 +74,21 @@ export default function Schedules() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Scheduled Tasks</h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Recurring commands that fire on a cron schedule.
-          </p>
-        </div>
-        <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger asChild>
-            <Button size="sm"><Plus className="h-4 w-4 mr-1.5" /> New Schedule</Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-lg">
-            <DialogHeader>
-              <DialogTitle>Create a scheduled task</DialogTitle>
-              <DialogDescription>Will run on the chosen devices on the chosen cadence.</DialogDescription>
-            </DialogHeader>
+      <PageHeader
+        eyebrow="Automation"
+        icon={<Clock className="h-5 w-5" />}
+        title="Scheduled Tasks"
+        description="Recurring commands that fire on a cron schedule."
+        actions={
+          <Dialog open={open} onOpenChange={setOpen}>
+            <DialogTrigger asChild>
+              <Button size="sm"><Plus className="h-4 w-4 mr-1.5" /> New Schedule</Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-lg">
+              <DialogHeader>
+                <DialogTitle>Create a scheduled task</DialogTitle>
+                <DialogDescription>Will run on the chosen devices on the chosen cadence.</DialogDescription>
+              </DialogHeader>
             <div className="space-y-3">
               <div>
                 <Label>Name</Label>
@@ -140,9 +140,10 @@ export default function Schedules() {
               <Button variant="ghost" onClick={() => setOpen(false)}>Cancel</Button>
               <Button onClick={submit} disabled={createSched.isPending}>Create</Button>
             </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      </div>
+            </DialogContent>
+          </Dialog>
+        }
+      />
 
       {schedules.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-16 text-center border border-dashed rounded-lg">

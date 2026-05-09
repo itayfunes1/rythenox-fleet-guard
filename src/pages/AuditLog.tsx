@@ -11,6 +11,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { ScrollText, Search, User, Activity } from "lucide-react";
+import { PageHeader } from "@/components/PageHeader";
 
 const ENTITY_TYPES = ["all", "remote_task", "build", "announcement"];
 
@@ -31,12 +32,12 @@ export default function AuditLog() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Audit Log</h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          Immutable record of every meaningful action in your organization.
-        </p>
-      </div>
+      <PageHeader
+        eyebrow="Compliance"
+        icon={<ScrollText className="h-5 w-5" />}
+        title="Audit Log"
+        description="Immutable record of every meaningful action in your organization."
+      />
 
       <div className="flex flex-wrap items-center gap-3">
         <div className="relative flex-1 min-w-64">

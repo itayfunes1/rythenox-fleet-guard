@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { Bell, Check, CheckCheck, Trash2, Search, Info, AlertTriangle, CheckCircle, XCircle, Filter } from "lucide-react";
+import { PageHeader } from "@/components/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -86,21 +87,19 @@ export default function NotificationsPage() {
 
   return (
     <div className="space-y-6">
-      <header className="flex items-start justify-between gap-4 flex-wrap">
-        <div>
-          <h1 className="text-2xl font-display font-semibold tracking-tight">Notifications</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">
-            {unreadCount > 0 ? `${unreadCount} unread` : "You're all caught up"} · {notifications.length} total
-          </p>
-        </div>
-        <div className="flex gap-2">
-          {unreadCount > 0 && (
+      <PageHeader
+        eyebrow="Activity"
+        icon={<Bell className="h-5 w-5" />}
+        title="Notifications"
+        description={`${unreadCount > 0 ? `${unreadCount} unread` : "You're all caught up"} · ${notifications.length} total`}
+        actions={
+          unreadCount > 0 ? (
             <Button variant="outline" size="sm" onClick={() => markAllAsRead.mutate()}>
               <CheckCheck className="h-4 w-4 mr-2" /> Mark all read
             </Button>
-          )}
-        </div>
-      </header>
+          ) : null
+        }
+      />
 
       <Card className="border-border/60">
         <CardHeader className="pb-3 space-y-3">

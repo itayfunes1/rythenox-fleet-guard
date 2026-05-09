@@ -4,7 +4,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Input } from "@/components/ui/input";
-import { Globe, Server, Wifi, Users, Activity, Clock, Zap, ChevronDown, ChevronUp, ShieldAlert, Trash2, Radio, Send, AlertTriangle, Lock } from "lucide-react";
+import { Globe, Server, Wifi, Users, Activity, Clock, Zap, ChevronDown, ChevronUp, ShieldAlert, Trash2, Radio, Send, AlertTriangle, Lock, Network as NetworkIcon } from "lucide-react";
+import { PageHeader } from "@/components/PageHeader";
 import { useRelays, type RelayNode } from "@/hooks/use-relays";
 import { useTenant } from "@/hooks/use-tenant";
 import { useAuth } from "@/components/AuthProvider";
@@ -125,22 +126,21 @@ export default function NetworkInfrastructure() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="space-y-1">
-          <h1 className="text-2xl font-bold text-foreground tracking-tight">Network Infrastructure</h1>
-          <p className="text-sm text-muted-foreground">Relay nodes, network telemetry & admin controls</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-success/10 border border-success/20">
+      <PageHeader
+        eyebrow="Operations"
+        icon={<NetworkIcon className="h-5 w-5" />}
+        title="Network Infrastructure"
+        description="Relay nodes, network telemetry & admin controls."
+        actions={
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-success/10 border border-success/20">
             <span className="relative flex h-2 w-2">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-success opacity-75" />
               <span className="relative inline-flex rounded-full h-2 w-2 bg-success" />
             </span>
-            <span className="text-[11px] font-medium text-success">Real-time</span>
+            <span className="text-xs font-semibold text-success">Real-time</span>
           </div>
-        </div>
-      </div>
+        }
+      />
 
       {/* Stats Grid */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 stagger-children">

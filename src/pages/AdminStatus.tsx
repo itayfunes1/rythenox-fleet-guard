@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "sonner";
 import { Loader2, Plus, X, Trash2, ShieldAlert } from "lucide-react";
+import { PageHeader } from "@/components/PageHeader";
 import { useEffect as useTitleEffect } from "react";
 
 const SERVICE_TOKENS = [
@@ -162,11 +163,12 @@ export default function AdminStatus() {
 
   return (
     <div className="space-y-6 p-1">
-
-      <header>
-        <h1 className="text-2xl font-semibold">Status Admin</h1>
-        <p className="text-sm text-muted-foreground">Manage incidents and incident email notifications.</p>
-      </header>
+      <PageHeader
+        eyebrow="Admin"
+        icon={<ShieldAlert className="h-5 w-5" />}
+        title="Status Admin"
+        description="Manage incidents and incident email notifications."
+      />
 
       <Card>
         <CardHeader>

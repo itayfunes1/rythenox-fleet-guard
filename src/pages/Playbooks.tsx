@@ -32,6 +32,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
 import { BookOpen, Plus, Trash2, Play, Zap, X } from "lucide-react";
+import { PageHeader } from "@/components/PageHeader";
 import { toast } from "sonner";
 
 export default function Playbooks() {
@@ -143,12 +144,12 @@ export default function Playbooks() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Playbooks & Commands</h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          Save reusable commands, build multi-step playbooks, and fan out across your fleet.
-        </p>
-      </div>
+      <PageHeader
+        eyebrow="Automation"
+        icon={<BookOpen className="h-5 w-5" />}
+        title="Playbooks & Commands"
+        description="Save reusable commands, build multi-step playbooks, and fan out across your fleet."
+      />
 
       <Tabs defaultValue="commands">
         <TabsList>

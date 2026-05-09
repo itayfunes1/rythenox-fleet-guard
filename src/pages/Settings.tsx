@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { Building2, Check, Copy, Eye, EyeOff, Key, Search, Settings2, UserPlus, X, Bell } from "lucide-react";
+import { PageHeader } from "@/components/PageHeader";
 import { useTenant } from "@/hooks/use-tenant";
 import { useAuth } from "@/components/AuthProvider";
 import { useToast } from "@/hooks/use-toast";
@@ -65,11 +66,13 @@ export default function SettingsPage() {
   };
 
   return (
-    <div className="space-y-6 max-w-2xl">
-      <div className="space-y-1">
-        <h1 className="text-2xl font-bold text-foreground tracking-tight">Settings</h1>
-        <p className="text-sm text-muted-foreground">Manage portal preferences and notifications</p>
-      </div>
+    <div className="space-y-6 max-w-3xl">
+      <PageHeader
+        eyebrow="Preferences"
+        icon={<Settings2 className="h-5 w-5" />}
+        title="Settings"
+        description="Manage portal preferences, organization, and notifications."
+      />
 
       <Card className="glass-card glow-card">
         <CardHeader>
