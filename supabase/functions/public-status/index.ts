@@ -6,12 +6,90 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type",
 };
 
+type Health = "operational" | "degraded" | "down";
+type DayState = "up" | "degraded" | "down" | "unknown";
+
 interface ServiceStatus {
   name: string;
-  status: "operational" | "degraded" | "down";
+  status: Health;
   description: string;
   uptime_pct: number;
+  bars: DayState[]; // length 90 (oldest -> today)
   checked_at: string;
+}
+
+const DAYS = 90;
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+// Map a public service name to incident.affected_services tokens that should match it
+const SERVICE_MATCHERS: Record<string, string[]> = {
+  "Platform (Web App & API)": ["platform", "web", "api"],
+  "Database": ["database", "db", "postgres"],
+  "Relay Network": ["relay", "relay_network", "relays"],
+  "Command Center": ["command_center", "command", "tasks", "task_pipeline"],
+  "Real-time Events": ["realtime", "real-time", "real_time", "events"],
+  "Build Pipeline": ["build", "build_pipeline", "builds"],
+};
+
+function matchesService(serviceName: string, affected: string[] | null): boolean {
+  if (!affected || affected.length === 0) return false;
+  const tokens = SERVICE_MATCHERS[serviceName] ?? [];
+  const lower = affected.map((a) => (a || "").toLowerCase().trim());
+  return lower.some((a) => tokens.some((t) => a === t || a.includes(t)));
+}
+
+function impactToDayState(impact: string): "down" | "degraded" {
+  return impact === "critical" || impact === "major" ? "down" : "degraded";
+}
+
+function buildBars(
+  serviceName: string,
+  incidents: Array<{
+    impact: string;
+    affected_services: string[] | null;
+    started_at: string;
+    resolved_at: string | null;
+  }>,
+  now: Date,
+  currentLive: Health,
+): { bars: DayState[]; uptime_pct: number } {
+  const bars: DayState[] = new Array(DAYS).fill("up");
+  const todayStart = new Date(now);
+  todayStart.setUTCHours(0, 0, 0, 0);
+
+  // i = 0 -> 89 days ago, i = 89 -> today
+  for (let i = 0; i < DAYS; i++) {
+    const dayStart = new Date(todayStart.getTime() - (DAYS - 1 - i) * DAY_MS);
+    const dayEnd = new Date(dayStart.getTime() + DAY_MS);
+
+    let worst: DayState = "up";
+    for (const inc of incidents) {
+      if (!matchesService(serviceName, inc.affected_services)) continue;
+      const start = new Date(inc.started_at);
+      const end = inc.resolved_at ? new Date(inc.resolved_at) : now;
+      if (start < dayEnd && end > dayStart) {
+        const s = impactToDayState(inc.impact);
+        if (s === "down") {
+          worst = "down";
+          break;
+        }
+        if (s === "degraded" && worst === "up") worst = "degraded";
+      }
+    }
+    bars[i] = worst;
+  }
+
+  // Reflect the live current state on the most recent bar (today) if worse
+  const liveState: DayState =
+    currentLive === "down" ? "down" : currentLive === "degraded" ? "degraded" : bars[DAYS - 1];
+  const order: Record<DayState, number> = { up: 0, unknown: 0, degraded: 1, down: 2 };
+  if (order[liveState] > order[bars[DAYS - 1]]) bars[DAYS - 1] = liveState;
+
+  const upCount = bars.filter((b) => b === "up").length;
+  const degradedCount = bars.filter((b) => b === "degraded").length;
+  const uptime_pct = Math.round(((upCount + degradedCount * 0.5) / DAYS) * 1000) / 10;
+
+  return { bars, uptime_pct };
 }
 
 Deno.serve(async (req) => {
@@ -26,154 +104,117 @@ Deno.serve(async (req) => {
     );
 
     const now = new Date();
-    const services: ServiceStatus[] = [];
+    const ninetyDaysAgo = new Date(now.getTime() - DAYS * DAY_MS).toISOString();
 
-    // 1. Platform (Web App & API) — if this function responds, it's up
-    services.push({
-      name: "Platform (Web App & API)",
-      status: "operational",
-      description: "Supabase backend, authentication, and web interface.",
-      uptime_pct: 100,
-      checked_at: now.toISOString(),
-    });
+    // Fetch all incidents that overlap the 90-day window
+    const { data: rawIncidents } = await supabase
+      .from("status_incidents")
+      .select("impact, affected_services, started_at, resolved_at")
+      .or(`resolved_at.is.null,resolved_at.gte.${ninetyDaysAgo}`);
+    const incidents = rawIncidents ?? [];
 
-    // 2. Database — try a lightweight query
-    let dbStatus: ServiceStatus["status"] = "operational";
+    // ---------- Live health probes ----------
+    // Database
+    let dbLive: Health = "operational";
     try {
       const { error } = await supabase
         .from("tenants")
         .select("id", { count: "exact", head: true });
-      if (error) dbStatus = "degraded";
+      if (error) dbLive = "degraded";
     } catch {
-      dbStatus = "down";
+      dbLive = "down";
     }
-    services.push({
-      name: "Database",
-      status: dbStatus,
-      description: "PostgreSQL primary datastore.",
-      uptime_pct: dbStatus === "operational" ? 100 : dbStatus === "degraded" ? 95 : 0,
-      checked_at: now.toISOString(),
-    });
 
-    // 3. Relay Network — aggregate across ALL tenants (no tenant-specific data exposed)
-    let relayStatus: ServiceStatus["status"] = "operational";
-    let relayUptime = 100;
+    // Relay network (aggregate across all tenants)
+    let relayLive: Health = "operational";
     try {
       const { data: relays, error } = await supabase
         .from("relay_nodes")
         .select("status, last_seen");
-
       if (error) {
-        relayStatus = "degraded";
-        relayUptime = 50;
-      } else if (!relays || relays.length === 0) {
-        relayStatus = "operational";
-        relayUptime = 100;
-      } else {
+        relayLive = "degraded";
+      } else if (relays && relays.length > 0) {
         const total = relays.length;
-        const online = relays.filter(
-          (r: any) => r.status === "Online",
-        ).length;
-        const pct = Math.round((online / total) * 100);
-        relayUptime = pct;
-
-        if (pct === 0) relayStatus = "down";
-        else if (pct < 80) relayStatus = "degraded";
-        else relayStatus = "operational";
+        const online = relays.filter((r: any) => r.status === "Online").length;
+        const pct = (online / total) * 100;
+        if (pct === 0) relayLive = "down";
+        else if (pct < 80) relayLive = "degraded";
       }
     } catch {
-      relayStatus = "down";
-      relayUptime = 0;
+      relayLive = "down";
     }
-    services.push({
-      name: "Relay Network",
-      status: relayStatus,
-      description: "WebSocket relay infrastructure bridging agents to the platform.",
-      uptime_pct: relayUptime,
-      checked_at: now.toISOString(),
-    });
 
-    // 4. Command Center (Task Pipeline) — check if tasks are flowing
-    let taskStatus: ServiceStatus["status"] = "operational";
+    // Command center: any tasks stuck > 10 min in Pending/Sent right now?
+    let commandLive: Health = "operational";
     try {
-      const oneDayAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString();
-      const { data: recentTasks, error } = await supabase
+      const tenMinAgo = new Date(now.getTime() - 10 * 60 * 1000).toISOString();
+      const { count, error } = await supabase
         .from("remote_tasks")
-        .select("status")
-        .gte("created_at", oneDayAgo)
-        .limit(50);
-
-      if (error) {
-        taskStatus = "degraded";
-      } else if (recentTasks && recentTasks.length > 0) {
-        const stuck = recentTasks.filter(
-          (t: any) => t.status === "Pending" || t.status === "Sent",
-        ).length;
-        const stuckPct = stuck / recentTasks.length;
-        if (stuckPct > 0.8) taskStatus = "degraded";
-      }
+        .select("id", { count: "exact", head: true })
+        .in("status", ["Pending", "Sent"])
+        .lt("created_at", tenMinAgo);
+      if (error) commandLive = "degraded";
+      else if ((count ?? 0) > 5) commandLive = "degraded";
     } catch {
-      taskStatus = "degraded";
+      commandLive = "degraded";
     }
-    services.push({
-      name: "Command Center",
-      status: taskStatus,
-      description: "Task dispatch pipeline (create → poll → execute → result).",
-      uptime_pct: taskStatus === "operational" ? 100 : 80,
-      checked_at: now.toISOString(),
-    });
 
-    // 5. Real-time Events
-    services.push({
-      name: "Real-time Events",
-      status: "operational",
-      description: "Supabase Realtime for live updates and notifications.",
-      uptime_pct: 100,
-      checked_at: now.toISOString(),
-    });
-
-    // 6. Build Pipeline
-    let buildStatus: ServiceStatus["status"] = "operational";
+    // Build pipeline: failure rate over last 48h
+    let buildLive: Health = "operational";
     try {
       const twoDaysAgo = new Date(now.getTime() - 48 * 60 * 60 * 1000).toISOString();
       const { data: builds, error } = await supabase
         .from("build_history")
         .select("status")
         .gte("created_at", twoDaysAgo)
-        .limit(20);
-
-      if (error) {
-        buildStatus = "degraded";
-      } else if (builds && builds.length > 0) {
+        .limit(50);
+      if (error) buildLive = "degraded";
+      else if (builds && builds.length >= 3) {
         const failRate =
-          builds.filter((b: any) => b.status === "failed").length / builds.length;
-        if (failRate > 0.5) buildStatus = "degraded";
+          builds.filter((b: any) => b.status === "failed" || b.status === "error").length /
+          builds.length;
+        if (failRate > 0.5) buildLive = "degraded";
       }
     } catch {
-      buildStatus = "degraded";
+      buildLive = "degraded";
     }
-    services.push({
-      name: "Build Pipeline",
-      status: buildStatus,
-      description: "Agent binary compilation via GitHub Actions.",
-      uptime_pct: buildStatus === "operational" ? 100 : 75,
-      checked_at: now.toISOString(),
+
+    // Realtime: best-effort — assume operational if DB is up
+    const realtimeLive: Health = dbLive === "operational" ? "operational" : "degraded";
+    // Platform: if this function executed, it's up
+    const platformLive: Health = "operational";
+
+    const definitions: Array<{ name: string; description: string; live: Health }> = [
+      { name: "Platform (Web App & API)", description: "Web app, edge functions, and authentication.", live: platformLive },
+      { name: "Database", description: "PostgreSQL primary datastore.", live: dbLive },
+      { name: "Relay Network", description: "WebSocket relay infrastructure bridging agents to the platform.", live: relayLive },
+      { name: "Command Center", description: "Task dispatch pipeline (create → poll → execute → result).", live: commandLive },
+      { name: "Real-time Events", description: "Supabase Realtime for live updates and notifications.", live: realtimeLive },
+      { name: "Build Pipeline", description: "Agent binary compilation via GitHub Actions.", live: buildLive },
+    ];
+
+    const services: ServiceStatus[] = definitions.map((d) => {
+      const { bars, uptime_pct } = buildBars(d.name, incidents, now, d.live);
+      return {
+        name: d.name,
+        description: d.description,
+        status: d.live,
+        uptime_pct,
+        bars,
+        checked_at: now.toISOString(),
+      };
     });
 
-    // Overall status
     const hasDown = services.some((s) => s.status === "down");
     const hasDegraded = services.some((s) => s.status === "degraded");
-    const overall: ServiceStatus["status"] = hasDown
-      ? "down"
-      : hasDegraded
-        ? "degraded"
-        : "operational";
+    const overall: Health = hasDown ? "down" : hasDegraded ? "degraded" : "operational";
 
     return new Response(
       JSON.stringify({
         overall,
         services,
         checked_at: now.toISOString(),
+        window_days: DAYS,
       }),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -182,12 +223,9 @@ Deno.serve(async (req) => {
     );
   } catch (e) {
     console.error("public-status error:", e);
-    return new Response(
-      JSON.stringify({ error: "Failed to check status" }),
-      {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 500,
-      },
-    );
+    return new Response(JSON.stringify({ error: "Failed to check status" }), {
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      status: 500,
+    });
   }
 });
