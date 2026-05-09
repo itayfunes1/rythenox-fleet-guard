@@ -507,7 +507,14 @@ function handlePreview(file: DiagnosticEntry) {
   }
 }
   return (
-    <div className="flex flex-col md:flex-row gap-4 h-full">
+    <div className="space-y-6">
+      <PageHeader
+        eyebrow="Storage"
+        icon={<FolderArchive className="h-5 w-5" />}
+        title="File Explorer"
+        description="Browse uploaded screenshots, recordings, logs, and looted assets per device."
+      />
+      <div className="flex flex-col md:flex-row gap-4 h-full">
       <Card className="glass-card md:w-64 shrink-0">
         <CardContent className="p-3">
           <div className="flex items-center gap-2 mb-3 px-1">
