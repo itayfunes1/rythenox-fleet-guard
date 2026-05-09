@@ -359,6 +359,39 @@ export default function StatusPage() {
           </div>
         )}
 
+        {/* Incidents Timeline */}
+        <div className="space-y-3">
+          <div className="flex items-center justify-between px-1">
+            <h3 className="text-xs font-semibold uppercase tracking-wider text-gray-500">
+              Incident History
+            </h3>
+            <span className="text-[10px] text-gray-600">
+              {incidents.length === 0 ? "No incidents reported" : `${incidents.length} incident${incidents.length === 1 ? "" : "s"}`}
+            </span>
+          </div>
+
+          {incidents.length === 0 ? (
+            <div className="rounded-lg border border-[#2a2a3e] bg-[#1a1a2e]/40 p-8 text-center">
+              <CheckCircle2 className="h-6 w-6 text-emerald-400 mx-auto mb-2" />
+              <p className="text-sm text-gray-400">No incidents reported</p>
+              <p className="text-[11px] text-gray-600 mt-1">All systems have been running smoothly.</p>
+            </div>
+          ) : (
+            <div className="relative space-y-3 pl-6 before:absolute before:left-2 before:top-2 before:bottom-2 before:w-px before:bg-[#2a2a3e]">
+              {incidents.map((incident) => (
+                <div key={incident.id} className="relative">
+                  <div
+                    className={`absolute -left-[18px] top-5 h-2.5 w-2.5 rounded-full ring-2 ring-[#0f0f1a] ${
+                      incidentStatusConfig[incident.status].dot
+                    }`}
+                  />
+                  <IncidentCard incident={incident} />
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
         {/* Legend */}
         <div className="rounded-lg border border-[#2a2a3e] bg-[#1a1a2e]/40 p-4">
           <h4 className="text-xs font-semibold text-gray-400 mb-3">Legend</h4>
