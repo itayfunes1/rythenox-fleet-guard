@@ -134,7 +134,7 @@ function MapView({
               >
                 <PopoverTrigger asChild>
                   <g
-                    style={{ cursor: clickable ? "pointer" : "default" }}
+                    style={{ cursor: "pointer" }}
                     onClick={(e) => {
                       e.stopPropagation();
                       if (p.devices.length === 1 && clickable) {
