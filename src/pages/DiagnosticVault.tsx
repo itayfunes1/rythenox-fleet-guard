@@ -632,6 +632,7 @@ function handlePreview(file: DiagnosticEntry) {
       <ImagePreviewDialog file={imagePreview} open={!!imagePreview} onClose={() => setImagePreview(null)} />
       <TextPreviewSheet file={textPreview} open={!!textPreview} onClose={() => setTextPreview(null)} />
       <AudioPreviewDialog file={audioPreview} open={!!audioPreview} onClose={() => setAudioPreview(null)} />
+      </div>
     </div>
   );
 }
