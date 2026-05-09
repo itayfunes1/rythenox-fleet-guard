@@ -19,18 +19,18 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
         <div className="min-h-screen flex w-full bg-background">
           <AppSidebar />
           <div className="flex-1 flex flex-col min-w-0">
-            <header className="h-16 flex items-center border-b border-border bg-card/80 backdrop-blur-md px-5 gap-3 sticky top-0 z-30 supports-[backdrop-filter]:bg-card/70">
+            <header className="h-16 flex items-center app-header px-5 gap-3 sticky top-0 z-30">
               <SidebarTrigger className="hover:bg-muted transition-colors rounded-lg h-8 w-8" />
 
               <div className="hidden md:flex items-center gap-2 flex-1 max-w-md ml-3">
                 <button
                   type="button"
                   onClick={() => setPaletteOpen(true)}
-                  className="flex items-center gap-2 w-full px-3.5 py-2 rounded-lg bg-muted/60 border border-border/70 text-muted-foreground text-sm hover:bg-muted transition-colors text-left"
+                  className="group flex items-center gap-2.5 w-full px-3.5 py-2 rounded-lg bg-muted/50 border border-border/70 text-muted-foreground text-sm hover:bg-muted hover:border-border transition-all text-left"
                 >
-                  <Search className="h-3.5 w-3.5" />
-                  <span className="text-xs font-medium">Search devices, builds, logs…</span>
-                  <kbd className="ml-auto text-[10px] bg-background px-1.5 py-0.5 rounded border border-border font-mono">⌘K</kbd>
+                  <Search className="h-3.5 w-3.5 group-hover:text-accent transition-colors" />
+                  <span className="text-xs font-medium tracking-tight">Search devices, builds, logs…</span>
+                  <kbd className="ml-auto text-[10px] bg-background px-1.5 py-0.5 rounded border border-border font-mono text-foreground/70">⌘K</kbd>
                 </button>
               </div>
 
@@ -38,7 +38,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
 
               <div className="flex items-center gap-3">
                 <NotificationDropdown />
-                <div className="h-9 w-9 rounded-full bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center text-xs font-semibold text-primary-foreground cursor-default shadow-sm ring-1 ring-border">
+                <div className="h-9 w-9 rounded-full bg-gradient-to-br from-primary via-primary to-[hsl(var(--primary-glow))] flex items-center justify-center text-xs font-bold text-primary-foreground cursor-default shadow-md ring-2 ring-background">
                   {initials}
                 </div>
               </div>
