@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Search, Terminal, RefreshCw, Monitor, Pencil, Check, X } from "lucide-react";
+import { PageHeader } from "@/components/PageHeader";
 import { useTenant } from "@/hooks/use-tenant";
 import { useDevices, useUpdateNickname, type ManagedDevice } from "@/hooks/use-devices";
 import { useTerminals } from "@/components/TerminalContext";
@@ -69,10 +70,12 @@ export default function Devices() {
 
   return (
     <div className="space-y-6">
-      <div className="space-y-1">
-        <h1 className="text-2xl font-bold text-foreground tracking-tight">Device Management</h1>
-        <p className="text-sm text-muted-foreground">Corporate asset inventory and remote management</p>
-      </div>
+      <PageHeader
+        eyebrow="Inventory"
+        icon={<Monitor className="h-5 w-5" />}
+        title="Device Management"
+        description="Corporate asset inventory and remote management."
+      />
 
       <div className="flex items-center gap-3 flex-wrap">
         <div className="relative flex-1 max-w-sm group">

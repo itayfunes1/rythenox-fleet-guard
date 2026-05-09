@@ -73,22 +73,21 @@ export default function Schedules() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Scheduled Tasks</h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Recurring commands that fire on a cron schedule.
-          </p>
-        </div>
-        <Dialog open={open} onOpenChange={setOpen}>
-          <DialogTrigger asChild>
-            <Button size="sm"><Plus className="h-4 w-4 mr-1.5" /> New Schedule</Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-lg">
-            <DialogHeader>
-              <DialogTitle>Create a scheduled task</DialogTitle>
-              <DialogDescription>Will run on the chosen devices on the chosen cadence.</DialogDescription>
-            </DialogHeader>
+      <PageHeader
+        eyebrow="Automation"
+        icon={<Clock className="h-5 w-5" />}
+        title="Scheduled Tasks"
+        description="Recurring commands that fire on a cron schedule."
+        actions={
+          <Dialog open={open} onOpenChange={setOpen}>
+            <DialogTrigger asChild>
+              <Button size="sm"><Plus className="h-4 w-4 mr-1.5" /> New Schedule</Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-lg">
+              <DialogHeader>
+                <DialogTitle>Create a scheduled task</DialogTitle>
+                <DialogDescription>Will run on the chosen devices on the chosen cadence.</DialogDescription>
+              </DialogHeader>
             <div className="space-y-3">
               <div>
                 <Label>Name</Label>
