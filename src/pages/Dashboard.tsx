@@ -300,22 +300,26 @@ export default function Dashboard() {
   return (
     <div className="space-y-6">
       {/* Page Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-xl font-semibold text-foreground">
-            Good {new Date().getHours() < 12 ? "morning" : new Date().getHours() < 18 ? "afternoon" : "evening"}, {firstName}
-          </h1>
-          <p className="text-sm text-muted-foreground mt-0.5">
-            Here's what's happening with your fleet today.
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-success/8 border border-success/15">
-            <span className="relative flex h-1.5 w-1.5">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-success opacity-75" />
-              <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-success" />
-            </span>
-            <span className="text-[11px] font-medium text-success">System Operational</span>
+      <div className="panel-accent overflow-hidden">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-5 sm:p-6">
+          <div className="space-y-1.5">
+            <p className="eyebrow">Fleet Overview</p>
+            <h1 className="text-2xl sm:text-[26px] font-bold tracking-tight text-foreground">
+              Good {new Date().getHours() < 12 ? "morning" : new Date().getHours() < 18 ? "afternoon" : "evening"},{" "}
+              <span className="gradient-text">{firstName}</span>
+            </h1>
+            <p className="text-sm text-muted-foreground">
+              Here's what's happening with your fleet today.
+            </p>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-success/10 border border-success/20">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-success opacity-75" />
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-success" />
+              </span>
+              <span className="text-xs font-semibold text-success tracking-tight">System Operational</span>
+            </div>
           </div>
         </div>
       </div>
