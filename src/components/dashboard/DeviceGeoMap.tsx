@@ -136,9 +136,8 @@ function MapView({
                   <g
                     style={{ cursor: clickable ? "pointer" : "default" }}
                     onClick={(e) => {
-                      if (!clickable) return;
                       e.stopPropagation();
-                      if (onlineDevices.length === 1) {
+                      if (p.devices.length === 1 && clickable) {
                         onDeviceClick(onlineDevices[0]);
                       } else {
                         setOpenKey(key);
