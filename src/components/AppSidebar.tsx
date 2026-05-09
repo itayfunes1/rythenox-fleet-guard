@@ -55,11 +55,11 @@ export function AppSidebar() {
       <SidebarMenuButton
         asChild
         isActive={isActive(item.url)}
-        className="transition-all duration-200 rounded-lg data-[active=true]:bg-gradient-to-r data-[active=true]:from-accent/10 data-[active=true]:to-transparent data-[active=true]:text-primary data-[active=true]:font-semibold data-[active=true]:shadow-sm hover:bg-muted/70 relative data-[active=true]:before:absolute data-[active=true]:before:left-0 data-[active=true]:before:top-1/2 data-[active=true]:before:-translate-y-1/2 data-[active=true]:before:h-5 data-[active=true]:before:w-[3px] data-[active=true]:before:rounded-r-full data-[active=true]:before:bg-accent"
+        className="group/nav transition-all duration-200 rounded-xl text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground data-[active=true]:bg-accent data-[active=true]:text-accent-foreground data-[active=true]:font-bold data-[active=true]:shadow-[0_8px_24px_-8px_hsl(var(--accent)/0.6)]"
       >
         <NavLink to={item.url} end={item.url === "/"}>
-          <item.icon className="h-4 w-4" />
-          {!collapsed && <span className="text-[13px]">{item.title}</span>}
+          <item.icon className="h-4 w-4 shrink-0" />
+          {!collapsed && <span className="text-[13px] tracking-tight">{item.title}</span>}
         </NavLink>
       </SidebarMenuButton>
     );
@@ -78,33 +78,33 @@ export function AppSidebar() {
 
   return (
     <Sidebar collapsible="icon" className="sidebar-glow">
-      <SidebarHeader className="p-4 pb-3 border-b border-sidebar-border/60">
+      <SidebarHeader className="p-4 pb-4 border-b border-sidebar-border">
         {collapsed ? (
           <div className="flex justify-center">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-[hsl(var(--primary-glow))] shadow-md shrink-0 ring-1 ring-primary/30">
-              <Zap className="h-4 w-4 text-primary-foreground" />
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-accent shadow-[0_8px_24px_-8px_hsl(var(--accent)/0.6)] shrink-0">
+              <Zap className="h-4 w-4 text-accent-foreground" strokeWidth={2.5} />
             </div>
           </div>
         ) : (
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-[hsl(var(--primary-glow))] shadow-md shrink-0 ring-1 ring-primary/30">
-              <Zap className="h-4 w-4 text-primary-foreground" />
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-accent shadow-[0_8px_24px_-8px_hsl(var(--accent)/0.6)] shrink-0">
+              <Zap className="h-4 w-4 text-accent-foreground" strokeWidth={2.5} />
             </div>
-            <div className="flex flex-col leading-tight">
-              <span className="font-display text-[16px] font-bold tracking-tight text-foreground">Rythenox</span>
-              <span className="text-[10px] text-accent font-semibold tracking-[0.18em] uppercase">Wraith</span>
+            <div className="flex flex-col leading-none">
+              <span className="font-display text-[18px] font-extrabold tracking-tight text-sidebar-primary-foreground">Rythenox</span>
+              <span className="text-[10px] text-accent font-bold tracking-[0.22em] uppercase mt-1">Wraith OS</span>
             </div>
           </div>
         )}
       </SidebarHeader>
 
-      <SidebarContent className="px-2">
+      <SidebarContent className="px-2 py-4">
         <SidebarGroup>
-          <SidebarGroupLabel className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold mb-1">
+          <SidebarGroupLabel className="text-[9px] uppercase tracking-[0.22em] text-sidebar-foreground/40 font-bold mb-2 px-2">
             Management
           </SidebarGroupLabel>
           <SidebarGroupContent>
-            <SidebarMenu className="space-y-0.5">
+            <SidebarMenu className="space-y-1">
               {mainItems
                 .filter((item) => !item.restrictedTo || user?.email === item.restrictedTo)
                 .map((item) => (
@@ -117,11 +117,11 @@ export function AppSidebar() {
         </SidebarGroup>
 
         <SidebarGroup>
-          <SidebarGroupLabel className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold mb-1">
+          <SidebarGroupLabel className="text-[9px] uppercase tracking-[0.22em] text-sidebar-foreground/40 font-bold mb-2 px-2 mt-4">
             Automation
           </SidebarGroupLabel>
           <SidebarGroupContent>
-            <SidebarMenu className="space-y-0.5">
+            <SidebarMenu className="space-y-1">
               {automationItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   {renderMenuItem(item)}
@@ -132,11 +132,11 @@ export function AppSidebar() {
         </SidebarGroup>
 
         <SidebarGroup>
-          <SidebarGroupLabel className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold mb-1">
+          <SidebarGroupLabel className="text-[9px] uppercase tracking-[0.22em] text-sidebar-foreground/40 font-bold mb-2 px-2 mt-4">
             System
           </SidebarGroupLabel>
           <SidebarGroupContent>
-            <SidebarMenu className="space-y-0.5">
+            <SidebarMenu className="space-y-1">
               {systemItems
                 .filter((item) => !item.restrictedTo || user?.email === item.restrictedTo)
                 .map((item) => (
@@ -149,22 +149,22 @@ export function AppSidebar() {
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter className="p-3">
+      <SidebarFooter className="p-3 border-t border-sidebar-border">
         {!collapsed ? (
-          <div className="rounded-xl p-3 space-y-2.5 border border-border bg-muted/50">
+          <div className="rounded-xl p-3 space-y-2.5 bg-sidebar-accent/60 border border-sidebar-border">
             <div className="flex items-center gap-2.5">
-              <div className="h-7 w-7 rounded-full bg-primary flex items-center justify-center text-[10px] font-bold text-primary-foreground shrink-0">
+              <div className="h-8 w-8 rounded-lg bg-accent flex items-center justify-center text-[10px] font-extrabold text-accent-foreground shrink-0">
                 {user?.email?.substring(0, 2).toUpperCase() || "??"}
               </div>
               <div className="min-w-0">
-                <p className="text-xs font-medium text-foreground truncate">{user?.email || "Unknown"}</p>
-                <p className="text-[10px] text-muted-foreground">Member</p>
+                <p className="text-xs font-semibold text-sidebar-primary-foreground truncate">{user?.email || "Unknown"}</p>
+                <p className="text-[10px] text-sidebar-foreground/60 uppercase tracking-wider">Operator</p>
               </div>
             </div>
             <Button
               variant="ghost"
               size="sm"
-              className="w-full justify-start text-xs text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors h-8"
+              className="w-full justify-start text-xs text-sidebar-foreground hover:text-destructive hover:bg-destructive/10 transition-colors h-8"
               onClick={signOut}
             >
               <LogOut className="h-3 w-3 mr-2" /> Sign Out
@@ -173,7 +173,7 @@ export function AppSidebar() {
         ) : (
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button variant="ghost" size="icon" onClick={signOut} className="hover:text-destructive hover:bg-destructive/10 h-8 w-8">
+              <Button variant="ghost" size="icon" onClick={signOut} className="text-sidebar-foreground hover:text-destructive hover:bg-destructive/10 h-8 w-8">
                 <LogOut className="h-4 w-4" />
               </Button>
             </TooltipTrigger>
