@@ -37,6 +37,7 @@ const automationItems = [
 const systemItems = [
   { title: "Messages", url: "/messages", icon: MessagesSquare },
   { title: "Notifications", url: "/notifications", icon: Bell },
+  { title: "System Status", url: "/status", icon: Activity },
   { title: "Documentation", url: "/docs", icon: LifeBuoy },
   { title: "Settings", url: "/settings", icon: Settings },
 ];
