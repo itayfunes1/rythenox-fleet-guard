@@ -6,7 +6,7 @@ import { Separator } from "@/components/ui/separator";
 import {
   BookOpen, Rocket, Monitor, Terminal, BookMarked, Clock, ScrollText,
   Network, FolderArchive, Bell, Settings, Search, Command, Zap, Shield,
-  AlertTriangle, CheckCircle2, ArrowRight,
+  AlertTriangle, CheckCircle2, ArrowRight, MessagesSquare,
 } from "lucide-react";
 
 type Section = {
@@ -109,7 +109,7 @@ const sections: Section[] = [
           <ul className="text-sm text-muted-foreground space-y-1.5 list-disc pl-5">
             <li><strong className="text-foreground">Management</strong> — Dashboard, Devices, Deployment Center, File Explorer. (Network is reserved for Rythenox staff and is hidden for customers.)</li>
             <li><strong className="text-foreground">Automation</strong> — Playbooks, Schedules, Audit Log.</li>
-            <li><strong className="text-foreground">System</strong> — Notifications, Documentation, Settings.</li>
+            <li><strong className="text-foreground">System</strong> — Messages, Notifications, Documentation, Settings.</li>
           </ul>
         </div>
         <Tip>
@@ -343,6 +343,28 @@ const sections: Section[] = [
           This page is restricted to a designated Rythenox monitoring account and is hidden from the sidebar
           for everyone else, including customer organization owners.
         </Tip>
+      </div>
+    ),
+  },
+  {
+    id: "messages",
+    group: "Operations",
+    title: "Team Messages",
+    icon: MessagesSquare,
+    keywords: "messages chat channels dm direct message team communication",
+    body: (
+      <div className="space-y-3">
+        <p className="text-sm text-muted-foreground">
+          Real-time team chat scoped to your organization. Communicate with colleagues without leaving
+          the platform.
+        </p>
+        <ul className="text-sm text-muted-foreground space-y-1.5 list-disc pl-5">
+          <li><strong className="text-foreground">Channels</strong> — organization-wide topic rooms created by admins. All tenant members are auto-added.</li>
+          <li><strong className="text-foreground">Direct Messages</strong> — private 1-on-1 conversations with any team member.</li>
+          <li>Mentions with <Code>@user</Code> trigger in-app notifications.</li>
+          <li>Typing indicators show when someone is composing a message.</li>
+        </ul>
+        <Tip>Only admins and owners can create new channels. Any member can start a DM.</Tip>
       </div>
     ),
   },
