@@ -6,7 +6,7 @@ import { Separator } from "@/components/ui/separator";
 import {
   BookOpen, Rocket, Monitor, Terminal, BookMarked, Clock, ScrollText,
   Network, FolderArchive, Bell, Settings, Search, Command, Zap, Shield,
-  AlertTriangle, CheckCircle2, ArrowRight, Sparkles,
+  AlertTriangle, CheckCircle2, ArrowRight,
 } from "lucide-react";
 
 type Section = {
@@ -108,7 +108,7 @@ const sections: Section[] = [
           <p className="text-sm font-semibold">Sidebar groups</p>
           <ul className="text-sm text-muted-foreground space-y-1.5 list-disc pl-5">
             <li><strong className="text-foreground">Management</strong> — Dashboard, Devices, Deployment Center, File Explorer. (Network is reserved for Rythenox staff and is hidden for customers.)</li>
-            <li><strong className="text-foreground">Automation</strong> — AI Assistant, Playbooks, Schedules, Audit Log.</li>
+            <li><strong className="text-foreground">Automation</strong> — Playbooks, Schedules, Audit Log.</li>
             <li><strong className="text-foreground">System</strong> — Notifications, Documentation, Settings.</li>
           </ul>
         </div>
@@ -223,36 +223,6 @@ const sections: Section[] = [
         <Tip variant="warn">
           Live remote file system traversal is not supported. Use the <strong>File Explorer</strong> for
           files an agent has uploaded.
-        </Tip>
-      </div>
-    ),
-  },
-  {
-    id: "ai-assistant",
-    group: "Automation",
-    title: "AI Command Assistant",
-    icon: Sparkles,
-    keywords: "ai assistant natural language gpt gemini suggest command llm",
-    body: (
-      <div className="space-y-4">
-        <p className="text-sm text-muted-foreground">
-          Describe what you want to do in plain English and the assistant generates a safe shell command,
-          recommends which online devices to run it on, and flags the risk level.
-        </p>
-        <Step n={1} title="Open the assistant">
-          Sidebar → <Code>AI Assistant</Code> (under Automation), or jump there from <Kbd>⌘K</Kbd>.
-        </Step>
-        <Step n={2} title="Ask in plain English">
-          e.g. <em>"Show disk usage on all Linux boxes"</em> or <em>"Restart the Windows print spooler"</em>.
-          Press <Kbd>⌘/Ctrl + Enter</Kbd> to submit.
-        </Step>
-        <Step n={3} title="Review, edit, and dispatch">
-          The assistant returns a single command, a rationale, a risk badge (LOW / MEDIUM / HIGH), and pre-selects
-          the recommended online devices. Edit the command, adjust targets, then click <strong>Run</strong>.
-        </Step>
-        <Tip variant="warn">
-          Only <strong>Online</strong> devices are pre-selected. If you manually pick offline devices, the task
-          is queued and runs once they reconnect. <strong>HIGH RISK</strong> commands require an extra confirmation.
         </Tip>
       </div>
     ),

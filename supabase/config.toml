@@ -21,5 +21,3 @@ verify_jwt = false
 [functions.geo-lookup]
 verify_jwt = true
 
-[functions.ai-command-assistant]
-verify_jwt = true
