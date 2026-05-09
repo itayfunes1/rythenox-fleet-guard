@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "sonner";
 import { Loader2, Plus, X, Trash2, ShieldAlert } from "lucide-react";
-import { Helmet } from "react-helmet-async";
+import { useEffect as useTitleEffect } from "react";
 
 const SERVICE_TOKENS = [
   { token: "platform", label: "Platform (Web App & API)" },
@@ -158,11 +158,10 @@ export default function AdminStatus() {
     );
   }
 
+  useTitleEffect(() => { document.title = "Status Admin — Rythenox"; }, []);
+
   return (
     <div className="space-y-6 p-1">
-      <Helmet>
-        <title>Status Admin — Rythenox</title>
-      </Helmet>
 
       <header>
         <h1 className="text-2xl font-semibold">Status Admin</h1>
