@@ -25,6 +25,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Clock, Plus, Trash2 } from "lucide-react";
+import { PageHeader } from "@/components/PageHeader";
 import { toast } from "sonner";
 
 const PRESETS = [
@@ -139,9 +140,10 @@ export default function Schedules() {
               <Button variant="ghost" onClick={() => setOpen(false)}>Cancel</Button>
               <Button onClick={submit} disabled={createSched.isPending}>Create</Button>
             </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      </div>
+            </DialogContent>
+          </Dialog>
+        }
+      />
 
       {schedules.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-16 text-center border border-dashed rounded-lg">
