@@ -2,11 +2,14 @@ import { useEffect, useState } from "react";
 import { CheckCircle2, AlertTriangle, XCircle, RefreshCw, ExternalLink, Clock, Wrench } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
+type DayState = "up" | "degraded" | "down" | "unknown";
+
 interface ServiceStatus {
   name: string;
   status: "operational" | "degraded" | "down";
   description: string;
   uptime_pct: number;
+  bars: DayState[];
   checked_at: string;
 }
 
@@ -63,31 +66,22 @@ const overallMessages = {
   },
 };
 
-function generateUptimeBars(uptime: number): ("up" | "degraded" | "down")[] {
-  const bars: ("up" | "degraded" | "down")[] = [];
-  for (let i = 0; i < 90; i++) {
-    const rand = Math.random() * 100;
-    if (rand < uptime) bars.push("up");
-    else if (rand < uptime + (100 - uptime) / 2) bars.push("degraded");
-    else bars.push("down");
-  }
-  return bars;
-}
-
-const barColorMap = {
+const barColorMap: Record<DayState, string> = {
   up: "bg-emerald-400",
   degraded: "bg-amber-400",
   down: "bg-red-400",
+  unknown: "bg-[#2a2a3e]",
 };
 
-function UptimeBar({ bars }: { bars: ("up" | "degraded" | "down")[] }) {
+function UptimeBar({ bars }: { bars: DayState[] }) {
   return (
     <div className="flex gap-[2px] items-end h-8">
       {bars.map((b, i) => (
         <div
           key={i}
+          title={`${bars.length - 1 - i} day${bars.length - 1 - i === 1 ? "" : "s"} ago — ${b}`}
           className={`flex-1 rounded-[1px] transition-all ${barColorMap[b]} ${
-            b === "up" ? "h-full" : b === "degraded" ? "h-3/4" : "h-1/2"
+            b === "up" ? "h-full" : b === "degraded" ? "h-3/4" : b === "down" ? "h-1/2" : "h-1/3"
           } opacity-80 hover:opacity-100`}
         />
       ))}
@@ -97,8 +91,7 @@ function UptimeBar({ bars }: { bars: ("up" | "degraded" | "down")[] }) {
 
 function ServiceCard({ service }: { service: ServiceStatus }) {
   const cfg = statusConfig[service.status];
-  const Icon = cfg.icon;
-  const bars = generateUptimeBars(service.uptime_pct);
+  const bars = service.bars && service.bars.length > 0 ? service.bars : [];
 
   return (
     <div className="rounded-lg border border-[#2a2a3e] bg-[#1a1a2e]/60 p-5 space-y-4">
