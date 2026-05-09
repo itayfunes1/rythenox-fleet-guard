@@ -322,6 +322,7 @@ export type Database = {
         Row: {
           arch: string | null
           id: string
+          last_command_poll_at: string | null
           last_seen: string | null
           nickname: string | null
           os_info: string | null
@@ -334,6 +335,7 @@ export type Database = {
         Insert: {
           arch?: string | null
           id?: string
+          last_command_poll_at?: string | null
           last_seen?: string | null
           nickname?: string | null
           os_info?: string | null
@@ -346,6 +348,7 @@ export type Database = {
         Update: {
           arch?: string | null
           id?: string
+          last_command_poll_at?: string | null
           last_seen?: string | null
           nickname?: string | null
           os_info?: string | null

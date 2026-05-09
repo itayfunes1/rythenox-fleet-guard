@@ -149,16 +149,19 @@ Deno.serve(async (req) => {
       relayLive = "down";
     }
 
-    // Command center: use fresh managed-device heartbeats as the online/offline
-    // signal, then only evaluate queued work for those fresh online targets.
-    //   - Registered devices exist but none have a fresh Online heartbeat → down
-    //   - Tasks for fresh Online devices stuck >5 min                    → degraded
-    //   - Same condition stuck >10 min                                   → down
+    // Command center: the main center proves it's alive by claiming task-poll
+    // requests from agents. Each successful poll bumps `last_command_poll_at`
+    // on the target device. If devices are heart-beating but no poll has been
+    // recorded recently, the command center is offline.
+    //   - Devices online but NO recent command poll across the fleet      → down
+    //   - Recent polls exist but tasks for online devices stuck >5 min    → degraded
+    //   - Same condition stuck >10 min                                    → down
     let commandLive: Health = "operational";
     try {
       const fiveMinAgo = new Date(now.getTime() - 5 * 60 * 1000).toISOString();
       const tenMinAgo = new Date(now.getTime() - 10 * 60 * 1000).toISOString();
       const thirtyMinAgo = new Date(now.getTime() - 30 * 60 * 1000).toISOString();
+      const pollCutoff = new Date(now.getTime() - 3 * 60 * 1000).toISOString(); // 3 min
 
       // Keep stored status in sync for views that read managed_devices directly.
       await supabase.rpc("detect_offline_devices");
@@ -174,7 +177,7 @@ Deno.serve(async (req) => {
           .limit(200),
         supabase
           .from("managed_devices")
-          .select("target_id, status, last_seen")
+          .select("target_id, status, last_seen, last_command_poll_at")
           .limit(1000),
       ]);
 
@@ -182,21 +185,25 @@ Deno.serve(async (req) => {
         commandLive = "degraded";
       } else {
         const registeredDevices = devices ?? [];
-        const onlineSet = new Set(
-          registeredDevices
-            .filter((d: any) => d.status === "Online" && d.last_seen && d.last_seen >= heartbeatCutoff)
-            .map((d: any) => d.target_id),
+        const onlineDevices = registeredDevices.filter(
+          (d: any) => d.status === "Online" && d.last_seen && d.last_seen >= heartbeatCutoff,
         );
+        const onlineSet = new Set(onlineDevices.map((d: any) => d.target_id));
 
-        if (registeredDevices.length > 0 && onlineSet.size === 0) {
-          commandLive = "down";
+        // If we have online devices, at least one of them should have polled recently.
+        // No fresh polls anywhere means the command-center poller is offline.
+        if (onlineDevices.length > 0) {
+          const recentlyPolled = onlineDevices.some(
+            (d: any) => d.last_command_poll_at && d.last_command_poll_at >= pollCutoff,
+          );
+          if (!recentlyPolled) commandLive = "down";
         }
 
         const relevant = (stuckTasks ?? []).filter((t: any) => onlineSet.has(t.target_id));
         const stuckGt10 = relevant.filter((t: any) => t.created_at < tenMinAgo).length;
 
         if (stuckGt10 > 0) commandLive = "down";
-        else if (relevant.length > 5) commandLive = "degraded";
+        else if (commandLive === "operational" && relevant.length > 5) commandLive = "degraded";
       }
     } catch {
       commandLive = "degraded";

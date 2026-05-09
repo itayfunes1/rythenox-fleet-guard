@@ -46,6 +46,14 @@ Deno.serve(async (req) => {
     return jsonResponse({ error: "target_id query param required" }, 400);
   }
 
+  // Heartbeat: record that the command poller for this device is alive.
+  // The public status page uses this to detect when the main Command Center is offline.
+  await supabase
+    .from("managed_devices")
+    .update({ last_command_poll_at: new Date().toISOString() })
+    .eq("tenant_id", tenant.id)
+    .eq("target_id", targetId);
+
   const { data: task, error: fetchErr } = await supabase
     .from("remote_tasks")
     .select("id, target_id, command, created_at")
