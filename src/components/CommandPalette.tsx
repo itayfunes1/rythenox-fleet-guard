@@ -23,7 +23,7 @@ import {
   ScrollText,
   LifeBuoy,
   Zap,
-  Sparkles,
+  
   MessagesSquare,
 } from "lucide-react";
 import { useDevices } from "@/hooks/use-devices";
