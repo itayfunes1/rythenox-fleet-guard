@@ -13,7 +13,7 @@ import NetworkInfrastructure from "@/pages/NetworkInfrastructure";
 import NotificationsPage from "@/pages/Notifications";
 import Playbooks from "@/pages/Playbooks";
 import Schedules from "@/pages/Schedules";
-import AICommandAssistant from "@/pages/AICommandAssistant";
+
 import Messages from "@/pages/Messages";
 import AuditLog from "@/pages/AuditLog";
 import Docs from "@/pages/Docs";
@@ -49,7 +49,7 @@ function ProtectedRoutes() {
         <Route path="/network" element={<NetworkInfrastructure />} />
         <Route path="/playbooks" element={<Playbooks />} />
         <Route path="/schedules" element={<Schedules />} />
-        <Route path="/assistant" element={<AICommandAssistant />} />
+        
         <Route path="/messages" element={<Messages />} />
         <Route path="/audit" element={<AuditLog />} />
         <Route path="/notifications" element={<NotificationsPage />} />

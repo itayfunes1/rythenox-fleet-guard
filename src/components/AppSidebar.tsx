@@ -28,7 +28,7 @@ const mainItems: Array<{ title: string; url: string; icon: typeof LayoutDashboar
 ];
 
 const automationItems = [
-  { title: "AI Assistant", url: "/assistant", icon: Sparkles },
+  
   { title: "Playbooks", url: "/playbooks", icon: BookOpen },
   { title: "Schedules", url: "/schedules", icon: Clock },
   { title: "Audit Log", url: "/audit", icon: ScrollText },
