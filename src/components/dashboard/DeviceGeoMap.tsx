@@ -68,12 +68,13 @@ async function lookupIps(ips: string[]): Promise<Record<string, CacheEntry>> {
 async function fetchDevicesAndResolve(tenantId: string): Promise<{ devices: DeviceLite[]; points: GeoPoint[] }> {
   const { data, error } = await supabase
     .from("managed_devices")
-    .select("target_id, status, public_ip, nickname")
+    .select("target_id, status, public_ip, nickname, last_seen")
     .eq("tenant_id", tenantId)
     .not("public_ip", "is", null);
 
   if (error) throw error;
-  const devices = (data || []) as DeviceLite[];
+  const now = Date.now();
+  const devices = ((data || []) as DeviceLite[]).filter((d) => isDeviceVisible(d.last_seen ?? null, now));
 
   // Collect unique IPs
   const ipSet = new Set<string>();
