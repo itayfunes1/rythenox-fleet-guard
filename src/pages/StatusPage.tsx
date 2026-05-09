@@ -2,11 +2,14 @@ import { useEffect, useState } from "react";
 import { CheckCircle2, AlertTriangle, XCircle, RefreshCw, ExternalLink, Clock, Wrench } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
+type DayState = "up" | "degraded" | "down" | "unknown";
+
 interface ServiceStatus {
   name: string;
   status: "operational" | "degraded" | "down";
   description: string;
   uptime_pct: number;
+  bars: DayState[];
   checked_at: string;
 }
 
