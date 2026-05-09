@@ -223,9 +223,81 @@ Deno.serve(async (req) => {
       };
     });
 
+    // ---------- Notification settings ----------
+    let notifyEmails: string[] = [];
+    let emailEnabled = true;
+    try {
+      const { data: settings } = await supabase
+        .from("status_settings")
+        .select("notify_emails, email_enabled")
+        .eq("id", true)
+        .maybeSingle();
+      notifyEmails = (settings?.notify_emails ?? []).filter((e: string) => !!e);
+      emailEnabled = settings?.email_enabled !== false;
+    } catch (_) { /* ignore */ }
+
+    const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
+    const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+
+    async function sendIncidentEmails(
+      incidentId: string,
+      action: "opened" | "updated" | "resolved",
+      payload: {
+        serviceName: string;
+        incidentTitle: string;
+        incidentDescription?: string;
+        status: string;
+        impact: string;
+      },
+    ) {
+      if (!emailEnabled || notifyEmails.length === 0) return;
+      for (const recipient of notifyEmails) {
+        // Idempotency: skip if already sent for this incident+action+recipient
+        const { data: existing } = await supabase
+          .from("status_incident_notifications")
+          .select("id")
+          .eq("incident_id", incidentId)
+          .eq("action", action)
+          .eq("recipient_email", recipient)
+          .maybeSingle();
+        if (existing) continue;
+
+        try {
+          const res = await fetch(`${SUPABASE_URL}/functions/v1/send-transactional-email`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${SERVICE_KEY}`,
+              "apikey": SERVICE_KEY,
+            },
+            body: JSON.stringify({
+              templateName: "incident-alert",
+              recipientEmail: recipient,
+              idempotencyKey: `incident-${incidentId}-${action}-${recipient}`,
+              templateData: {
+                ...payload,
+                action,
+                occurredAt: now.toISOString(),
+                statusUrl: "https://rythenox-fleet-guard.lovable.app/status",
+              },
+            }),
+          });
+          if (!res.ok) {
+            console.error("incident email failed", recipient, res.status, await res.text());
+            continue;
+          }
+          await supabase.from("status_incident_notifications").insert({
+            incident_id: incidentId,
+            action,
+            recipient_email: recipient,
+          });
+        } catch (e) {
+          console.error("incident email exception", recipient, e);
+        }
+      }
+    }
+
     // ---------- Auto-incident open/close ----------
-    // Auto incidents are identified by created_by IS NULL and a "[Auto]" title prefix.
-    // Open one when live is down/degraded, resolve when back to operational.
     try {
       const { data: openAuto } = await supabase
         .from("status_incidents")
@@ -234,10 +306,10 @@ Deno.serve(async (req) => {
         .is("created_by", null)
         .ilike("title", "[Auto]%");
 
-      const openByService = new Map<string, { id: string; impact: string }>();
+      const openByService = new Map<string, { id: string; title: string; impact: string }>();
       for (const inc of openAuto ?? []) {
         const token = (inc.affected_services ?? [])[0];
-        if (token) openByService.set(token, { id: inc.id, impact: inc.impact });
+        if (token) openByService.set(token, { id: inc.id, title: inc.title, impact: inc.impact });
       }
 
       for (const d of definitions) {
@@ -250,25 +322,53 @@ Deno.serve(async (req) => {
               .from("status_incidents")
               .update({ status: "resolved", resolved_at: now.toISOString() })
               .eq("id", open.id);
+            await sendIncidentEmails(open.id, "resolved", {
+              serviceName: d.name,
+              incidentTitle: open.title,
+              incidentDescription: `${d.name} has returned to operational.`,
+              status: "resolved",
+              impact: open.impact,
+            });
           }
         } else {
           const desiredImpact = d.live === "down" ? "major" : "minor";
           if (!open) {
-            await supabase.from("status_incidents").insert({
-              title: `[Auto] ${d.name} ${d.live === "down" ? "outage" : "degradation"} detected`,
-              description:
-                "Automatically opened by the public-status probe. Will resolve when the service returns to operational.",
-              status: "investigating",
-              impact: desiredImpact,
-              affected_services: [token],
-              started_at: now.toISOString(),
-            });
+            const title = `[Auto] ${d.name} ${d.live === "down" ? "outage" : "degradation"} detected`;
+            const description =
+              "Automatically opened by the status probe. Will resolve when the service returns to operational.";
+            const { data: inserted } = await supabase
+              .from("status_incidents")
+              .insert({
+                title,
+                description,
+                status: "investigating",
+                impact: desiredImpact,
+                affected_services: [token],
+                started_at: now.toISOString(),
+              })
+              .select("id")
+              .single();
+            if (inserted?.id) {
+              await sendIncidentEmails(inserted.id, "opened", {
+                serviceName: d.name,
+                incidentTitle: title,
+                incidentDescription: description,
+                status: "investigating",
+                impact: desiredImpact,
+              });
+            }
           } else if (open.impact === "minor" && desiredImpact === "major") {
-            // Escalate from degraded to down
             await supabase
               .from("status_incidents")
               .update({ impact: "major", status: "identified" })
               .eq("id", open.id);
+            await sendIncidentEmails(open.id, "updated", {
+              serviceName: d.name,
+              incidentTitle: open.title,
+              incidentDescription: `Severity escalated to major — ${d.name} is now down.`,
+              status: "identified",
+              impact: "major",
+            });
           }
         }
       }

@@ -1,4 +1,4 @@
-import { LayoutDashboard, Monitor, Rocket, FolderArchive, Network, Settings, LogOut, Zap, Bell, BookOpen, Clock, ScrollText, LifeBuoy, MessagesSquare, Activity } from "lucide-react";
+import { LayoutDashboard, Monitor, Rocket, FolderArchive, Network, Settings, LogOut, Zap, Bell, BookOpen, Clock, ScrollText, LifeBuoy, MessagesSquare, Activity, ShieldAlert } from "lucide-react";
 import rythenoxLogo from "@/assets/rythenox-logo.svg";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
@@ -34,10 +34,11 @@ const automationItems = [
   { title: "Audit Log", url: "/audit", icon: ScrollText },
 ];
 
-const systemItems = [
+const systemItems: Array<{ title: string; url: string; icon: typeof LayoutDashboard; restrictedTo?: string }> = [
   { title: "Messages", url: "/messages", icon: MessagesSquare },
   { title: "Notifications", url: "/notifications", icon: Bell },
   { title: "System Status", url: "/status", icon: Activity },
+  { title: "Status Admin", url: "/admin/status", icon: ShieldAlert, restrictedTo: "monitor@rythenox.com" },
   { title: "Documentation", url: "/docs", icon: LifeBuoy },
   { title: "Settings", url: "/settings", icon: Settings },
 ];
@@ -136,11 +137,13 @@ export function AppSidebar() {
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu className="space-y-0.5">
-              {systemItems.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  {renderMenuItem(item)}
-                </SidebarMenuItem>
-              ))}
+              {systemItems
+                .filter((item) => !item.restrictedTo || user?.email === item.restrictedTo)
+                .map((item) => (
+                  <SidebarMenuItem key={item.title}>
+                    {renderMenuItem(item)}
+                  </SidebarMenuItem>
+                ))}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
