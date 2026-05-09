@@ -105,91 +105,101 @@
 }
 
 @layer components {
-  /* Elevated card */
   .glass-card {
-    @apply relative overflow-hidden rounded-xl border border-border bg-card;
+    @apply relative overflow-hidden rounded-2xl border border-border bg-card;
     box-shadow: var(--shadow-sm);
   }
 
-  /* Hover lift card */
   .glow-card {
-    @apply relative overflow-hidden rounded-xl;
-    transition: transform 0.2s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.2s ease, border-color 0.2s ease;
+    @apply relative overflow-hidden rounded-2xl;
+    transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.25s ease, border-color 0.25s ease;
   }
 
   .glow-card:hover {
-    transform: translateY(-2px);
+    transform: translateY(-3px);
     box-shadow: var(--shadow-lg);
-    border-color: hsl(var(--accent) / 0.35);
+    border-color: hsl(var(--primary) / 0.5);
   }
 
-  /* Panel — primary surface for the new dashboard-panels layout */
   .panel {
-    @apply relative rounded-xl border bg-card;
+    @apply relative rounded-2xl border-2 bg-card;
     border-color: hsl(var(--border));
     box-shadow: var(--shadow-sm);
   }
 
   .panel-elevated {
-    @apply relative rounded-xl border bg-card;
+    @apply relative rounded-2xl border-2 bg-card;
     border-color: hsl(var(--border));
     box-shadow: var(--shadow-md);
   }
 
+  /* Hero accent panel — bold border + gradient + accent strip */
   .panel-accent {
-    @apply relative rounded-xl border;
-    background: linear-gradient(135deg, hsl(var(--primary-soft)), hsl(var(--card)));
-    border-color: hsl(var(--accent) / 0.25);
-    box-shadow: var(--shadow-sm);
+    @apply relative rounded-2xl border-2 overflow-hidden;
+    background: linear-gradient(135deg, hsl(var(--card)) 0%, hsl(var(--accent-soft)) 100%);
+    border-color: hsl(var(--primary));
+    box-shadow: var(--shadow-md);
   }
 
-  /* Section heading rule */
+  .panel-accent::before {
+    content: '';
+    position: absolute;
+    inset: 0 0 auto 0;
+    height: 4px;
+    background: var(--gradient-accent);
+  }
+
+  /* Editorial eyebrow with line */
   .eyebrow {
-    @apply text-[10px] uppercase tracking-[0.14em] font-semibold text-muted-foreground;
+    @apply inline-flex items-center gap-2 text-[10px] uppercase tracking-[0.18em] font-bold text-accent;
   }
 
-  /* Gradient text */
+  .eyebrow::before {
+    content: '';
+    width: 18px;
+    height: 2px;
+    background: hsl(var(--accent));
+  }
+
   .gradient-text {
-    background: var(--gradient-primary);
+    background: var(--gradient-accent);
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
-    @apply font-semibold;
+    @apply font-extrabold;
   }
 
-  /* Animated pulse dot */
-  .pulse-dot {
-    @apply relative;
-  }
-
+  .pulse-dot { @apply relative; }
   .pulse-dot::after {
     content: '';
     @apply absolute inset-0 rounded-full;
     animation: pulse-ring 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
   }
-
   @keyframes pulse-ring {
     0% { transform: scale(1); opacity: 0.6; }
     50% { transform: scale(2.5); opacity: 0; }
     100% { transform: scale(1); opacity: 0; }
   }
 
-  /* Sidebar surface */
+  /* Sidebar — dark floating panel */
   .sidebar-glow {
-    @apply relative border-r border-sidebar-border;
-    background: linear-gradient(180deg, hsl(var(--sidebar-background)) 0%, hsl(220 35% 97%) 100%);
-    backdrop-filter: blur(8px);
+    @apply relative;
+    background: hsl(var(--sidebar-background));
+    color: hsl(var(--sidebar-foreground));
+    border-right: none;
   }
-
-  .sidebar-glow::after {
-    display: none;
-  }
+  .sidebar-glow::after { display: none; }
 
   /* App header */
   .app-header {
-    background: hsl(var(--card) / 0.85);
-    backdrop-filter: saturate(140%) blur(10px);
+    background: hsl(var(--background) / 0.75);
+    backdrop-filter: saturate(180%) blur(14px);
     border-bottom: 1px solid hsl(var(--border));
+  }
+
+  .dot-grid {
+    background-image: radial-gradient(hsl(var(--primary) / 0.08) 1px, transparent 1px);
+    background-size: 16px 16px;
   }
 
   /* Page transition */
