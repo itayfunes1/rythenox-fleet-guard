@@ -109,7 +109,7 @@ const sections: Section[] = [
           <ul className="text-sm text-muted-foreground space-y-1.5 list-disc pl-5">
             <li><strong className="text-foreground">Management</strong> — Dashboard, Devices, Deployment Center, File Explorer. (Network is reserved for Rythenox staff and is hidden for customers.)</li>
             <li><strong className="text-foreground">Automation</strong> — Playbooks, Schedules, Audit Log.</li>
-            <li><strong className="text-foreground">System</strong> — Notifications, Documentation, Settings.</li>
+            <li><strong className="text-foreground">System</strong> — Messages, Notifications, Documentation, Settings.</li>
           </ul>
         </div>
         <Tip>
