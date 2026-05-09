@@ -22,6 +22,7 @@ import AuthPage from "@/pages/Auth";
 import ResetPassword from "@/pages/ResetPassword";
 import StatusPage from "@/pages/StatusPage";
 import Unsubscribe from "@/pages/Unsubscribe";
+import AdminStatus from "@/pages/AdminStatus";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -57,6 +58,7 @@ function ProtectedRoutes() {
         <Route path="/notifications" element={<NotificationsPage />} />
         <Route path="/docs" element={<Docs />} />
         <Route path="/settings" element={<SettingsPage />} />
+        <Route path="/admin/status" element={<AdminStatus />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </DashboardLayout>
