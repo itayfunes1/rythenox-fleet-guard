@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { CheckCircle2, AlertTriangle, XCircle, RefreshCw, ExternalLink } from "lucide-react";
+import { CheckCircle2, AlertTriangle, XCircle, RefreshCw, ExternalLink, Clock, Wrench } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 interface ServiceStatus {
   name: string;
