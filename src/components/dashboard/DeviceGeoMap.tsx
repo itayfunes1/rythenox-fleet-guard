@@ -4,12 +4,14 @@ import { Loader2, MapPin } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useTenant } from "@/hooks/use-tenant";
 import { useQuery } from "@tanstack/react-query";
+import { isDeviceVisible } from "@/lib/device-presence";
 
 interface DeviceLite {
   target_id: string;
   status: string;
   public_ip: string | null;
   nickname?: string | null;
+  last_seen?: string | null;
 }
 
 interface GeoPoint {
@@ -66,12 +68,13 @@ async function lookupIps(ips: string[]): Promise<Record<string, CacheEntry>> {
 async function fetchDevicesAndResolve(tenantId: string): Promise<{ devices: DeviceLite[]; points: GeoPoint[] }> {
   const { data, error } = await supabase
     .from("managed_devices")
-    .select("target_id, status, public_ip, nickname")
+    .select("target_id, status, public_ip, nickname, last_seen")
     .eq("tenant_id", tenantId)
     .not("public_ip", "is", null);
 
   if (error) throw error;
-  const devices = (data || []) as DeviceLite[];
+  const now = Date.now();
+  const devices = ((data || []) as DeviceLite[]).filter((d) => isDeviceVisible(d.last_seen ?? null, now));
 
   // Collect unique IPs
   const ipSet = new Set<string>();
