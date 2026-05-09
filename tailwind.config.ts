@@ -14,8 +14,8 @@ export default {
     },
     extend: {
       fontFamily: {
-        sans: ['DM Sans', 'system-ui', '-apple-system', 'sans-serif'],
-        display: ['Space Grotesk', 'DM Sans', 'system-ui', 'sans-serif'],
+        sans: ['Epilogue', 'system-ui', '-apple-system', 'sans-serif'],
+        display: ['Urbanist', 'Epilogue', 'system-ui', 'sans-serif'],
         mono: ['JetBrains Mono', 'ui-monospace', 'SFMono-Regular', 'monospace'],
       },
       colors: {
