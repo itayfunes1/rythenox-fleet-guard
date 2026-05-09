@@ -8,6 +8,7 @@ import {
   Network, FolderArchive, Bell, Settings, Search, Command, Zap, Shield,
   AlertTriangle, CheckCircle2, ArrowRight, MessagesSquare,
 } from "lucide-react";
+import { PageHeader } from "@/components/PageHeader";
 
 type Section = {
   id: string;
@@ -521,19 +522,17 @@ export default function Docs() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-start justify-between gap-4 flex-wrap">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight flex items-center gap-2">
-            <BookOpen className="h-5 w-5 text-primary" /> Documentation
-          </h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Everything you need to operate Rythenox Wraith — onboarding, agents, automation, and troubleshooting.
-          </p>
-        </div>
-        <Badge variant="outline" className="gap-1.5">
-          <Zap className="h-3 w-3" /> v1.0
-        </Badge>
-      </div>
+      <PageHeader
+        eyebrow="Help Center"
+        icon={<BookOpen className="h-5 w-5" />}
+        title="Documentation"
+        description="Everything you need to operate Rythenox Wraith — onboarding, agents, automation, and troubleshooting."
+        actions={
+          <Badge variant="outline" className="gap-1.5">
+            <Zap className="h-3 w-3" /> v1.0
+          </Badge>
+        }
+      />
 
       <div className="grid grid-cols-1 lg:grid-cols-[260px_1fr] gap-6">
         {/* Sidebar TOC */}
