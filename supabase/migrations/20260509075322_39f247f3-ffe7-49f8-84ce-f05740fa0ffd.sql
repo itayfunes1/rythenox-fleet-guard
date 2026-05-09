@@ -1,0 +1,1 @@
+UPDATE public.status_settings SET notify_emails = ARRAY['itay@rythenox.com']::text[], updated_at = now() WHERE id = true;
