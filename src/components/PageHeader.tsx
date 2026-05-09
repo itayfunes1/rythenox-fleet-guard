@@ -10,21 +10,21 @@ interface PageHeaderProps {
 
 export function PageHeader({ eyebrow, title, description, actions, icon }: PageHeaderProps) {
   return (
-    <div className="panel-accent overflow-hidden">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-5 sm:p-6">
+    <div className="panel-accent">
+      <div className="relative flex flex-col sm:flex-row sm:items-end sm:justify-between gap-5 p-5 sm:p-7 pt-7 sm:pt-9">
         <div className="flex items-start gap-4 min-w-0">
           {icon && (
-            <div className="shrink-0 h-11 w-11 rounded-xl bg-gradient-to-br from-primary to-[hsl(var(--primary-glow))] text-primary-foreground flex items-center justify-center shadow-md ring-1 ring-primary/20">
+            <div className="shrink-0 h-12 w-12 rounded-2xl bg-primary text-primary-foreground flex items-center justify-center shadow-md ring-1 ring-primary/10">
               {icon}
             </div>
           )}
-          <div className="space-y-1.5 min-w-0">
+          <div className="space-y-2 min-w-0">
             {eyebrow && <p className="eyebrow">{eyebrow}</p>}
-            <h1 className="text-2xl sm:text-[26px] font-bold tracking-tight text-foreground leading-tight">
+            <h1 className="text-3xl sm:text-[34px] font-extrabold tracking-tight text-foreground leading-[1.05]">
               {title}
             </h1>
             {description && (
-              <p className="text-sm text-muted-foreground max-w-2xl">{description}</p>
+              <p className="text-sm text-muted-foreground max-w-2xl leading-relaxed">{description}</p>
             )}
           </div>
         </div>
