@@ -557,7 +557,7 @@ function handlePreview(file: DiagnosticEntry) {
           <BreadcrumbList>
             <BreadcrumbItem>
               <BreadcrumbLink onClick={() => setSelectedDevice(null)} className="cursor-pointer">
-                Explorer
+                File Explorer
               </BreadcrumbLink>
             </BreadcrumbItem>
             <BreadcrumbSeparator />
