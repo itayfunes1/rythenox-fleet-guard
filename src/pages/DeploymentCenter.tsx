@@ -21,8 +21,6 @@ import {
   ExternalLink,
   History,
   Clock,
-  ShieldAlert,
-  Fingerprint,
 } from "lucide-react";
 import { useTenant } from "@/hooks/use-tenant";
 import { supabase } from "@/integrations/supabase/client";
@@ -53,14 +51,6 @@ export default function DeploymentCenter() {
   const [progress, setProgress] = useState(0);
   const [redownloadingId, setRedownloadingId] = useState<string | null>(null);
 
-  // Updated Stealth & Evasion State including Native Syscalls
-  const [stealthConfig, setStealthConfig] = useState({
-    delay: 30,
-    antiVM: true,
-    processGhost: "werfault.exe",
-    nativeSyscalls: true, // New: Bypasses standard VirtualAlloc hooks
-    melt: false,
-  });
 
   const currentStage = BUILD_STAGES.find((s) => progress <= s.threshold)?.label ?? "Processing";
 
@@ -108,7 +98,6 @@ export default function DeploymentCenter() {
         headers: { Authorization: `Bearer ${refreshed.session.access_token}` },
         body: {
           api_key: tenant.apiKey,
-          stealth: stealthConfig,
         },
       });
 
@@ -251,10 +240,9 @@ export default function DeploymentCenter() {
                 </div>
                 <div className="space-y-1.5">
                   <h4 className="font-semibold">Generate a new agent</h4>
-                  <p className="text-sm text-muted-foreground max-w-md mx-auto">
-                    A signed Windows executable will be compiled with your tenant credentials and chosen stealth
-                    parameters embedded.
-                  </p>
+                    <p className="text-sm text-muted-foreground max-w-md mx-auto">
+                      A signed Windows executable will be compiled with your tenant credentials embedded.
+                    </p>
                 </div>
                 <Button onClick={handleBuild} size="lg" className="gap-2 w-full sm:w-auto">
                   <Rocket className="h-4 w-4" />
