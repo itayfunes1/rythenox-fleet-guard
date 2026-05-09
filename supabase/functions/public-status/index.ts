@@ -125,7 +125,8 @@ Deno.serve(async (req) => {
       dbLive = "down";
     }
 
-    // Relay network (aggregate across all tenants) — require recent heartbeat
+    // Relay network: operational if AT LEAST one relay is online with a recent heartbeat.
+    // Only "down" when relays exist but none are healthy.
     let relayLive: Health = "operational";
     try {
       const { data: relays, error } = await supabase
@@ -135,44 +136,56 @@ Deno.serve(async (req) => {
         relayLive = "degraded";
       } else if (relays && relays.length > 0) {
         const freshCutoff = now.getTime() - 2 * 60 * 1000; // 2 min
-        const total = relays.length;
         const healthy = relays.filter((r: any) => {
           if (r.status !== "Online") return false;
           if (!r.last_seen) return false;
           return new Date(r.last_seen).getTime() >= freshCutoff;
         }).length;
-        const pct = (healthy / total) * 100;
-        if (pct === 0) relayLive = "down";
-        else if (pct < 80) relayLive = "degraded";
+        if (healthy === 0) relayLive = "down";
+        // else: at least one healthy relay → operational
       }
     } catch {
       relayLive = "down";
     }
 
-    // Command center: tasks stuck in Pending/Sent
-    //   >0 stuck >30min  → down (pipeline wedged)
-    //   >5 stuck >10min  → degraded
+    // Command center: a wedged pipeline only matters for tasks whose target
+    // device is currently Online. Old tasks targeting offline devices are
+    // expected to sit in Pending forever and must NOT mark the service down.
+    //   - Recent tasks (last 30 min) for ONLINE devices stuck >5 min  → degraded
+    //   - Same condition stuck >10 min                                → down
     let commandLive: Health = "operational";
     try {
+      const fiveMinAgo = new Date(now.getTime() - 5 * 60 * 1000).toISOString();
       const tenMinAgo = new Date(now.getTime() - 10 * 60 * 1000).toISOString();
       const thirtyMinAgo = new Date(now.getTime() - 30 * 60 * 1000).toISOString();
+      const freshHeartbeat = new Date(now.getTime() - 2 * 60 * 1000).toISOString();
 
-      const [{ count: stuck10, error: e1 }, { count: stuck30, error: e2 }] = await Promise.all([
+      // Pull recent stuck tasks (small set) and online devices, then join in code
+      const [{ data: stuckTasks, error: e1 }, { data: onlineDevices, error: e2 }] = await Promise.all([
         supabase
           .from("remote_tasks")
-          .select("id", { count: "exact", head: true })
+          .select("target_id, created_at, status")
           .in("status", ["Pending", "Sent"])
-          .lt("created_at", tenMinAgo),
+          .gte("created_at", thirtyMinAgo)
+          .lt("created_at", fiveMinAgo)
+          .limit(200),
         supabase
-          .from("remote_tasks")
-          .select("id", { count: "exact", head: true })
-          .in("status", ["Pending", "Sent"])
-          .lt("created_at", thirtyMinAgo),
+          .from("managed_devices")
+          .select("target_id")
+          .eq("status", "Online")
+          .gte("last_seen", freshHeartbeat),
       ]);
 
-      if (e1 || e2) commandLive = "degraded";
-      else if ((stuck30 ?? 0) > 0) commandLive = "down";
-      else if ((stuck10 ?? 0) > 5) commandLive = "degraded";
+      if (e1 || e2) {
+        commandLive = "degraded";
+      } else {
+        const onlineSet = new Set((onlineDevices ?? []).map((d: any) => d.target_id));
+        const relevant = (stuckTasks ?? []).filter((t: any) => onlineSet.has(t.target_id));
+        const stuckGt10 = relevant.filter((t: any) => t.created_at < tenMinAgo).length;
+
+        if (stuckGt10 > 0) commandLive = "down";
+        else if (relevant.length > 5) commandLive = "degraded";
+      }
     } catch {
       commandLive = "degraded";
     }
