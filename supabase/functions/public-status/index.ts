@@ -149,18 +149,22 @@ Deno.serve(async (req) => {
       relayLive = "down";
     }
 
-    // Command center: the main center proves it's alive by claiming task-poll
+    // Command center: the main center proves it's alive by serving task-poll
     // requests from agents. Each successful poll bumps `last_command_poll_at`
-    // on the target device. If devices are heart-beating but no poll has been
-    // recorded recently, the command center is offline.
+    // on the target device. Do not treat "all devices are now offline" as a
+    // healthy command center; that is exactly what happens after the center has
+    // been shut down long enough for heartbeats to expire.
+    //   - Recent fleet activity but latest command poll >10 min old       → down
+    //   - Recent fleet activity but latest command poll >5 min old        → degraded
     //   - Devices online but NO recent command poll across the fleet      → down
-    //   - Recent polls exist but tasks for online devices stuck >5 min    → degraded
+    //   - Tasks for online devices stuck >5 min                           → degraded
     //   - Same condition stuck >10 min                                    → down
     let commandLive: Health = "operational";
     try {
       const fiveMinAgo = new Date(now.getTime() - 5 * 60 * 1000).toISOString();
       const tenMinAgo = new Date(now.getTime() - 10 * 60 * 1000).toISOString();
       const thirtyMinAgo = new Date(now.getTime() - 30 * 60 * 1000).toISOString();
+      const twentyFourHoursAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString();
       const pollCutoff = new Date(now.getTime() - 3 * 60 * 1000).toISOString(); // 3 min
 
       // Keep stored status in sync for views that read managed_devices directly.
@@ -189,6 +193,25 @@ Deno.serve(async (req) => {
           (d: any) => d.status === "Online" && d.last_seen && d.last_seen >= heartbeatCutoff,
         );
         const onlineSet = new Set(onlineDevices.map((d: any) => d.target_id));
+        const recentlyActiveDevices = registeredDevices.filter(
+          (d: any) => d.last_seen && d.last_seen >= twentyFourHoursAgo,
+        );
+        const pollTimes = registeredDevices
+          .map((d: any) => d.last_command_poll_at)
+          .filter(Boolean)
+          .sort();
+        const latestCommandPollAt = pollTimes[pollTimes.length - 1];
+
+        // If this fleet has been active recently, stale/no command polling is
+        // the strongest signal that the command center is unavailable, even if
+        // every device has already aged into Offline status.
+        if (recentlyActiveDevices.length > 0) {
+          if (!latestCommandPollAt || latestCommandPollAt < tenMinAgo) {
+            commandLive = "down";
+          } else if (latestCommandPollAt < fiveMinAgo) {
+            commandLive = "degraded";
+          }
+        }
 
         // If we have online devices, at least one of them should have polled recently.
         // No fresh polls anywhere means the command-center poller is offline.
