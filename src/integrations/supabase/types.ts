@@ -753,6 +753,38 @@ export type Database = {
           },
         ]
       }
+      status_incident_notifications: {
+        Row: {
+          action: string
+          id: string
+          incident_id: string
+          recipient_email: string
+          sent_at: string
+        }
+        Insert: {
+          action: string
+          id?: string
+          incident_id: string
+          recipient_email: string
+          sent_at?: string
+        }
+        Update: {
+          action?: string
+          id?: string
+          incident_id?: string
+          recipient_email?: string
+          sent_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "status_incident_notifications_incident_id_fkey"
+            columns: ["incident_id"]
+            isOneToOne: false
+            referencedRelation: "status_incidents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       status_incidents: {
         Row: {
           affected_services: string[]
@@ -792,6 +824,30 @@ export type Database = {
           status?: string
           title?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      status_settings: {
+        Row: {
+          email_enabled: boolean
+          id: boolean
+          notify_emails: string[]
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          email_enabled?: boolean
+          id?: boolean
+          notify_emails?: string[]
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          email_enabled?: boolean
+          id?: boolean
+          notify_emails?: string[]
+          updated_at?: string
+          updated_by?: string | null
         }
         Relationships: []
       }
