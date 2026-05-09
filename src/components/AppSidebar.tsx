@@ -55,7 +55,7 @@ export function AppSidebar() {
       <SidebarMenuButton
         asChild
         isActive={isActive(item.url)}
-        className="transition-all duration-150 rounded-lg data-[active=true]:bg-primary/8 data-[active=true]:text-primary data-[active=true]:font-semibold hover:bg-muted"
+        className="transition-all duration-200 rounded-lg data-[active=true]:bg-gradient-to-r data-[active=true]:from-accent/10 data-[active=true]:to-transparent data-[active=true]:text-primary data-[active=true]:font-semibold data-[active=true]:shadow-sm hover:bg-muted/70 relative data-[active=true]:before:absolute data-[active=true]:before:left-0 data-[active=true]:before:top-1/2 data-[active=true]:before:-translate-y-1/2 data-[active=true]:before:h-5 data-[active=true]:before:w-[3px] data-[active=true]:before:rounded-r-full data-[active=true]:before:bg-accent"
       >
         <NavLink to={item.url} end={item.url === "/"}>
           <item.icon className="h-4 w-4" />
@@ -78,21 +78,21 @@ export function AppSidebar() {
 
   return (
     <Sidebar collapsible="icon" className="sidebar-glow">
-      <SidebarHeader className="p-4">
+      <SidebarHeader className="p-4 pb-3 border-b border-sidebar-border/60">
         {collapsed ? (
           <div className="flex justify-center">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-primary/70 shadow-sm shrink-0 ring-1 ring-primary/20">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-[hsl(var(--primary-glow))] shadow-md shrink-0 ring-1 ring-primary/30">
               <Zap className="h-4 w-4 text-primary-foreground" />
             </div>
           </div>
         ) : (
-          <div className="flex items-center gap-2.5">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-primary/70 shadow-sm shrink-0 ring-1 ring-primary/20">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-[hsl(var(--primary-glow))] shadow-md shrink-0 ring-1 ring-primary/30">
               <Zap className="h-4 w-4 text-primary-foreground" />
             </div>
             <div className="flex flex-col leading-tight">
-              <span className="font-display text-[15px] font-semibold tracking-tight text-foreground">Rythenox</span>
-              <span className="text-[10px] text-muted-foreground tracking-wide uppercase">Wraith</span>
+              <span className="font-display text-[16px] font-bold tracking-tight text-foreground">Rythenox</span>
+              <span className="text-[10px] text-accent font-semibold tracking-[0.18em] uppercase">Wraith</span>
             </div>
           </div>
         )}
