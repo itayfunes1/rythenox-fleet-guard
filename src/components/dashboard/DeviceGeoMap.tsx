@@ -304,10 +304,7 @@ export function DeviceGeoMap() {
       )}
 
       <Dialog open={maximized} onOpenChange={setMaximized}>
-        <DialogContent
-          className="max-w-[96vw] w-[96vw] h-[92vh] p-0 gap-0 flex flex-col overflow-hidden"
-          showCloseButton={false}
-        >
+        <DialogContent className="max-w-[96vw] w-[96vw] h-[92vh] p-0 gap-0 flex flex-col overflow-hidden [&>button.absolute]:hidden">
           <DialogTitle className="sr-only">Device Geo Map</DialogTitle>
           <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-card">
             <div className="flex items-center gap-2">
