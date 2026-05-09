@@ -40,7 +40,7 @@ const NAV_ITEMS = [
   { label: "Dashboard", path: "/", icon: LayoutDashboard },
   { label: "Devices", path: "/devices", icon: Monitor },
   { label: "Deployment Center", path: "/deployment", icon: Rocket },
-  { label: "Diagnostic Vault", path: "/diagnostics", icon: FolderArchive },
+  { label: "File Explorer", path: "/diagnostics", icon: FolderArchive },
   { label: "Network", path: "/network", icon: Network },
   { label: "AI Assistant", path: "/assistant", icon: Sparkles },
   { label: "Playbooks", path: "/playbooks", icon: BookOpen },
