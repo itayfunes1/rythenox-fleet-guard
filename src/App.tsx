@@ -21,6 +21,7 @@ import SettingsPage from "@/pages/Settings";
 import AuthPage from "@/pages/Auth";
 import ResetPassword from "@/pages/ResetPassword";
 import StatusPage from "@/pages/StatusPage";
+import Unsubscribe from "@/pages/Unsubscribe";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -80,6 +81,7 @@ const App = () => (
             <Route path="/auth" element={<AuthRoute />} />
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/status" element={<StatusPage />} />
+            <Route path="/unsubscribe" element={<Unsubscribe />} />
             <Route path="/*" element={<ProtectedRoutes />} />
           </Routes>
         </AuthProvider>
