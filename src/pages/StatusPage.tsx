@@ -126,8 +126,113 @@ function ServiceCard({ service }: { service: ServiceStatus }) {
   );
 }
 
+interface Incident {
+  id: string;
+  title: string;
+  description: string | null;
+  status: "investigating" | "identified" | "monitoring" | "resolved";
+  impact: "minor" | "major" | "critical";
+  affected_services: string[];
+  started_at: string;
+  resolved_at: string | null;
+}
+
+const impactConfig = {
+  minor: { label: "Minor", color: "text-amber-400", bg: "bg-amber-500/10", border: "border-amber-500/30" },
+  major: { label: "Major", color: "text-orange-400", bg: "bg-orange-500/10", border: "border-orange-500/30" },
+  critical: { label: "Critical", color: "text-red-400", bg: "bg-red-500/10", border: "border-red-500/30" },
+};
+
+const incidentStatusConfig = {
+  investigating: { label: "Investigating", color: "text-amber-400", dot: "bg-amber-400" },
+  identified: { label: "Identified", color: "text-orange-400", dot: "bg-orange-400" },
+  monitoring: { label: "Monitoring", color: "text-blue-400", dot: "bg-blue-400" },
+  resolved: { label: "Resolved", color: "text-emerald-400", dot: "bg-emerald-400" },
+};
+
+function formatDuration(start: string, end: string | null): string {
+  const startMs = new Date(start).getTime();
+  const endMs = end ? new Date(end).getTime() : Date.now();
+  const mins = Math.max(1, Math.round((endMs - startMs) / 60000));
+  if (mins < 60) return `${mins}m`;
+  const hrs = Math.floor(mins / 60);
+  const rem = mins % 60;
+  if (hrs < 24) return rem ? `${hrs}h ${rem}m` : `${hrs}h`;
+  const days = Math.floor(hrs / 24);
+  return `${days}d ${hrs % 24}h`;
+}
+
+function formatDateTime(iso: string): string {
+  return new Date(iso).toLocaleString(undefined, {
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+function IncidentCard({ incident }: { incident: Incident }) {
+  const impact = impactConfig[incident.impact];
+  const status = incidentStatusConfig[incident.status];
+  const isResolved = incident.status === "resolved";
+
+  return (
+    <div className={`rounded-lg border ${isResolved ? "border-[#2a2a3e]" : impact.border} bg-[#1a1a2e]/60 p-5 space-y-3`}>
+      <div className="flex items-start justify-between gap-3">
+        <div className="space-y-1 min-w-0">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className={`text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded ${impact.bg} ${impact.color}`}>
+              {impact.label}
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span className={`h-1.5 w-1.5 rounded-full ${status.dot}`} />
+              <span className={`text-[11px] font-medium ${status.color}`}>{status.label}</span>
+            </span>
+          </div>
+          <h4 className="text-sm font-semibold text-white">{incident.title}</h4>
+          {incident.description && (
+            <p className="text-xs text-gray-400 leading-relaxed">{incident.description}</p>
+          )}
+        </div>
+      </div>
+
+      {incident.affected_services.length > 0 && (
+        <div className="flex flex-wrap gap-1.5">
+          {incident.affected_services.map((s) => (
+            <span key={s} className="text-[10px] px-2 py-0.5 rounded border border-[#2a2a3e] bg-[#0f0f1a] text-gray-400">
+              {s}
+            </span>
+          ))}
+        </div>
+      )}
+
+      <div className="flex items-center gap-4 text-[11px] text-gray-500 pt-2 border-t border-[#1e1e35]">
+        <span className="flex items-center gap-1.5">
+          <Clock className="h-3 w-3" />
+          Started {formatDateTime(incident.started_at)}
+        </span>
+        {incident.resolved_at ? (
+          <span className="flex items-center gap-1.5">
+            <CheckCircle2 className="h-3 w-3 text-emerald-400" />
+            Resolved {formatDateTime(incident.resolved_at)}
+          </span>
+        ) : (
+          <span className="flex items-center gap-1.5 text-amber-400">
+            <Wrench className="h-3 w-3" />
+            Ongoing
+          </span>
+        )}
+        <span className="ml-auto font-medium text-gray-400">
+          {formatDuration(incident.started_at, incident.resolved_at)}
+        </span>
+      </div>
+    </div>
+  );
+}
+
 export default function StatusPage() {
   const [data, setData] = useState<StatusData | null>(null);
+  const [incidents, setIncidents] = useState<Incident[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
@@ -136,14 +241,21 @@ export default function StatusPage() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(STATUS_URL, {
-        headers: {
-          apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
-        },
-      });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const json = await res.json();
+      const [statusRes, incidentsRes] = await Promise.all([
+        fetch(STATUS_URL, {
+          headers: { apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY },
+        }),
+        supabase
+          .from("status_incidents")
+          .select("*")
+          .order("started_at", { ascending: false })
+          .limit(25),
+      ]);
+
+      if (!statusRes.ok) throw new Error(`HTTP ${statusRes.status}`);
+      const json = await statusRes.json();
       setData(json);
+      if (incidentsRes.data) setIncidents(incidentsRes.data as Incident[]);
       setLastRefresh(new Date());
     } catch (e) {
       setError(e instanceof Error ? e.message : "Failed to load status");
