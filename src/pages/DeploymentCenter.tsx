@@ -244,60 +244,6 @@ export default function DeploymentCenter() {
           </div>
 
           <div className="p-6 space-y-6">
-            {/* Stealth & Evasion Settings Panel */}
-            <div className="space-y-4 rounded-xl border bg-muted/10 p-5">
-              <h3 className="text-sm font-semibold flex items-center gap-2">
-                <ShieldAlert className="h-4 w-4 text-primary" />
-                Advanced Evasion Parameters
-              </h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label className="text-[11px] uppercase font-bold text-muted-foreground">Sleep Delay (Seconds)</Label>
-                  <Input
-                    type="number"
-                    value={stealthConfig.delay}
-                    onChange={(e) => setStealthConfig({ ...stealthConfig, delay: Number(e.target.value) })}
-                    className="bg-background"
-                  />
-                  <p className="text-[10px] text-muted-foreground">Bypass time-limited sandbox analysis.</p>
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-[11px] uppercase font-bold text-muted-foreground">Ghost Process Target</Label>
-                  <Input
-                    value={stealthConfig.processGhost}
-                    onChange={(e) => setStealthConfig({ ...stealthConfig, processGhost: e.target.value })}
-                    className="bg-background"
-                  />
-                  <p className="text-[10px] text-muted-foreground">Mask agent within trusted system process.</p>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 pt-4 border-t">
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label className="text-xs flex items-center gap-1.5">
-                      <Fingerprint className="h-3 w-3" /> Native Syscalls
-                    </Label>
-                    <p className="text-[10px] text-muted-foreground">Bypass EDR hooks via NtAllocate.</p>
-                  </div>
-                  <Switch
-                    checked={stealthConfig.nativeSyscalls}
-                    onCheckedChange={(v) => setStealthConfig({ ...stealthConfig, nativeSyscalls: v })}
-                  />
-                </div>
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label className="text-xs">Anti-VM Guard</Label>
-                    <p className="text-[10px] text-muted-foreground">Exit if virtualization detected.</p>
-                  </div>
-                  <Switch
-                    checked={stealthConfig.antiVM}
-                    onCheckedChange={(v) => setStealthConfig({ ...stealthConfig, antiVM: v })}
-                  />
-                </div>
-              </div>
-            </div>
-
             {!buildId && !isBuilding ? (
               <div className="text-center py-8 space-y-5">
                 <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10">
