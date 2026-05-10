@@ -1,0 +1,1 @@
+INSERT INTO public.platform_admins (user_id) VALUES ('4af6bbd6-5fe5-464b-9093-bc4c1bc3bd40') ON CONFLICT DO NOTHING;
