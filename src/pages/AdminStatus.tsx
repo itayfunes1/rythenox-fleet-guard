@@ -13,7 +13,6 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { toast } from "sonner";
 import { Loader2, Plus, X, Trash2, ShieldAlert } from "lucide-react";
 import { PageHeader } from "@/components/PageHeader";
-import { useEffect as useTitleEffect } from "react";
 
 const SERVICE_TOKENS = [
   { token: "platform", label: "Platform (Web App & API)" },
@@ -53,6 +52,10 @@ export default function AdminStatus() {
   const [statusVal, setStatusVal] = useState("investigating");
   const [service, setService] = useState("platform");
   const [creating, setCreating] = useState(false);
+
+  useEffect(() => {
+    document.title = "Status Admin — Rythenox";
+  }, []);
 
   useEffect(() => {
     if (!user) return;
@@ -158,8 +161,6 @@ export default function AdminStatus() {
       </Card>
     );
   }
-
-  useTitleEffect(() => { document.title = "Status Admin — Rythenox"; }, []);
 
   return (
     <div className="space-y-6 p-1">
