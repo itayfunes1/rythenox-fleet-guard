@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider, useAuth } from "@/components/AuthProvider";
 import { DashboardLayout } from "@/components/DashboardLayout";
+import { TwoFactorGate } from "@/components/TwoFactorGate";
 import Dashboard from "@/pages/Dashboard";
 import Devices from "@/pages/Devices";
 import DeploymentCenter from "@/pages/DeploymentCenter";
