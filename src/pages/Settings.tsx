@@ -251,6 +251,8 @@ export default function SettingsPage() {
 
       <NotificationPreferencesCard />
 
+      <TwoFactorCard />
+
       <Button className="bg-primary hover:bg-primary/90 transition-colors">
         Save Settings
       </Button>
