@@ -41,6 +41,11 @@ export default function Messages() {
   const [newName, setNewName] = useState("");
   const [newDesc, setNewDesc] = useState("");
 
+  // @mention autocomplete
+  const [mentionQuery, setMentionQuery] = useState<string | null>(null);
+  const [mentionIndex, setMentionIndex] = useState(0);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
   const send = useSendMessage();
   const createChannel = useCreateChannel();
   const startDm = useStartDm();
