@@ -15,6 +15,7 @@ import { useToast } from "@/hooks/use-toast";
 import { AnnouncementManager } from "@/components/AnnouncementManager";
 import { useJoinRequests, useOrganizationMutations, useOrganizationSearch } from "@/hooks/use-organization";
 import { NotificationPreferencesCard } from "@/components/settings/NotificationPreferencesCard";
+import { TwoFactorCard } from "@/components/settings/TwoFactorCard";
 export default function SettingsPage() {
   const { data: tenant, isLoading } = useTenant();
   const { user } = useAuth();
