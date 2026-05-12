@@ -110,8 +110,18 @@ export default function Messages() {
     }
   };
 
+  const updateMentionState = (val: string, caret: number) => {
+    const upTo = val.slice(0, caret);
+    // Match @ followed by partial token (no @ or whitespace) at end
+    const m = upTo.match(/(?:^|\s)@([\w.-]*)$/);
+    setMentionQuery(m ? m[1] : null);
+    setMentionIndex(0);
+  };
+
   const handleDraftChange = (val: string) => {
     setDraft(val);
+    const caret = textareaRef.current?.selectionStart ?? val.length;
+    updateMentionState(val, caret);
     const now = Date.now();
     if (now - typingRef.current > 1500) {
       typingRef.current = now;
@@ -119,7 +129,41 @@ export default function Messages() {
     }
   };
 
+  const mentionMatches = useMemo(() => {
+    if (mentionQuery === null) return [];
+    const q = mentionQuery.toLowerCase();
+    return members
+      .filter((m) => m.user_id !== user?.id && m.email.toLowerCase().includes(q))
+      .slice(0, 6);
+  }, [mentionQuery, members, user?.id]);
+
+  const insertMention = (email: string) => {
+    const ta = textareaRef.current;
+    const caret = ta?.selectionStart ?? draft.length;
+    const before = draft.slice(0, caret);
+    const after = draft.slice(caret);
+    const replaced = before.replace(/@([\w.-]*)$/, `@${email} `);
+    const next = replaced + after;
+    setDraft(next);
+    setMentionQuery(null);
+    requestAnimationFrame(() => {
+      const pos = replaced.length;
+      ta?.focus();
+      ta?.setSelectionRange(pos, pos);
+    });
+  };
+
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (mentionQuery !== null && mentionMatches.length > 0) {
+      if (e.key === "ArrowDown") { e.preventDefault(); setMentionIndex((i) => (i + 1) % mentionMatches.length); return; }
+      if (e.key === "ArrowUp")   { e.preventDefault(); setMentionIndex((i) => (i - 1 + mentionMatches.length) % mentionMatches.length); return; }
+      if (e.key === "Enter" || e.key === "Tab") {
+        e.preventDefault();
+        insertMention(mentionMatches[mentionIndex].email);
+        return;
+      }
+      if (e.key === "Escape") { e.preventDefault(); setMentionQuery(null); return; }
+    }
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       handleSend();
