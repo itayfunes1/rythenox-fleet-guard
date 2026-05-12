@@ -15,6 +15,7 @@ import { useToast } from "@/hooks/use-toast";
 import { AnnouncementManager } from "@/components/AnnouncementManager";
 import { useJoinRequests, useOrganizationMutations, useOrganizationSearch } from "@/hooks/use-organization";
 import { NotificationPreferencesCard } from "@/components/settings/NotificationPreferencesCard";
+import { TwoFactorCard } from "@/components/settings/TwoFactorCard";
 export default function SettingsPage() {
   const { data: tenant, isLoading } = useTenant();
   const { user } = useAuth();
@@ -249,6 +250,8 @@ export default function SettingsPage() {
       </Card>
 
       <NotificationPreferencesCard />
+
+      <TwoFactorCard />
 
       <Button className="bg-primary hover:bg-primary/90 transition-colors">
         Save Settings

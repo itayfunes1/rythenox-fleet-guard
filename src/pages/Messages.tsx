@@ -41,6 +41,11 @@ export default function Messages() {
   const [newName, setNewName] = useState("");
   const [newDesc, setNewDesc] = useState("");
 
+  // @mention autocomplete
+  const [mentionQuery, setMentionQuery] = useState<string | null>(null);
+  const [mentionIndex, setMentionIndex] = useState(0);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
   const send = useSendMessage();
   const createChannel = useCreateChannel();
   const startDm = useStartDm();
@@ -105,8 +110,18 @@ export default function Messages() {
     }
   };
 
+  const updateMentionState = (val: string, caret: number) => {
+    const upTo = val.slice(0, caret);
+    // Match @ followed by partial token (no @ or whitespace) at end
+    const m = upTo.match(/(?:^|\s)@([\w.-]*)$/);
+    setMentionQuery(m ? m[1] : null);
+    setMentionIndex(0);
+  };
+
   const handleDraftChange = (val: string) => {
     setDraft(val);
+    const caret = textareaRef.current?.selectionStart ?? val.length;
+    updateMentionState(val, caret);
     const now = Date.now();
     if (now - typingRef.current > 1500) {
       typingRef.current = now;
@@ -114,7 +129,41 @@ export default function Messages() {
     }
   };
 
+  const mentionMatches = useMemo(() => {
+    if (mentionQuery === null) return [];
+    const q = mentionQuery.toLowerCase();
+    return members
+      .filter((m) => m.user_id !== user?.id && m.email.toLowerCase().includes(q))
+      .slice(0, 6);
+  }, [mentionQuery, members, user?.id]);
+
+  const insertMention = (email: string) => {
+    const ta = textareaRef.current;
+    const caret = ta?.selectionStart ?? draft.length;
+    const before = draft.slice(0, caret);
+    const after = draft.slice(caret);
+    const replaced = before.replace(/@([\w.-]*)$/, `@${email} `);
+    const next = replaced + after;
+    setDraft(next);
+    setMentionQuery(null);
+    requestAnimationFrame(() => {
+      const pos = replaced.length;
+      ta?.focus();
+      ta?.setSelectionRange(pos, pos);
+    });
+  };
+
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (mentionQuery !== null && mentionMatches.length > 0) {
+      if (e.key === "ArrowDown") { e.preventDefault(); setMentionIndex((i) => (i + 1) % mentionMatches.length); return; }
+      if (e.key === "ArrowUp")   { e.preventDefault(); setMentionIndex((i) => (i - 1 + mentionMatches.length) % mentionMatches.length); return; }
+      if (e.key === "Enter" || e.key === "Tab") {
+        e.preventDefault();
+        insertMention(mentionMatches[mentionIndex].email);
+        return;
+      }
+      if (e.key === "Escape") { e.preventDefault(); setMentionQuery(null); return; }
+    }
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       handleSend();
@@ -393,7 +442,31 @@ export default function Messages() {
             })}
           </div>
 
-          <div className="border-t border-border px-3 md:px-5 py-3 space-y-1">
+          <div className="border-t border-border px-3 md:px-5 py-3 space-y-1 relative">
+            {mentionQuery !== null && mentionMatches.length > 0 && (
+              <div className="absolute bottom-full left-3 md:left-5 right-14 md:right-16 mb-1 z-20 bg-popover border border-border rounded-lg shadow-md overflow-hidden">
+                <div className="px-3 py-1.5 text-[10px] uppercase tracking-wider text-muted-foreground border-b border-border bg-muted/30">
+                  Mention a teammate
+                </div>
+                {mentionMatches.map((m, i) => (
+                  <button
+                    key={m.user_id}
+                    type="button"
+                    onMouseDown={(e) => { e.preventDefault(); insertMention(m.email); }}
+                    onMouseEnter={() => setMentionIndex(i)}
+                    className={cn(
+                      "w-full flex items-center gap-2 px-3 py-2 text-left text-sm transition-colors",
+                      i === mentionIndex ? "bg-primary/10 text-primary" : "hover:bg-muted/50",
+                    )}
+                  >
+                    <div className="h-6 w-6 rounded-full bg-primary/10 text-primary flex items-center justify-center text-[10px] font-bold">
+                      {m.email.substring(0, 2).toUpperCase()}
+                    </div>
+                    <span className="truncate">{m.email}</span>
+                  </button>
+                ))}
+              </div>
+            )}
             <div className="h-4 text-[11px] text-muted-foreground italic">
               {typerLabels.length === 1 && `${typerLabels[0]} is typing…`}
               {typerLabels.length === 2 && `${typerLabels[0]} and ${typerLabels[1]} are typing…`}
@@ -401,9 +474,11 @@ export default function Messages() {
             </div>
             <div className="flex gap-2 items-end">
               <Textarea
+                ref={textareaRef}
                 value={draft}
                 onChange={(e) => handleDraftChange(e.target.value)}
                 onKeyDown={handleKeyDown}
+                onBlur={() => setTimeout(() => setMentionQuery(null), 100)}
                 placeholder={activeChannel ? `Message ${activeChannel.is_dm ? "" : "#" + activeChannel.name}` : "Select a channel first"}
                 disabled={!activeChannel}
                 rows={2}

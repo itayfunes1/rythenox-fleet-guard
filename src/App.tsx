@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider, useAuth } from "@/components/AuthProvider";
 import { DashboardLayout } from "@/components/DashboardLayout";
+import { TwoFactorGate } from "@/components/TwoFactorGate";
 import Dashboard from "@/pages/Dashboard";
 import Devices from "@/pages/Devices";
 import DeploymentCenter from "@/pages/DeploymentCenter";
@@ -43,25 +44,27 @@ function ProtectedRoutes() {
   }
 
   return (
-    <DashboardLayout>
-      <Routes>
-        <Route path="/" element={<Dashboard />} />
-        <Route path="/devices" element={<Devices />} />
-        <Route path="/deployment" element={<DeploymentCenter />} />
-        <Route path="/diagnostics" element={<DiagnosticVault />} />
-        <Route path="/network" element={<NetworkInfrastructure />} />
-        <Route path="/playbooks" element={<Playbooks />} />
-        <Route path="/schedules" element={<Schedules />} />
-        
-        <Route path="/messages" element={<Messages />} />
-        <Route path="/audit" element={<AuditLog />} />
-        <Route path="/notifications" element={<NotificationsPage />} />
-        <Route path="/docs" element={<Docs />} />
-        <Route path="/settings" element={<SettingsPage />} />
-        <Route path="/admin/status" element={<AdminStatus />} />
-        <Route path="*" element={<NotFound />} />
-      </Routes>
-    </DashboardLayout>
+    <TwoFactorGate>
+      <DashboardLayout>
+        <Routes>
+          <Route path="/" element={<Dashboard />} />
+          <Route path="/devices" element={<Devices />} />
+          <Route path="/deployment" element={<DeploymentCenter />} />
+          <Route path="/diagnostics" element={<DiagnosticVault />} />
+          <Route path="/network" element={<NetworkInfrastructure />} />
+          <Route path="/playbooks" element={<Playbooks />} />
+          <Route path="/schedules" element={<Schedules />} />
+
+          <Route path="/messages" element={<Messages />} />
+          <Route path="/audit" element={<AuditLog />} />
+          <Route path="/notifications" element={<NotificationsPage />} />
+          <Route path="/docs" element={<Docs />} />
+          <Route path="/settings" element={<SettingsPage />} />
+          <Route path="/admin/status" element={<AdminStatus />} />
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </DashboardLayout>
+    </TwoFactorGate>
   );
 }
 
