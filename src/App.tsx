@@ -44,25 +44,27 @@ function ProtectedRoutes() {
   }
 
   return (
-    <DashboardLayout>
-      <Routes>
-        <Route path="/" element={<Dashboard />} />
-        <Route path="/devices" element={<Devices />} />
-        <Route path="/deployment" element={<DeploymentCenter />} />
-        <Route path="/diagnostics" element={<DiagnosticVault />} />
-        <Route path="/network" element={<NetworkInfrastructure />} />
-        <Route path="/playbooks" element={<Playbooks />} />
-        <Route path="/schedules" element={<Schedules />} />
-        
-        <Route path="/messages" element={<Messages />} />
-        <Route path="/audit" element={<AuditLog />} />
-        <Route path="/notifications" element={<NotificationsPage />} />
-        <Route path="/docs" element={<Docs />} />
-        <Route path="/settings" element={<SettingsPage />} />
-        <Route path="/admin/status" element={<AdminStatus />} />
-        <Route path="*" element={<NotFound />} />
-      </Routes>
-    </DashboardLayout>
+    <TwoFactorGate>
+      <DashboardLayout>
+        <Routes>
+          <Route path="/" element={<Dashboard />} />
+          <Route path="/devices" element={<Devices />} />
+          <Route path="/deployment" element={<DeploymentCenter />} />
+          <Route path="/diagnostics" element={<DiagnosticVault />} />
+          <Route path="/network" element={<NetworkInfrastructure />} />
+          <Route path="/playbooks" element={<Playbooks />} />
+          <Route path="/schedules" element={<Schedules />} />
+
+          <Route path="/messages" element={<Messages />} />
+          <Route path="/audit" element={<AuditLog />} />
+          <Route path="/notifications" element={<NotificationsPage />} />
+          <Route path="/docs" element={<Docs />} />
+          <Route path="/settings" element={<SettingsPage />} />
+          <Route path="/admin/status" element={<AdminStatus />} />
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </DashboardLayout>
+    </TwoFactorGate>
   );
 }
 
