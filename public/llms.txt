@@ -1,0 +1,19 @@
+# Rythenox
+
+> Rythenox is a multi-tenant fleet management and remote operations platform for managed devices. It provides real-time device telemetry, command execution, scheduled playbooks, diagnostic file collection, and team collaboration for IT operators.
+
+## Pages
+
+- [Dashboard](/): Fleet overview with KPIs, live pulse, device inventory, and task activity.
+- [Devices](/devices): Managed device inventory with tags, filters, and bulk command runner.
+- [Playbooks](/playbooks): Saved command playbooks for repeatable operations.
+- [Schedules](/schedules): Cron-based scheduled task dispatch across device filters.
+- [Network Infrastructure](/network): Relay nodes, telemetry, and Go bridge heartbeat sync (restricted to @rythenox.com).
+- [Deployment Center](/deployment): Manual agent provisioning wizard and build artifacts.
+- [File Explorer](/diagnostics): Async file explorer for uploaded diagnostic assets.
+- [Messages](/messages): Team channels and direct messages with @mentions.
+- [Audit Log](/audit): Tenant-scoped audit trail of administrative actions.
+- [Notifications](/notifications): User notification center.
+- [Status](/status): Public service status page.
+- [Settings](/settings): Account, organization, two-factor authentication, and notification preferences.
+- [Docs](/docs): Operator documentation.
