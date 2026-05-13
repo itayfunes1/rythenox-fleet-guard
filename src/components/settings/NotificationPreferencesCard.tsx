@@ -13,6 +13,7 @@ const CATEGORIES: Array<{
   icon: typeof Bell;
 }> = [
   { key: "direct_messages", title: "Direct messages", description: "When a teammate sends you a DM in Messages.", icon: MessageSquare },
+  { key: "thread_replies", title: "Thread replies", description: "When someone replies to a message you posted.", icon: MessageSquare },
   { key: "device_offline", title: "Device went offline", description: "When a managed device stops responding.", icon: Monitor },
   { key: "device_enrolled", title: "New device enrolled", description: "When a new agent connects for the first time.", icon: MonitorUp },
   { key: "task_completed", title: "Task completed", description: "When a remote task finishes successfully.", icon: CheckCircle2 },

@@ -23,6 +23,11 @@ export interface ChatMessage {
   mentions: string[];
   edited_at: string | null;
   created_at: string;
+  parent_id: string | null;
+  reply_count: number;
+  deleted_at: string | null;
+  pinned_at: string | null;
+  pinned_by: string | null;
 }
 
 export interface ChatMembership {
@@ -42,6 +47,27 @@ export interface TypingRow {
   channel_id: string;
   user_id: string;
   updated_at: string;
+}
+
+export interface ChatReaction {
+  id: string;
+  message_id: string;
+  channel_id: string;
+  user_id: string;
+  emoji: string;
+}
+
+export interface ChatAttachment {
+  id: string;
+  message_id: string;
+  channel_id: string;
+  storage_path: string;
+  file_name: string;
+  mime_type: string;
+  byte_size: number;
+  width: number | null;
+  height: number | null;
+  uploader_id: string;
 }
 
 const TYPING_WINDOW_MS = 4000;
@@ -132,6 +158,13 @@ export function useChannelMessages(channelId: string | null) {
       .channel(`chat_messages_${channelId}`)
       .on("postgres_changes", { event: "*", schema: "public", table: "chat_messages", filter: `channel_id=eq.${channelId}` }, () => {
         qc.invalidateQueries({ queryKey: ["chat_messages", channelId] });
+        qc.invalidateQueries({ queryKey: ["chat_pinned", channelId] });
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "chat_message_reactions", filter: `channel_id=eq.${channelId}` }, () => {
+        qc.invalidateQueries({ queryKey: ["chat_reactions", channelId] });
+      })
+      .on("postgres_changes", { event: "*", schema: "public", table: "chat_message_attachments", filter: `channel_id=eq.${channelId}` }, () => {
+        qc.invalidateQueries({ queryKey: ["chat_attachments", channelId] });
       })
       .subscribe();
     return () => { supabase.removeChannel(ch); };
@@ -146,11 +179,121 @@ export function useChannelMessages(channelId: string | null) {
         .select("*")
         .eq("channel_id", channelId!)
         .order("created_at", { ascending: true })
-        .limit(200);
+        .limit(300);
       if (error) throw error;
       return (data || []) as unknown as ChatMessage[];
     },
   });
+}
+
+export function useChannelReactions(channelId: string | null) {
+  return useQuery({
+    queryKey: ["chat_reactions", channelId],
+    enabled: !!channelId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("chat_message_reactions" as any)
+        .select("*")
+        .eq("channel_id", channelId!);
+      if (error) throw error;
+      return (data || []) as unknown as ChatReaction[];
+    },
+  });
+}
+
+export function useChannelAttachments(channelId: string | null) {
+  return useQuery({
+    queryKey: ["chat_attachments", channelId],
+    enabled: !!channelId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("chat_message_attachments" as any)
+        .select("*")
+        .eq("channel_id", channelId!);
+      if (error) throw error;
+      return (data || []) as unknown as ChatAttachment[];
+    },
+  });
+}
+
+export function usePinnedMessages(channelId: string | null) {
+  return useQuery({
+    queryKey: ["chat_pinned", channelId],
+    enabled: !!channelId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("chat_messages" as any)
+        .select("*")
+        .eq("channel_id", channelId!)
+        .not("pinned_at", "is", null)
+        .is("deleted_at", null)
+        .order("pinned_at", { ascending: false });
+      if (error) throw error;
+      return (data || []) as unknown as ChatMessage[];
+    },
+  });
+}
+
+export function useThreadReplies(parentId: string | null) {
+  const qc = useQueryClient();
+
+  useEffect(() => {
+    if (!parentId) return;
+    const ch = supabase
+      .channel(`chat_thread_${parentId}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "chat_messages", filter: `parent_id=eq.${parentId}` }, () => {
+        qc.invalidateQueries({ queryKey: ["chat_thread", parentId] });
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, [parentId, qc]);
+
+  return useQuery({
+    queryKey: ["chat_thread", parentId],
+    enabled: !!parentId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("chat_messages" as any)
+        .select("*")
+        .eq("parent_id", parentId!)
+        .order("created_at", { ascending: true });
+      if (error) throw error;
+      return (data || []) as unknown as ChatMessage[];
+    },
+  });
+}
+
+async function uploadAttachments(opts: {
+  files: File[];
+  tenantId: string;
+  channelId: string;
+  messageId: string;
+  uploaderId: string;
+}) {
+  const rows: any[] = [];
+  for (const file of opts.files) {
+    const safeName = file.name.replace(/[^\w.\-]+/g, "_");
+    const path = `${opts.tenantId}/${opts.channelId}/${opts.messageId}/${Date.now()}_${safeName}`;
+    const up = await supabase.storage.from("chat-attachments").upload(path, file, {
+      contentType: file.type || "application/octet-stream",
+      upsert: false,
+    });
+    if (up.error) throw up.error;
+    rows.push({
+      message_id: opts.messageId,
+      channel_id: opts.channelId,
+      tenant_id: opts.tenantId,
+      uploader_id: opts.uploaderId,
+      storage_path: path,
+      file_name: file.name,
+      mime_type: file.type || "application/octet-stream",
+      byte_size: file.size,
+    });
+  }
+  if (rows.length) {
+    const { error } = await supabase.from("chat_message_attachments" as any).insert(rows as any);
+    if (error) throw error;
+  }
 }
 
 export function useSendMessage() {
@@ -159,23 +302,176 @@ export function useSendMessage() {
   const qc = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ channelId, body, mentions }: { channelId: string; body: string; mentions: string[] }) => {
+    mutationFn: async ({
+      channelId,
+      body,
+      mentions,
+      parentId,
+      files,
+    }: {
+      channelId: string;
+      body: string;
+      mentions: string[];
+      parentId?: string | null;
+      files?: File[];
+    }) => {
       if (!user || !tenant?.tenantId) throw new Error("Not signed in");
       const trimmed = body.trim();
-      if (!trimmed) throw new Error("Empty message");
-      const { error } = await supabase.from("chat_messages" as any).insert({
-        channel_id: channelId,
-        tenant_id: tenant.tenantId,
-        author_id: user.id,
-        body: trimmed,
-        mentions,
-      } as any);
+      const hasFiles = files && files.length > 0;
+      if (!trimmed && !hasFiles) throw new Error("Empty message");
+
+      const { data, error } = await supabase
+        .from("chat_messages" as any)
+        .insert({
+          channel_id: channelId,
+          tenant_id: tenant.tenantId,
+          author_id: user.id,
+          body: trimmed || (hasFiles ? "" : ""),
+          mentions,
+          parent_id: parentId ?? null,
+        } as any)
+        .select("id")
+        .single();
       if (error) throw error;
-      // clear typing
+      const messageId = (data as any).id as string;
+
+      if (hasFiles) {
+        await uploadAttachments({
+          files: files!,
+          tenantId: tenant.tenantId,
+          channelId,
+          messageId,
+          uploaderId: user.id,
+        });
+      }
+
       await supabase.from("chat_typing" as any).delete().eq("channel_id", channelId).eq("user_id", user.id);
+      return messageId;
     },
     onSuccess: (_d, vars) => {
       qc.invalidateQueries({ queryKey: ["chat_messages", vars.channelId] });
+      if (vars.parentId) qc.invalidateQueries({ queryKey: ["chat_thread", vars.parentId] });
+      qc.invalidateQueries({ queryKey: ["chat_attachments", vars.channelId] });
+    },
+  });
+}
+
+export function useEditMessage() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, body, channelId }: { id: string; body: string; channelId: string }) => {
+      const { error } = await supabase
+        .from("chat_messages" as any)
+        .update({ body: body.trim() } as any)
+        .eq("id", id);
+      if (error) throw error;
+      return channelId;
+    },
+    onSuccess: (channelId) => {
+      qc.invalidateQueries({ queryKey: ["chat_messages", channelId] });
+    },
+  });
+}
+
+export function useDeleteMessage() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, channelId }: { id: string; channelId: string }) => {
+      const { error } = await supabase
+        .from("chat_messages" as any)
+        .update({ deleted_at: new Date().toISOString(), body: "" } as any)
+        .eq("id", id);
+      if (error) throw error;
+      return channelId;
+    },
+    onSuccess: (channelId) => {
+      qc.invalidateQueries({ queryKey: ["chat_messages", channelId] });
+      qc.invalidateQueries({ queryKey: ["chat_pinned", channelId] });
+    },
+  });
+}
+
+export function useTogglePin() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, pinned, channelId }: { id: string; pinned: boolean; channelId: string }) => {
+      const fn = pinned ? "unpin_chat_message" : "pin_chat_message";
+      const { error } = await supabase.rpc(fn as any, { _message_id: id });
+      if (error) throw error;
+      return channelId;
+    },
+    onSuccess: (channelId) => {
+      qc.invalidateQueries({ queryKey: ["chat_messages", channelId] });
+      qc.invalidateQueries({ queryKey: ["chat_pinned", channelId] });
+    },
+  });
+}
+
+export function useToggleReaction() {
+  const { user } = useAuth();
+  const { data: tenant } = useTenant();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      messageId,
+      channelId,
+      emoji,
+      mine,
+    }: {
+      messageId: string;
+      channelId: string;
+      emoji: string;
+      mine: boolean;
+    }) => {
+      if (!user || !tenant?.tenantId) throw new Error("Not signed in");
+      if (mine) {
+        const { error } = await supabase
+          .from("chat_message_reactions" as any)
+          .delete()
+          .eq("message_id", messageId)
+          .eq("user_id", user.id)
+          .eq("emoji", emoji);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from("chat_message_reactions" as any)
+          .insert({
+            message_id: messageId,
+            channel_id: channelId,
+            tenant_id: tenant.tenantId,
+            user_id: user.id,
+            emoji,
+          } as any);
+        if (error) throw error;
+      }
+      return channelId;
+    },
+    onSuccess: (channelId) => {
+      qc.invalidateQueries({ queryKey: ["chat_reactions", channelId] });
+    },
+  });
+}
+
+export function useSearchMessages() {
+  return useMutation({
+    mutationFn: async ({ query, channelId }: { query: string; channelId?: string | null }) => {
+      const { data, error } = await supabase.rpc("search_chat_messages" as any, {
+        _query: query,
+        _channel_id: channelId ?? null,
+        _limit: 50,
+      });
+      if (error) throw error;
+      return (data || []) as Array<{
+        id: string;
+        channel_id: string;
+        channel_name: string;
+        is_dm: boolean;
+        author_id: string;
+        author_email: string;
+        body: string;
+        parent_id: string | null;
+        created_at: string;
+      }>;
     },
   });
 }
@@ -281,4 +577,20 @@ export function useTyping(channelId: string | null) {
   }, [query.data, user?.id]);
 
   return { activeTypers, ping };
+}
+
+// Signed URL helper with React Query caching
+export function useSignedAttachmentUrl(path: string | null | undefined) {
+  return useQuery({
+    queryKey: ["chat_signed_url", path],
+    enabled: !!path,
+    staleTime: 50 * 60 * 1000,
+    queryFn: async () => {
+      const { data, error } = await supabase.storage
+        .from("chat-attachments")
+        .createSignedUrl(path!, 60 * 60);
+      if (error) throw error;
+      return data.signedUrl;
+    },
+  });
 }

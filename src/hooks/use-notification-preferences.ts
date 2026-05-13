@@ -10,7 +10,8 @@ export type NotificationCategory =
   | "build_finished"
   | "org_requests"
   | "announcements"
-  | "direct_messages";
+  | "direct_messages"
+  | "thread_replies";
 
 export interface NotificationPreferences {
   user_id: string;
@@ -22,6 +23,7 @@ export interface NotificationPreferences {
   org_requests: boolean;
   announcements: boolean;
   direct_messages: boolean;
+  thread_replies: boolean;
   toast_enabled: boolean;
 }
 
@@ -34,6 +36,7 @@ const DEFAULTS: Omit<NotificationPreferences, "user_id"> = {
   org_requests: true,
   announcements: true,
   direct_messages: true,
+  thread_replies: true,
   toast_enabled: true,
 };
 

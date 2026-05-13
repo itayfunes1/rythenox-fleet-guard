@@ -180,35 +180,144 @@ export type Database = {
         }
         Relationships: []
       }
+      chat_message_attachments: {
+        Row: {
+          byte_size: number
+          channel_id: string
+          created_at: string
+          file_name: string
+          height: number | null
+          id: string
+          message_id: string
+          mime_type: string
+          storage_path: string
+          tenant_id: string
+          uploader_id: string
+          width: number | null
+        }
+        Insert: {
+          byte_size?: number
+          channel_id: string
+          created_at?: string
+          file_name: string
+          height?: number | null
+          id?: string
+          message_id: string
+          mime_type: string
+          storage_path: string
+          tenant_id: string
+          uploader_id: string
+          width?: number | null
+        }
+        Update: {
+          byte_size?: number
+          channel_id?: string
+          created_at?: string
+          file_name?: string
+          height?: number | null
+          id?: string
+          message_id?: string
+          mime_type?: string
+          storage_path?: string
+          tenant_id?: string
+          uploader_id?: string
+          width?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_message_attachments_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "chat_messages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      chat_message_reactions: {
+        Row: {
+          channel_id: string
+          created_at: string
+          emoji: string
+          id: string
+          message_id: string
+          tenant_id: string
+          user_id: string
+        }
+        Insert: {
+          channel_id: string
+          created_at?: string
+          emoji: string
+          id?: string
+          message_id: string
+          tenant_id: string
+          user_id: string
+        }
+        Update: {
+          channel_id?: string
+          created_at?: string
+          emoji?: string
+          id?: string
+          message_id?: string
+          tenant_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_message_reactions_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "chat_messages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       chat_messages: {
         Row: {
           author_id: string
           body: string
+          body_tsv: unknown
           channel_id: string
           created_at: string
+          deleted_at: string | null
           edited_at: string | null
           id: string
           mentions: string[]
+          parent_id: string | null
+          pinned_at: string | null
+          pinned_by: string | null
+          reply_count: number
           tenant_id: string
         }
         Insert: {
           author_id: string
           body: string
+          body_tsv?: unknown
           channel_id: string
           created_at?: string
+          deleted_at?: string | null
           edited_at?: string | null
           id?: string
           mentions?: string[]
+          parent_id?: string | null
+          pinned_at?: string | null
+          pinned_by?: string | null
+          reply_count?: number
           tenant_id: string
         }
         Update: {
           author_id?: string
           body?: string
+          body_tsv?: unknown
           channel_id?: string
           created_at?: string
+          deleted_at?: string | null
           edited_at?: string | null
           id?: string
           mentions?: string[]
+          parent_id?: string | null
+          pinned_at?: string | null
+          pinned_by?: string | null
+          reply_count?: number
           tenant_id?: string
         }
         Relationships: [
@@ -217,6 +326,13 @@ export type Database = {
             columns: ["channel_id"]
             isOneToOne: false
             referencedRelation: "chat_channels"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chat_messages_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "chat_messages"
             referencedColumns: ["id"]
           },
         ]
@@ -379,6 +495,7 @@ export type Database = {
           org_requests: boolean
           task_completed: boolean
           task_failed: boolean
+          thread_replies: boolean
           toast_enabled: boolean
           updated_at: string
           user_id: string
@@ -393,6 +510,7 @@ export type Database = {
           org_requests?: boolean
           task_completed?: boolean
           task_failed?: boolean
+          thread_replies?: boolean
           toast_enabled?: boolean
           updated_at?: string
           user_id: string
@@ -407,6 +525,7 @@ export type Database = {
           org_requests?: boolean
           task_completed?: boolean
           task_failed?: boolean
+          thread_replies?: boolean
           toast_enabled?: boolean
           updated_at?: string
           user_id?: string
@@ -994,10 +1113,25 @@ export type Database = {
         }
         Returns: undefined
       }
+      pin_chat_message: { Args: { _message_id: string }; Returns: undefined }
       reject_join_request: { Args: { _request_id: string }; Returns: undefined }
       request_join_organization: {
         Args: { _message?: string; _tenant_id: string }
         Returns: string
+      }
+      search_chat_messages: {
+        Args: { _channel_id?: string; _limit?: number; _query: string }
+        Returns: {
+          author_email: string
+          author_id: string
+          body: string
+          channel_id: string
+          channel_name: string
+          created_at: string
+          id: string
+          is_dm: boolean
+          parent_id: string
+        }[]
       }
       search_organizations: {
         Args: { search_text: string }
@@ -1012,6 +1146,7 @@ export type Database = {
         Args: { _tags: string[]; _target_id: string }
         Returns: undefined
       }
+      unpin_chat_message: { Args: { _message_id: string }; Returns: undefined }
     }
     Enums: {
       [_ in never]: never
