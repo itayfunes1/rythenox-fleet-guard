@@ -36,6 +36,7 @@ const DEFAULTS: Omit<NotificationPreferences, "user_id"> = {
   org_requests: true,
   announcements: true,
   direct_messages: true,
+  thread_replies: true,
   toast_enabled: true,
 };
 
