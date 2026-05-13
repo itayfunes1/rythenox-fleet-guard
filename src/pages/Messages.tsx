@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Hash, Lock, Menu, MessageSquarePlus, Plus, Send, Users } from "lucide-react";
+import { Hash, Lock, Menu, MessageSquarePlus, Paperclip, Plus, Search, Send, Users, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -13,7 +13,9 @@ import { useTenant } from "@/hooks/use-tenant";
 import { toast } from "sonner";
 import {
   useChannels,
+  useChannelAttachments,
   useChannelMessages,
+  useChannelReactions,
   useCreateChannel,
   useMarkChannelRead,
   useMyMemberships,
@@ -22,9 +24,17 @@ import {
   useTenantMembers,
   useTyping,
   type ChatChannel,
+  type ChatMessage,
   type TenantMember,
 } from "@/hooks/use-chat";
 import { cn } from "@/lib/utils";
+import { MessageRow } from "@/components/messages/MessageRow";
+import { ThreadPanel } from "@/components/messages/ThreadPanel";
+import { SearchSheet } from "@/components/messages/SearchSheet";
+import { PinnedPopover } from "@/components/messages/PinnedPopover";
+
+const MAX_FILES = 5;
+const MAX_BYTES = 25 * 1024 * 1024;
 
 export default function Messages() {
   const { user } = useAuth();
@@ -41,16 +51,24 @@ export default function Messages() {
   const [newName, setNewName] = useState("");
   const [newDesc, setNewDesc] = useState("");
 
-  // @mention autocomplete
   const [mentionQuery, setMentionQuery] = useState<string | null>(null);
   const [mentionIndex, setMentionIndex] = useState(0);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  const [files, setFiles] = useState<File[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const [threadParent, setThreadParent] = useState<ChatMessage | null>(null);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [highlightId, setHighlightId] = useState<string | null>(null);
 
   const send = useSendMessage();
   const createChannel = useCreateChannel();
   const startDm = useStartDm();
   const markRead = useMarkChannelRead();
   const { data: messages = [] } = useChannelMessages(activeChannelId);
+  const { data: reactions = [] } = useChannelReactions(activeChannelId);
+  const { data: attachments = [] } = useChannelAttachments(activeChannelId);
   const { activeTypers, ping } = useTyping(activeChannelId);
 
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -59,14 +77,12 @@ export default function Messages() {
   const groupChannels = channels.filter((c) => !c.is_dm);
   const directChannels = channels.filter((c) => c.is_dm);
 
-  // Auto-select first channel
   useEffect(() => {
     if (!activeChannelId && channels.length > 0) {
       setActiveChannelId(channels[0].id);
     }
   }, [channels, activeChannelId]);
 
-  // Mark as read when messages load
   useEffect(() => {
     if (activeChannelId && messages.length > 0) {
       markRead.mutate(activeChannelId);
@@ -74,13 +90,12 @@ export default function Messages() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeChannelId, messages.length]);
 
-  // Auto-scroll on new messages
   useEffect(() => {
     requestAnimationFrame(() => {
       const el = scrollRef.current;
       if (el) el.scrollTop = el.scrollHeight;
     });
-  }, [messages, activeChannelId]);
+  }, [messages.length, activeChannelId]);
 
   const activeChannel = channels.find((c) => c.id === activeChannelId);
 
@@ -96,15 +111,48 @@ export default function Messages() {
     return m;
   }, [members]);
 
+  const reactionsByMessage = useMemo(() => {
+    const m: Record<string, typeof reactions> = {};
+    reactions.forEach((r) => { (m[r.message_id] ||= []).push(r); });
+    return m;
+  }, [reactions]);
+
+  const attachmentsByMessage = useMemo(() => {
+    const m: Record<string, typeof attachments> = {};
+    attachments.forEach((a) => { (m[a.message_id] ||= []).push(a); });
+    return m;
+  }, [attachments]);
+
+  const visibleMessages = useMemo(
+    () => messages.filter((m) => !m.parent_id),
+    [messages],
+  );
+
+  const isAdmin = tenant?.canManageOrganization ?? false;
+
+  const handleAddFiles = (incoming: FileList | null) => {
+    if (!incoming) return;
+    const arr = Array.from(incoming);
+    const tooBig = arr.find((f) => f.size > MAX_BYTES);
+    if (tooBig) {
+      toast.error(`${tooBig.name} exceeds 25 MB`);
+      return;
+    }
+    setFiles((prev) => [...prev, ...arr].slice(0, MAX_FILES));
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
   const handleSend = async () => {
-    if (!activeChannelId || !draft.trim()) return;
+    if (!activeChannelId) return;
+    if (!draft.trim() && files.length === 0) return;
     const mentionEmails = Array.from(draft.matchAll(/@([\w.+-]+@[\w.-]+\.\w+)/g)).map((m) => m[1]);
     const mentions = mentionEmails
       .map((e) => memberByEmail[e]?.user_id)
       .filter((x): x is string => !!x);
     try {
-      await send.mutateAsync({ channelId: activeChannelId, body: draft, mentions });
+      await send.mutateAsync({ channelId: activeChannelId, body: draft, mentions, files });
       setDraft("");
+      setFiles([]);
     } catch (e: any) {
       toast.error(e.message || "Failed to send");
     }
@@ -112,7 +160,6 @@ export default function Messages() {
 
   const updateMentionState = (val: string, caret: number) => {
     const upTo = val.slice(0, caret);
-    // Match @ followed by partial token (no @ or whitespace) at end
     const m = upTo.match(/(?:^|\s)@([\w.-]*)$/);
     setMentionQuery(m ? m[1] : null);
     setMentionIndex(0);
@@ -195,6 +242,16 @@ export default function Messages() {
     }
   };
 
+  const jumpToMessage = (channelId: string, messageId: string) => {
+    setActiveChannelId(channelId);
+    setHighlightId(messageId);
+    setTimeout(() => {
+      const el = document.getElementById(`msg-${messageId}`);
+      el?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 200);
+    setTimeout(() => setHighlightId(null), 2500);
+  };
+
   const canCreateChannels = tenant?.canManageOrganization ?? false;
   const otherMembers = members.filter((m) => m.user_id !== user?.id);
 
@@ -202,14 +259,12 @@ export default function Messages() {
     .map((t) => memberById[t.user_id]?.email?.split("@")[0])
     .filter(Boolean);
 
-  // Resolve DM display label from the other channel member.
   const dmLabelFor = (channel: ChatChannel) => {
     const otherMembership = memberships.find(
       (m) => m.channel_id === channel.id && m.user_id !== user?.id,
     );
     const peer = otherMembership ? memberById[otherMembership.user_id] : undefined;
     if (peer?.email) return peer.email;
-
     if (channel.created_by && channel.created_by !== user?.id) {
       const creator = memberById[channel.created_by];
       if (creator?.email) return creator.email;
@@ -219,7 +274,6 @@ export default function Messages() {
 
   const SidebarContent = (
     <div className="flex flex-col h-full bg-muted/30">
-      {/* Channels header */}
       <div className="px-3 py-3 border-b border-border">
         <div className="flex items-center justify-between">
           <span className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold">Channels</span>
@@ -270,7 +324,6 @@ export default function Messages() {
           ))}
         </div>
 
-        {/* DMs header */}
         <div className="px-3 pt-3 pb-1 flex items-center justify-between">
           <span className="text-[10px] uppercase tracking-widest text-muted-foreground font-semibold">Direct Messages</span>
           <Dialog open={dmOpen} onOpenChange={setDmOpen}>
@@ -286,7 +339,7 @@ export default function Messages() {
                 <div className="space-y-1">
                   {otherMembers.length === 0 && (
                     <p className="text-xs text-muted-foreground px-1 py-2">
-                      No other members in this organization yet. Invite teammates from the Organization settings to start a DM.
+                      No other members in this organization yet.
                     </p>
                   )}
                   {otherMembers.map((m) => (
@@ -309,14 +362,8 @@ export default function Messages() {
           </Dialog>
         </div>
 
-        {/* Quick "New DM" CTA for discoverability */}
         <div className="px-2 pb-1">
-          <Button
-            variant="outline"
-            size="sm"
-            className="w-full justify-start h-8 text-xs"
-            onClick={() => setDmOpen(true)}
-          >
+          <Button variant="outline" size="sm" className="w-full justify-start h-8 text-xs" onClick={() => setDmOpen(true)}>
             <MessageSquarePlus className="h-3.5 w-3.5 mr-2" />
             New direct message
           </Button>
@@ -352,6 +399,10 @@ export default function Messages() {
           <p className="text-sm text-muted-foreground hidden sm:block">Channels and direct messages for your organization.</p>
         </div>
         <div className="flex gap-2 shrink-0">
+          <Button variant="outline" size="sm" onClick={() => setSearchOpen(true)} className="gap-1.5">
+            <Search className="h-4 w-4" />
+            <span className="hidden sm:inline">Search</span>
+          </Button>
           <Button variant="outline" size="sm" onClick={() => setDmOpen(true)} className="gap-1.5">
             <MessageSquarePlus className="h-4 w-4" />
             <span className="hidden sm:inline">New DM</span>
@@ -360,15 +411,12 @@ export default function Messages() {
       </header>
 
       <Card className="flex md:grid md:grid-cols-12 h-[calc(100vh-12rem)] overflow-hidden">
-        {/* Desktop sidebar */}
         <aside className="hidden md:flex md:col-span-3 border-r border-border flex-col min-h-0">
           {SidebarContent}
         </aside>
 
-        {/* Conversation */}
         <section className="flex-1 md:col-span-9 flex flex-col min-h-0">
           <div className="border-b border-border px-3 md:px-5 py-3 flex items-center gap-2">
-            {/* Mobile nav trigger */}
             <Sheet open={mobileNavOpen} onOpenChange={setMobileNavOpen}>
               <SheetTrigger asChild>
                 <Button variant="ghost" size="icon" className="md:hidden h-8 w-8 shrink-0">
@@ -385,64 +433,53 @@ export default function Messages() {
                 {activeChannel.is_dm ? <Lock className="h-4 w-4 text-muted-foreground shrink-0" /> : <Hash className="h-4 w-4 text-muted-foreground shrink-0" />}
                 <h2 className="text-sm font-semibold truncate">{activeChannel.is_dm ? dmLabelFor(activeChannel) : activeChannel.name}</h2>
                 {activeChannel.description && <span className="text-xs text-muted-foreground border-l border-border pl-2 ml-1 hidden md:inline truncate">{activeChannel.description}</span>}
+                <div className="ml-auto flex items-center gap-1">
+                  <PinnedPopover
+                    channelId={activeChannel.id}
+                    members={members}
+                    onJump={(id) => jumpToMessage(activeChannel.id, id)}
+                  />
+                </div>
               </>
             ) : (
               <span className="text-sm text-muted-foreground flex items-center gap-2"><Users className="h-4 w-4" /> Select a conversation</span>
             )}
           </div>
 
-          <div ref={scrollRef} className="flex-1 overflow-y-auto px-3 md:px-5 py-4 space-y-3">
+          <div ref={scrollRef} className="flex-1 overflow-y-auto px-3 md:px-5 py-4 space-y-1">
             {!activeChannel && (
               <div className="h-full flex flex-col items-center justify-center text-center text-muted-foreground gap-3 px-4">
                 <MessageSquarePlus className="h-8 w-8 opacity-50" />
                 <p className="text-sm">Pick a channel or start a direct message.</p>
-                <Button size="sm" onClick={() => setDmOpen(true)}>
-                  <MessageSquarePlus className="h-4 w-4 mr-2" />
-                  New direct message
-                </Button>
               </div>
             )}
-            {activeChannel && messages.length === 0 && (
+            {activeChannel && visibleMessages.length === 0 && (
               <p className="text-xs text-muted-foreground text-center pt-8">No messages yet — say hi 👋</p>
             )}
-            {messages.map((m, i) => {
+            {visibleMessages.map((m, i) => {
               const author = memberById[m.author_id];
-              const initials = author?.email?.substring(0, 2).toUpperCase() || "??";
-              const prev = messages[i - 1];
-              const showHeader = !prev || prev.author_id !== m.author_id || (new Date(m.created_at).getTime() - new Date(prev.created_at).getTime() > 5 * 60 * 1000);
-              const isMe = m.author_id === user?.id;
+              const prev = visibleMessages[i - 1];
+              const showHeader = !prev || prev.author_id !== m.author_id ||
+                (new Date(m.created_at).getTime() - new Date(prev.created_at).getTime() > 5 * 60 * 1000);
               return (
-                <div key={m.id} className="group flex gap-3">
-                  <div className="w-8 shrink-0">
-                    {showHeader && (
-                      <div className="h-8 w-8 rounded-full bg-primary/10 text-primary flex items-center justify-center text-[10px] font-bold">
-                        {initials}
-                      </div>
-                    )}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    {showHeader && (
-                      <div className="flex items-baseline gap-2 mb-0.5 flex-wrap">
-                        <span className="text-sm font-semibold">{author?.email || "Unknown"}{isMe && <span className="text-[10px] font-normal text-muted-foreground ml-1">(you)</span>}</span>
-                        <span className="text-[10px] text-muted-foreground">{new Date(m.created_at).toLocaleString()}</span>
-                      </div>
-                    )}
-                    <p className="text-sm leading-relaxed whitespace-pre-wrap break-words">
-                      {m.body.split(/(@[\w.+-]+@[\w.-]+\.\w+)/g).map((part, idx) =>
-                        part.startsWith("@") && memberByEmail[part.slice(1)] ? (
-                          <span key={idx} className="bg-primary/10 text-primary rounded px-1 font-medium">{part}</span>
-                        ) : (
-                          <span key={idx}>{part}</span>
-                        ),
-                      )}
-                    </p>
-                  </div>
-                </div>
+                <MessageRow
+                  key={m.id}
+                  message={m}
+                  showHeader={showHeader}
+                  isMe={m.author_id === user?.id}
+                  authorEmail={author?.email}
+                  reactions={reactionsByMessage[m.id] || []}
+                  attachments={attachmentsByMessage[m.id] || []}
+                  memberByEmail={memberByEmail}
+                  isAdmin={isAdmin}
+                  onOpenThread={setThreadParent}
+                  highlight={highlightId === m.id}
+                />
               );
             })}
           </div>
 
-          <div className="border-t border-border px-3 md:px-5 py-3 space-y-1 relative">
+          <div className="border-t border-border px-3 md:px-5 py-3 space-y-2 relative">
             {mentionQuery !== null && mentionMatches.length > 0 && (
               <div className="absolute bottom-full left-3 md:left-5 right-14 md:right-16 mb-1 z-20 bg-popover border border-border rounded-lg shadow-md overflow-hidden">
                 <div className="px-3 py-1.5 text-[10px] uppercase tracking-wider text-muted-foreground border-b border-border bg-muted/30">
@@ -467,12 +504,46 @@ export default function Messages() {
                 ))}
               </div>
             )}
+
+            {files.length > 0 && (
+              <div className="flex flex-wrap gap-1">
+                {files.map((f, i) => (
+                  <span key={i} className="text-xs bg-muted px-2 py-1 rounded inline-flex items-center gap-1.5">
+                    <Paperclip className="h-3 w-3" />
+                    {f.name}
+                    <button type="button" onClick={() => setFiles(files.filter((_, j) => j !== i))}>
+                      <X className="h-3 w-3" />
+                    </button>
+                  </span>
+                ))}
+              </div>
+            )}
+
             <div className="h-4 text-[11px] text-muted-foreground italic">
               {typerLabels.length === 1 && `${typerLabels[0]} is typing…`}
               {typerLabels.length === 2 && `${typerLabels[0]} and ${typerLabels[1]} are typing…`}
               {typerLabels.length > 2 && `${typerLabels.length} people are typing…`}
             </div>
+
+            <input
+              ref={fileInputRef}
+              type="file"
+              multiple
+              className="hidden"
+              onChange={(e) => handleAddFiles(e.target.files)}
+            />
+
             <div className="flex gap-2 items-end">
+              <Button
+                size="icon"
+                variant="outline"
+                className="h-10 w-10 shrink-0"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={!activeChannel || files.length >= MAX_FILES}
+                title="Attach file"
+              >
+                <Paperclip className="h-4 w-4" />
+              </Button>
               <Textarea
                 ref={textareaRef}
                 value={draft}
@@ -484,13 +555,26 @@ export default function Messages() {
                 rows={2}
                 className="resize-none"
               />
-              <Button onClick={handleSend} disabled={!activeChannel || !draft.trim() || send.isPending} size="icon" className="h-10 w-10 shrink-0">
+              <Button onClick={handleSend} disabled={!activeChannel || (!draft.trim() && files.length === 0) || send.isPending} size="icon" className="h-10 w-10 shrink-0">
                 <Send className="h-4 w-4" />
               </Button>
             </div>
           </div>
         </section>
       </Card>
+
+      <ThreadPanel
+        parent={threadParent}
+        onClose={() => setThreadParent(null)}
+        members={members}
+        isAdmin={isAdmin}
+      />
+
+      <SearchSheet
+        open={searchOpen}
+        onOpenChange={setSearchOpen}
+        onJump={jumpToMessage}
+      />
     </div>
   );
 }
