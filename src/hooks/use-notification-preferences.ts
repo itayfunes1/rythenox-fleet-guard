@@ -23,6 +23,7 @@ export interface NotificationPreferences {
   org_requests: boolean;
   announcements: boolean;
   direct_messages: boolean;
+  thread_replies: boolean;
   toast_enabled: boolean;
 }
 
