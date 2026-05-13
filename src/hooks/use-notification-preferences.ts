@@ -10,7 +10,8 @@ export type NotificationCategory =
   | "build_finished"
   | "org_requests"
   | "announcements"
-  | "direct_messages";
+  | "direct_messages"
+  | "thread_replies";
 
 export interface NotificationPreferences {
   user_id: string;
