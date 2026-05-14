@@ -29,6 +29,19 @@ import { useAuth } from "@/components/AuthProvider";
 
 const wait = (ms: number) => new Promise((resolve) => window.setTimeout(resolve, ms));
 
+const withTimeout = async <T,>(promise: Promise<T>, ms: number, message: string) => {
+  let timeoutId: number | undefined;
+  const timeout = new Promise<never>((_, reject) => {
+    timeoutId = window.setTimeout(() => reject(new Error(message)), ms);
+  });
+
+  try {
+    return await Promise.race([promise, timeout]);
+  } finally {
+    if (timeoutId) window.clearTimeout(timeoutId);
+  }
+};
+
 const BUILD_STAGES = [
   { threshold: 15, label: "Initializing build environment" },
   { threshold: 35, label: "Compiling agent binary" },
@@ -67,8 +80,8 @@ export default function DeploymentCenter() {
   };
 
   const handleBuild = async () => {
-    if (!tenant?.apiKey) {
-      toast({ title: "Missing API key", description: "Your tenant API key was not found.", variant: "destructive" });
+    if (!tenant?.tenantId) {
+      toast({ title: "Missing tenant", description: "Your organization context was not found.", variant: "destructive" });
       return;
     }
 
@@ -85,17 +98,25 @@ export default function DeploymentCenter() {
     try {
       if (authLoading) throw new Error("Authentication is still loading. Try again in a moment.");
 
-      const { data: refreshed, error: refreshError } = await supabase.auth.refreshSession(session ?? undefined);
-      if (refreshError || !refreshed.session?.access_token) {
+      const { data: currentSession, error: sessionError } = await withTimeout(
+        supabase.auth.getSession(),
+        8000,
+        "Could not verify your session. Please refresh the page and retry the build."
+      );
+      const accessToken = currentSession.session?.access_token ?? session?.access_token;
+      if (sessionError || !accessToken) {
         await signOut();
         throw new Error("Your session expired. Please sign in again, then retry the build.");
       }
 
-      // Updated payload to include the new syscalls flag
-      const { data, error } = await supabase.functions.invoke<{ buildId?: string; status?: string }>("generate-build", {
-        headers: { Authorization: `Bearer ${refreshed.session.access_token}` },
-        body: {},
-      });
+      const { data, error } = await withTimeout(
+        supabase.functions.invoke<{ buildId?: string; status?: string }>("generate-build", {
+          headers: { Authorization: `Bearer ${accessToken}` },
+          body: {},
+        }),
+        20000,
+        "The build request did not reach the build service. Please retry in a moment."
+      );
 
       if (error) throw error;
       if (!data?.buildId) throw new Error("The build started, but no build ID was returned.");
