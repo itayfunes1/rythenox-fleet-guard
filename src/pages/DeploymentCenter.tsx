@@ -41,7 +41,7 @@ export default function DeploymentCenter() {
   const { data: tenant } = useTenant();
   const { session, loading: authLoading, signOut } = useAuth();
   const { toast } = useToast();
-  const { data: history, recordBuild, markBuildReady, markBuildFailed } = useBuildHistory();
+  const { data: history, markBuildReady, markBuildFailed } = useBuildHistory();
   const [isBuilding, setIsBuilding] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
   const [buildId, setBuildId] = useState<string | null>(null);
@@ -92,18 +92,15 @@ export default function DeploymentCenter() {
       }
 
       // Updated payload to include the new syscalls flag
-      const { data, error } = await supabase.functions.invoke<{ buildId?: string }>("generate-build", {
+      const { data, error } = await supabase.functions.invoke<{ buildId?: string; status?: string }>("generate-build", {
         headers: { Authorization: `Bearer ${refreshed.session.access_token}` },
-        body: {
-          api_key: tenant.apiKey,
-        },
+        body: {},
       });
 
       if (error) throw error;
       if (!data?.buildId) throw new Error("The build started, but no build ID was returned.");
 
       setBuildId(data.buildId);
-      await recordBuild(data.buildId);
 
       const readyUrl = await waitForBuildArtifact(data.buildId);
       if (!readyUrl) {
