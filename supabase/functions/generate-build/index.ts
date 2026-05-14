@@ -5,8 +5,8 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const GITHUB_OWNER = "itayfunes1";
-const GITHUB_REPO = "client-source";
+const GITHUB_OWNER = Deno.env.get("GITHUB_OWNER") ?? "itayfunes1";
+const GITHUB_REPO = Deno.env.get("GITHUB_REPO") ?? "client-source";
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -48,13 +48,29 @@ Deno.serve(async (req) => {
     }
     const userId = userData.user.id;
 
-    // Look up THIS user's tenant API key server-side (via security-definer RPC)
+    // Look up THIS user's tenant context and API key server-side (never trust client payload)
     const admin = createClient(supabaseUrl, serviceRoleKey);
-    const { data: apiKey, error: keyErr } = await admin.rpc("get_tenant_api_key", {
-      _user_id: userId,
-    });
+    const [{ data: apiKey, error: keyErr }, { data: membership, error: membershipErr }] = await Promise.all([
+      admin.rpc("get_tenant_api_key", { _user_id: userId }),
+      admin
+        .from("tenant_members")
+        .select("tenant_id, role, created_at")
+        .eq("user_id", userId)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle(),
+    ]);
+
+    if (membershipErr || !membership?.tenant_id) {
+      console.error("generate-build: tenant lookup failed", membershipErr?.message ?? "no membership");
+      return new Response(
+        JSON.stringify({ error: "No tenant membership found for this user" }),
+        { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
     if (keyErr || !apiKey) {
+      console.error("generate-build: tenant API key lookup failed", keyErr?.message ?? "no api key");
       return new Response(
         JSON.stringify({ error: "No tenant API key found for this user" }),
         { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -63,6 +79,23 @@ Deno.serve(async (req) => {
 
     // Generate a unique build ID for this request — used as the artifact filename
     const buildId = crypto.randomUUID();
+
+    const { error: buildRecordErr } = await admin.from("build_history").insert({
+      build_id: buildId,
+      tenant_id: membership.tenant_id,
+      user_id: userId,
+      status: "building",
+    });
+
+    if (buildRecordErr) {
+      console.error("generate-build: failed to record build", buildRecordErr.message);
+      return new Response(
+        JSON.stringify({ error: "Failed to record build request" }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    console.log(`generate-build: dispatching ${GITHUB_OWNER}/${GITHUB_REPO} for build ${buildId}`);
 
     // Dispatch the GitHub Actions workflow
     const dispatchResp = await fetch(
@@ -74,6 +107,7 @@ Deno.serve(async (req) => {
           "Accept": "application/vnd.github+json",
           "X-GitHub-Api-Version": "2022-11-28",
           "Content-Type": "application/json",
+          "User-Agent": "rythenox-build-dispatcher",
         },
         body: JSON.stringify({
           event_type: "generate-agent",
@@ -82,6 +116,7 @@ Deno.serve(async (req) => {
             supabase_url: supabaseUrl,
             task_id: buildId,
             user_id: userId,
+            tenant_id: membership.tenant_id,
           },
         }),
       }
@@ -89,6 +124,11 @@ Deno.serve(async (req) => {
 
     if (!dispatchResp.ok) {
       const text = await dispatchResp.text();
+      console.error("generate-build: GitHub dispatch failed", dispatchResp.status, text.slice(0, 500));
+      await admin
+        .from("build_history")
+        .update({ status: "failed", completed_at: new Date().toISOString() })
+        .eq("build_id", buildId);
       return new Response(
         JSON.stringify({
           error: "Failed to dispatch GitHub Actions workflow",
@@ -99,11 +139,14 @@ Deno.serve(async (req) => {
       );
     }
 
-    return new Response(JSON.stringify({ buildId }), {
+    console.log(`generate-build: GitHub dispatch accepted for build ${buildId}`);
+
+    return new Response(JSON.stringify({ buildId, status: "queued" }), {
       status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (error) {
+    console.error("generate-build: unhandled error", error instanceof Error ? error.message : String(error));
     return new Response(
       JSON.stringify({ error: "Internal server error" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
