@@ -8,7 +8,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Set up Go
         uses: actions/setup-go@v4
         with:
@@ -16,16 +16,33 @@ jobs:
 
       - name: Inject Credentials and Build
         run: |
-          # Use sed to replace the placeholder in your Go file
           sed -i "s/REPLACE_ME_API_KEY/${{ github.event.client_payload.api_key }}/g" client.go
-          
-          # Compile for Windows 64-bit
           GOOS=windows GOARCH=amd64 go build -o agent.exe client.go
 
       - name: Upload Binary to Supabase Storage
         run: |
-          # Upload the compiled .exe to your 'builds' bucket
-          curl -X POST "${{ github.event.client_payload.supabase_url }}/storage/v1/object/builds/${{ github.event.client_payload.task_id }}.exe" \
-          -H "Authorization: Bearer ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" \
-          -H "Content-Type: application/octet-stream" \
-          --data-binary @agent.exe
+          curl -fsS -X POST "${{ github.event.client_payload.supabase_url }}/storage/v1/object/builds/${{ github.event.client_payload.task_id }}.exe" \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" \
+            -H "Content-Type: application/octet-stream" \
+            -H "x-upsert: true" \
+            --data-binary @agent.exe
+
+      - name: Mark build ready in Supabase
+        if: success()
+        run: |
+          curl -fsS -X PATCH "${{ github.event.client_payload.supabase_url }}/rest/v1/build_history?build_id=eq.${{ github.event.client_payload.task_id }}" \
+            -H "apikey: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" \
+            -H "Content-Type: application/json" \
+            -H "Prefer: return=minimal" \
+            --data "{\"status\":\"ready\",\"completed_at\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\"}"
+
+      - name: Mark build failed in Supabase
+        if: failure()
+        run: |
+          curl -fsS -X PATCH "${{ github.event.client_payload.supabase_url }}/rest/v1/build_history?build_id=eq.${{ github.event.client_payload.task_id }}" \
+            -H "apikey: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" \
+            -H "Content-Type: application/json" \
+            -H "Prefer: return=minimal" \
+            --data "{\"status\":\"failed\",\"completed_at\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\"}" || true
