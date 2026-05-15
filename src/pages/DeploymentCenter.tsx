@@ -67,10 +67,19 @@ export default function DeploymentCenter() {
 
   const waitForBuildArtifact = async (id: string) => {
     const fileName = `${id}.exe`;
-    for (let attempt = 0; attempt < 40; attempt += 1) {
+    // Poll up to 6 minutes — Go cross-compile + upload can exceed 2 minutes on cold runners.
+    for (let attempt = 0; attempt < 120; attempt += 1) {
       try {
         const { data } = await supabase.storage.from("builds").createSignedUrl(fileName, 300);
-        if (data?.signedUrl) return data.signedUrl;
+        if (data?.signedUrl) {
+          // Verify the object is actually fetchable (avoid races where the row exists but body isn't committed).
+          try {
+            const head = await fetch(data.signedUrl, { method: "HEAD", cache: "no-store" });
+            if (head.ok) return data.signedUrl;
+          } catch {
+            // fall through to retry
+          }
+        }
       } catch {
         // keep polling
       }
