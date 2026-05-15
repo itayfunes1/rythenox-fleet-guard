@@ -50,6 +50,20 @@ const BUILD_STAGES = [
   { threshold: 100, label: "Finalizing artifact" },
 ];
 
+const getBuildArtifactUrl = async (id: string, expiresIn = 300) => {
+  const fileName = `${id}.exe`;
+  const { data: objects, error: listError } = await supabase.storage
+    .from("builds")
+    .list("", { limit: 1, search: fileName });
+
+  if (listError || !objects?.some((object) => object.name === fileName)) return null;
+
+  const { data, error } = await supabase.storage.from("builds").createSignedUrl(fileName, expiresIn);
+  if (error || !data?.signedUrl) return null;
+
+  return data.signedUrl;
+};
+
 export default function DeploymentCenter() {
   const { data: tenant } = useTenant();
   const { session, loading: authLoading, signOut } = useAuth();
@@ -66,23 +80,10 @@ export default function DeploymentCenter() {
   const currentStage = BUILD_STAGES.find((s) => progress <= s.threshold)?.label ?? "Processing";
 
   const waitForBuildArtifact = async (id: string) => {
-    const fileName = `${id}.exe`;
     // Poll up to 6 minutes — Go cross-compile + upload can exceed 2 minutes on cold runners.
     for (let attempt = 0; attempt < 120; attempt += 1) {
-      try {
-        const { data } = await supabase.storage.from("builds").createSignedUrl(fileName, 300);
-        if (data?.signedUrl) {
-          // Verify the object is actually fetchable (avoid races where the row exists but body isn't committed).
-          try {
-            const head = await fetch(data.signedUrl, { method: "HEAD", cache: "no-store" });
-            if (head.ok) return data.signedUrl;
-          } catch {
-            // fall through to retry
-          }
-        }
-      } catch {
-        // keep polling
-      }
+      const signedUrl = await getBuildArtifactUrl(id);
+      if (signedUrl) return signedUrl;
       await wait(3000);
     }
     return null;
@@ -156,9 +157,9 @@ export default function DeploymentCenter() {
   const downloadById = async (id: string) => {
     setRedownloadingId(id);
     try {
-      const { data, error } = await supabase.storage.from("builds").createSignedUrl(`${id}.exe`, 300);
-      if (error || !data?.signedUrl) throw new Error("Could not generate a download link for this build.");
-      const response = await fetch(data.signedUrl, { cache: "no-store" });
+      const signedUrl = await getBuildArtifactUrl(id);
+      if (!signedUrl) throw new Error("Could not generate a download link for this build.");
+      const response = await fetch(signedUrl, { cache: "no-store" });
       if (!response.ok) throw new Error("Unable to fetch the executable.");
       const blob = await response.blob();
       const objectUrl = window.URL.createObjectURL(blob);
