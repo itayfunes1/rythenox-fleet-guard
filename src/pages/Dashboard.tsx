@@ -693,3 +693,59 @@ function QuickAction({
     </button>
   );
 }
+
+function PulseChip({ label, value, accent }: { label: string; value: string; accent: string }) {
+  return (
+    <div className="flex flex-col gap-0.5 px-2 py-2 rounded-lg bg-muted/60 border border-border/60">
+      <span className="text-[9px] font-bold text-muted-foreground uppercase tracking-wider truncate">{label}</span>
+      <span className={`text-sm font-extrabold tabular-nums ${accent}`}>{value}</span>
+    </div>
+  );
+}
+
+const toneStyles = {
+  primary: { bg: "bg-primary/8", text: "text-primary", strip: "bg-primary" },
+  success: { bg: "bg-success/10", text: "text-success", strip: "bg-success" },
+  destructive: { bg: "bg-destructive/10", text: "text-destructive", strip: "bg-destructive" },
+  warning: { bg: "bg-warning/10", text: "text-warning", strip: "bg-warning" },
+  accent: { bg: "bg-accent/10", text: "text-accent", strip: "bg-accent" },
+} as const;
+
+function KpiCard({
+  label,
+  value,
+  icon: Icon,
+  tone,
+  sub,
+  chart,
+}: {
+  label: string;
+  value: string;
+  icon: React.ComponentType<{ className?: string }>;
+  tone: keyof typeof toneStyles;
+  sub: React.ReactNode;
+  chart?: React.ReactNode;
+}) {
+  const s = toneStyles[tone];
+  return (
+    <div className="group relative overflow-hidden rounded-2xl border border-border bg-card shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-md hover:border-border-strong">
+      <div className={`absolute inset-x-0 top-0 h-0.5 ${s.strip} opacity-70 group-hover:opacity-100 transition-opacity`} />
+      <div className="p-4">
+        <div className="flex items-center justify-between mb-3">
+          <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.16em]">{label}</span>
+          <div className={`h-8 w-8 rounded-lg ${s.bg} flex items-center justify-center transition-transform group-hover:scale-110`}>
+            <Icon className={`h-4 w-4 ${s.text}`} />
+          </div>
+        </div>
+        <div className="flex items-end justify-between gap-2">
+          <div className="min-w-0 flex-1">
+            <div className="text-[28px] font-extrabold text-foreground tabular-nums leading-none">{value}</div>
+            <p className="text-[11px] text-muted-foreground mt-1.5 truncate">{sub}</p>
+          </div>
+          {chart && <div className="shrink-0">{chart}</div>}
+        </div>
+      </div>
+    </div>
+  );
+}
+
