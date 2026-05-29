@@ -298,107 +298,110 @@ export default function Dashboard() {
   const lastHeartbeat = devices[0]?.last_seen || null;
 
   return (
-    <div className="space-y-6">
-      {/* Page Header */}
+    <div className="space-y-6 stagger-children">
+      {/* HERO — Greeting + composite live pulse */}
       <div className="panel-accent overflow-hidden">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-5 sm:p-6">
-          <div className="space-y-1.5">
-            <p className="eyebrow">Fleet Overview</p>
-            <h1 className="text-2xl sm:text-[26px] font-bold tracking-tight text-foreground">
-              Good {new Date().getHours() < 12 ? "morning" : new Date().getHours() < 18 ? "afternoon" : "evening"},{" "}
-              <span className="gradient-text">{firstName}</span>
-            </h1>
-            <p className="text-sm text-muted-foreground">
-              Here's what's happening with your fleet today.
-            </p>
-          </div>
-          <div className="flex items-center gap-2 shrink-0">
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-success/10 border border-success/20">
-              <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-success opacity-75" />
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-success" />
-              </span>
-              <span className="text-xs font-semibold text-success tracking-tight">System Operational</span>
+        <div className="relative">
+          <div className="absolute inset-0 dot-grid opacity-60 pointer-events-none" />
+          <div className="relative grid grid-cols-1 lg:grid-cols-[1.4fr_1fr] gap-6 p-6 sm:p-8">
+            {/* Left: greeting */}
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <p className="eyebrow">Fleet Overview</p>
+                <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-success/10 border border-success/20">
+                  <span className="relative flex h-1.5 w-1.5">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-success opacity-75" />
+                    <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-success" />
+                  </span>
+                  <span className="text-[10px] font-bold text-success uppercase tracking-wider">Operational</span>
+                </span>
+              </div>
+              <h1 className="text-3xl sm:text-[34px] font-extrabold tracking-tight text-foreground leading-[1.1]">
+                Good {new Date().getHours() < 12 ? "morning" : new Date().getHours() < 18 ? "afternoon" : "evening"},{" "}
+                <span className="gradient-text">{firstName}</span>
+              </h1>
+              <p className="text-sm text-muted-foreground max-w-md">
+                {totalDevices > 0
+                  ? `Monitoring ${totalDevices} device${totalDevices === 1 ? "" : "s"} · ${commandsLastHour} command${commandsLastHour === 1 ? "" : "s"} executed this hour.`
+                  : "Your fleet is quiet — register a device to start orchestrating."}
+              </p>
+              <div className="flex flex-wrap items-center gap-2 pt-1">
+                <Button size="sm" className="h-8 text-xs font-semibold rounded-lg" onClick={() => navigate("/deployment")}>
+                  <Rocket className="h-3.5 w-3.5 mr-1.5" /> Deploy Agent
+                </Button>
+                <Button size="sm" variant="outline" className="h-8 text-xs font-semibold rounded-lg" onClick={() => navigate("/devices")}>
+                  <Monitor className="h-3.5 w-3.5 mr-1.5" /> View Devices
+                </Button>
+                <Button size="sm" variant="ghost" className="h-8 text-xs font-semibold rounded-lg" onClick={() => navigate("/network")}>
+                  <Network className="h-3.5 w-3.5 mr-1.5" /> Network
+                </Button>
+              </div>
+            </div>
+
+            {/* Right: composite Fleet Pulse score */}
+            <div className="relative rounded-xl border border-border bg-card/70 backdrop-blur p-5">
+              <div className="flex items-start justify-between mb-3">
+                <div>
+                  <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-[0.18em]">Fleet Pulse</p>
+                  <div className="flex items-baseline gap-2 mt-1">
+                    <span className="text-4xl font-extrabold text-foreground tabular-nums">{healthPercent}</span>
+                    <span className="text-sm font-semibold text-muted-foreground">/ 100</span>
+                  </div>
+                </div>
+                <Badge variant="outline" className={`text-[10px] font-bold ${healthPercent >= 80 ? "border-success/30 text-success bg-success/5" : healthPercent >= 50 ? "border-warning/30 text-warning bg-warning/5" : "border-destructive/30 text-destructive bg-destructive/5"}`}>
+                  {healthPercent >= 80 ? "Healthy" : healthPercent >= 50 ? "Degraded" : "Critical"}
+                </Badge>
+              </div>
+              <Progress value={healthPercent} className="h-1.5 mb-4" />
+              <div className="grid grid-cols-4 gap-2">
+                <PulseChip label="Cmd/hr" value={commandsLastHour.toString()} accent="text-primary" />
+                <PulseChip label="Sessions" value={(sessions?.length ?? 0).toString()} accent="text-success" />
+                <PulseChip label="Relays" value={`${onlineRelays}/${relayList.length}`} accent={onlineRelays === relayList.length && relayList.length > 0 ? "text-success" : "text-warning"} />
+                <PulseChip label="Online" value={`${onlineCount}/${totalDevices}`} accent="text-accent" />
+              </div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Live Pulse Strip */}
-      <LivePulseStrip
-        commandsLastHour={commandsLastHour}
-        activeSessions={sessions?.length ?? 0}
-        onlineRelays={onlineRelays}
-        totalRelays={relayList.length}
-        lastHeartbeat={lastHeartbeat}
-      />
-
-      {/* KPI Row — now smarter */}
+      {/* KPI Row — elevated, animated hover */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="border border-border">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Total Devices</span>
-              <div className="h-8 w-8 rounded-md bg-primary/8 flex items-center justify-center">
-                <Monitor className="h-4 w-4 text-primary" />
-              </div>
-            </div>
-            <div className="flex items-end justify-between gap-2">
-              <div>
-                <div className="text-2xl font-bold text-foreground tabular-nums">{totalDevices}</div>
-                <p className="text-[11px] text-muted-foreground mt-1">Task volume / 7d</p>
-              </div>
-              <Sparkline data={taskVolume7d} />
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="border border-border">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Online</span>
-              <div className="h-8 w-8 rounded-md bg-success/8 flex items-center justify-center">
-                <Wifi className="h-4 w-4 text-success" />
-              </div>
-            </div>
-            <div className="text-2xl font-bold text-foreground tabular-nums">{onlineCount}</div>
-            <div className="flex items-center gap-1 mt-1">
+        <KpiCard
+          label="Total Devices"
+          value={totalDevices.toString()}
+          icon={Monitor}
+          tone="primary"
+          sub="Task volume / 7d"
+          chart={<Sparkline data={taskVolume7d} />}
+        />
+        <KpiCard
+          label="Online"
+          value={onlineCount.toString()}
+          icon={Wifi}
+          tone="success"
+          sub={
+            <span className="flex items-center gap-1">
               <TrendingUp className="h-3 w-3 text-success" />
-              <span className="text-[11px] text-success font-medium">{healthPercent}% fleet health</span>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card className="border border-border">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Offline</span>
-              <div className="h-8 w-8 rounded-md bg-destructive/8 flex items-center justify-center">
-                <WifiOff className="h-4 w-4 text-destructive" />
-              </div>
-            </div>
-            <div className="text-2xl font-bold text-foreground tabular-nums">{offlineCount}</div>
-            <p className="text-[11px] text-muted-foreground mt-1 truncate">
-              {longestOffline ? <>Top: <span className="font-mono">{longestOffline.target_id}</span></> : "All responsive"}
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card className="border border-border">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Success Rate</span>
-              <div className="h-8 w-8 rounded-md bg-warning/8 flex items-center justify-center">
-                <Activity className="h-4 w-4 text-warning" />
-              </div>
-            </div>
-            <div className="text-2xl font-bold text-foreground tabular-nums">{successRate}%</div>
-            <p className="text-[11px] text-muted-foreground mt-1 tabular-nums">
-              {pendingTasks} pending · {failedTasks} failed
-            </p>
-          </CardContent>
-        </Card>
+              <span className="text-success font-semibold">{healthPercent}% fleet health</span>
+            </span>
+          }
+        />
+        <KpiCard
+          label="Offline"
+          value={offlineCount.toString()}
+          icon={WifiOff}
+          tone="destructive"
+          sub={longestOffline ? <>Stale: <span className="font-mono">{longestOffline.target_id}</span></> : "All responsive"}
+        />
+        <KpiCard
+          label="Success Rate"
+          value={`${successRate}%`}
+          icon={Activity}
+          tone="warning"
+          sub={<span className="tabular-nums">{pendingTasks} pending · {failedTasks} failed</span>}
+        />
       </div>
+
 
       {/* Main Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
