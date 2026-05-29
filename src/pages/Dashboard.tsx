@@ -19,7 +19,8 @@ import { useNavigate } from "react-router-dom";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Sparkline } from "@/components/dashboard/Sparkline";
 import { isDeviceResponsive } from "@/lib/device-presence";
-import { LivePulseStrip } from "@/components/dashboard/LivePulseStrip";
+
+
 import { ActivityHeatmap } from "@/components/dashboard/ActivityHeatmap";
 import { SmartInsights, type Insight } from "@/components/dashboard/SmartInsights";
 import { CommandTypeBreakdown } from "@/components/dashboard/CommandTypeBreakdown";
